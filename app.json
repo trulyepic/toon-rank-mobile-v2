@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#17110f"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.toonranksmobile"
     },
     "web": {
       "bundler": "metro"

@@ -2,7 +2,7 @@ import type { PropsWithChildren, ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { colors, spacing } from "../theme/tokens";
+import { colors, spacing, typography } from "../theme/tokens";
 
 type Props = PropsWithChildren<{
   title: string;
@@ -50,12 +50,10 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 28,
-    fontWeight: "800",
+    ...typography.screenTitle,
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
+    ...typography.body,
   },
 });

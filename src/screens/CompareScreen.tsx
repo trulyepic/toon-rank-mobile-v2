@@ -48,7 +48,7 @@ function compactGenre(genre?: string) {
     .map((part) => part.trim())
     .filter(Boolean)
     .slice(0, 4)
-    .join(" · ");
+    .join(" / ");
 }
 
 function RowLabel({ text }: { text: string }) {
@@ -339,8 +339,8 @@ const styles = StyleSheet.create({
   clearButton: {
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "#4a362d",
-    backgroundColor: "#241b17",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
@@ -350,9 +350,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   emptyCard: {
-    backgroundColor: "#221916",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#45332a",
+    borderColor: colors.border,
     borderRadius: 24,
     padding: spacing.lg,
     gap: spacing.md,
@@ -368,8 +368,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   notice: {
-    backgroundColor: "#221916",
-    borderColor: "#45332a",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 24,
     padding: spacing.md,
@@ -410,9 +410,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   countBadge: {
-    backgroundColor: "#253764",
+    backgroundColor: colors.accentSoft,
     borderWidth: 1,
-    borderColor: "#3b5cba",
+    borderColor: colors.accent,
     borderRadius: radii.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -426,9 +426,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#201815",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#413128",
+    borderColor: colors.borderSoft,
     borderRadius: radii.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -453,9 +453,9 @@ const styles = StyleSheet.create({
     height: 1,
   },
   headerCard: {
-    backgroundColor: "#211815",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#49362d",
+    borderColor: colors.borderSoft,
     borderRadius: 24,
     padding: 12,
     gap: 10,
@@ -470,8 +470,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#3b2c25",
-    backgroundColor: "#17110f",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
     position: "relative",
   },
   headerCover: {
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(30, 56, 123, 0.92)",
+    backgroundColor: colors.overlay,
     borderRadius: radii.pill,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "#4a362d",
-    backgroundColor: "#1f1714",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
   },
   headerMetaWrap: {
     gap: 8,
@@ -530,8 +530,8 @@ const styles = StyleSheet.create({
   },
   headerChip: {
     borderWidth: 1,
-    borderColor: "#4766c8",
-    backgroundColor: "#24355d",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
     borderRadius: radii.pill,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -544,8 +544,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   headerChipMuted: {
-    borderColor: "#4a362d",
-    backgroundColor: "#291f1b",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
   },
   headerChipMutedText: {
     color: colors.textMuted,
@@ -557,10 +557,10 @@ const styles = StyleSheet.create({
   sectionBlock: {
     gap: spacing.sm,
     padding: spacing.md,
-    backgroundColor: "#191311",
+    backgroundColor: colors.backgroundSoft,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#362720",
+    borderColor: colors.border,
   },
   sectionTitle: {
     color: colors.text,
@@ -575,8 +575,8 @@ const styles = StyleSheet.create({
     minHeight: 62,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#3b2d25",
-    backgroundColor: "#211815",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 10,
     justifyContent: "center",
@@ -592,8 +592,8 @@ const styles = StyleSheet.create({
     minHeight: 62,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#3c2d25",
-    backgroundColor: "#241b17",
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
     paddingHorizontal: 12,
     paddingVertical: 10,
     justifyContent: "center",
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   valueCellAccent: {
-    color: "#8cb0ff",
+    color: colors.accentStrong,
   },
   dimmed: {
     opacity: 0.9,

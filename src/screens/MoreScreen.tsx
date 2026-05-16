@@ -5,11 +5,11 @@ export function MoreScreen() {
   return (
     <ScreenShell
       title="More"
-      subtitle="This holds the future account, settings, and post-auth features without blocking Phase 1."
+      subtitle="Account, reading list, forum activity, settings, and support live here."
     >
       <PlaceholderCard
-        title="Deferred features"
-        body="Auth, reading list management, forum interactions, contributor tools, and admin workflows stay out of the initial mobile build."
+        title="Account features"
+        body="Sign in, saved titles, forum activity, settings, Terms, Privacy, and support links will be organized from this screen."
       />
     </ScreenShell>
   );

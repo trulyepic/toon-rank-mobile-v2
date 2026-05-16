@@ -16,14 +16,14 @@ import { fetchRankings } from "../api/series";
 import { ScreenShell } from "../components/ScreenShell";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
-  if (score >= 7.5) return "#5f88ff";
+  if (score >= 7.5) return colors.accentStrong;
   if (score >= 5) return colors.warning;
-  return "#eb6a5a";
+  return colors.danger;
 }
 
 function HomeCard({
@@ -70,7 +70,7 @@ function HomeCard({
             {item.title}
           </Text>
           <Text style={styles.posterSubtitle}>
-            {item.type} · {item.vote_count.toLocaleString()} votes
+            {item.type} / {item.vote_count.toLocaleString()} votes
           </Text>
         </View>
       </Pressable>
@@ -121,8 +121,7 @@ export function HomeScreen() {
       {isError ? (
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
-            Rankings failed to load. Once the backend is reachable, this screen
-            becomes the mobile browse surface.
+            Rankings failed to load. Check your connection and try again in a moment.
           </Text>
         </View>
       ) : null}
@@ -146,8 +145,7 @@ export function HomeScreen() {
           !isLoading && !isError ? (
             <View style={styles.notice}>
               <Text style={styles.noticeText}>
-                No rankings yet. Once the backend responds, titles will appear
-                here as a visual browsing grid.
+                No rankings are available yet. Check back soon for ranked titles.
               </Text>
             </View>
           ) : null
@@ -178,13 +176,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#47342b",
-    backgroundColor: "#211714",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
+    ...shadows.card,
   },
   posterImage: {
     width: "100%",
@@ -207,9 +201,9 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     top: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(18, 14, 12, 0.88)",
+    backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.overlayBorder,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -223,9 +217,9 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     top: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(18, 14, 12, 0.88)",
+    backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.overlayBorder,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -240,15 +234,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: radii.pill,
-    backgroundColor: "#1f1714",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.borderSoft,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
   compareButtonActive: {
-    backgroundColor: "#315fdc",
-    borderColor: "#6d93ff",
+    backgroundColor: colors.accent,
+    borderColor: colors.accentBorder,
   },
   compareButtonText: {
     color: colors.text,
@@ -261,9 +255,7 @@ const styles = StyleSheet.create({
   },
   posterTitle: {
     color: colors.text,
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: "800",
+    ...typography.cardTitle,
   },
   posterSubtitle: {
     color: colors.textMuted,
@@ -289,9 +281,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: radii.pill,
-    backgroundColor: "#241b17",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.borderSoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
