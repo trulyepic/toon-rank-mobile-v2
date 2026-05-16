@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { colors } from "./src/theme/tokens";
 
 const queryClient = new QueryClient();
 
@@ -12,12 +13,12 @@ const theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: "#17110f",
-    card: "#241a16",
-    text: "#f7f3ef",
-    border: "#4a362d",
-    primary: "#315fdc",
-    notification: "#f97316",
+    background: colors.background,
+    card: colors.surface,
+    text: colors.text,
+    border: colors.border,
+    primary: colors.accent,
+    notification: colors.warning,
   },
 };
 

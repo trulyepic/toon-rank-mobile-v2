@@ -4,6 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { CompareScreen } from "../screens/CompareScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { MoreScreen } from "../screens/MoreScreen";
+import { colors } from "../theme/tokens";
 import { SearchScreen } from "../screens/SearchScreen";
 
 export type TabParamList = {
@@ -36,11 +37,11 @@ export function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#241a16",
-          borderTopColor: "#4a362d",
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
         },
-        tabBarActiveTintColor: "#f7f3ef",
-        tabBarInactiveTintColor: "#bcaea4",
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name={getTabIconName(route.name)} size={size} color={color} />
         ),

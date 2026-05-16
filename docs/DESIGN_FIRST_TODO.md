@@ -5,23 +5,23 @@ experience before wiring full authenticated functionality.
 
 ## Phase 0: Repo And Baseline
 
-- [ ] Initialize git for `toon-ranks-mobile` or confirm its target repository.
-- [ ] Add a mobile `.gitignore` if one does not exist.
-- [ ] Commit the current WIP baseline before feature work.
-- [ ] Run `npm run typecheck` and record the baseline result.
-- [ ] Decide branch naming convention for mobile work.
+- [x] Initialize git for `toon-ranks-mobile` or confirm its target repository.
+- [x] Add a mobile `.gitignore` if one does not exist.
+- [x] Commit the current WIP baseline before feature work.
+- [x] Run `npm run typecheck` and record the baseline result.
+- [x] Decide branch naming convention for mobile work.
 
 ## Phase 1: Design Foundation
 
 Suggested branch: `mobile-design-foundation`
 
-- [ ] Clean and expand `src/theme/tokens.ts`.
-- [ ] Reduce hardcoded colors in screens.
-- [ ] Align brand accent with Toon Ranks blue.
-- [ ] Add stable typography tokens.
-- [ ] Add shared shadow/elevation/border tokens where useful.
-- [ ] Fix visible mojibake such as `Â·`.
-- [ ] Replace phase-oriented placeholder copy with product copy.
+- [x] Clean and expand `src/theme/tokens.ts`.
+- [x] Reduce hardcoded colors in screens.
+- [x] Align brand accent with Toon Ranks blue.
+- [x] Add stable typography tokens.
+- [x] Add shared shadow/elevation/border tokens where useful.
+- [x] Fix visible mojibake such as `Â·`.
+- [x] Replace phase-oriented placeholder copy with product copy.
 
 ## Phase 2: Reusable UI Primitives
 

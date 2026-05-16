@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing, typography } from "../theme/tokens";
 
 export function PlaceholderCard({
   title,
@@ -28,12 +28,10 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
+    ...typography.cardTitle,
   },
   body: {
     color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 21,
+    ...typography.body,
   },
 });

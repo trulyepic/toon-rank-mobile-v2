@@ -134,15 +134,14 @@ export function SeriesDetailScreen() {
   return (
     <ScreenShell
       title={summary?.title || detail?.title || "Series detail"}
-      subtitle="A mobile read-only version of the same detail structure used on Toon Ranks."
+      subtitle="Scan the cover, rank, scores, synopsis, and reader voting breakdown."
     >
       {isLoading ? <ActivityIndicator color={colors.accent} /> : null}
 
       {isError ? (
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
-            We couldn&apos;t load this title right now. This screen depends on the
-            same public summary and detail endpoints as the website.
+            We couldn&apos;t load this title right now. Check your connection and try again.
           </Text>
         </View>
       ) : null}
@@ -250,9 +249,8 @@ export function SeriesDetailScreen() {
 
             <View style={styles.voteNotice}>
               <Text style={styles.voteNoticeText}>
-                Voting comes in the next mobile phase when account support is ready.
-                The app will use the same categories and locked-per-category voting flow
-                as the website.
+                Sign-in voting will use the same categories and one-vote-per-category flow
+                as Toon Ranks on the web.
               </Text>
             </View>
 
@@ -286,9 +284,9 @@ const styles = StyleSheet.create({
   },
   heroShell: {
     overflow: "hidden",
-    borderRadius: 28,
+    borderRadius: radii.hero,
     borderWidth: 1,
-    borderColor: "#433128",
+    borderColor: colors.borderSoft,
     backgroundColor: colors.surface,
   },
   heroImage: {
@@ -311,16 +309,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   metaChip: {
-    backgroundColor: "#221a16",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.borderSoft,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
   statusChip: {
-    backgroundColor: "#203469",
-    borderColor: "#315fdc",
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accent,
   },
   metaChipText: {
     color: colors.text,
@@ -341,8 +339,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   genreChip: {
-    backgroundColor: "#203469",
-    borderColor: "#315fdc",
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accent,
     borderWidth: 1,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
@@ -355,9 +353,9 @@ const styles = StyleSheet.create({
   },
   avgCard: {
     width: 132,
-    backgroundColor: "#241b17",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.borderSoft,
     borderRadius: 24,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
@@ -389,16 +387,16 @@ const styles = StyleSheet.create({
   metricCard: {
     minWidth: "47%",
     flexGrow: 1,
-    backgroundColor: "#261c18",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.border,
     borderRadius: 20,
     padding: spacing.md,
     gap: spacing.xs,
   },
   metricCardHighlight: {
-    borderColor: "#315fdc",
-    backgroundColor: "#203469",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   metricLabel: {
     color: colors.textMuted,
@@ -417,9 +415,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   infoCard: {
-    backgroundColor: "#221916",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#45332a",
+    borderColor: colors.border,
     borderRadius: 24,
     padding: spacing.md,
     gap: spacing.sm,
@@ -456,9 +454,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   breakdownCard: {
-    backgroundColor: "#261c18",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#45332a",
+    borderColor: colors.border,
     borderRadius: 22,
     padding: spacing.md,
     gap: 4,
@@ -469,7 +467,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   breakdownScore: {
-    color: "#5f88ff",
+    color: colors.accentStrong,
     fontSize: 28,
     fontWeight: "800",
   },
@@ -487,20 +485,20 @@ const styles = StyleSheet.create({
   voteNotice: {
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#8b521c",
-    backgroundColor: "rgba(111, 57, 11, 0.18)",
+    borderColor: colors.warningBorder,
+    backgroundColor: colors.warningSurface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   voteNoticeText: {
-    color: "#f3cf89",
+    color: colors.warningText,
     fontSize: 14,
     lineHeight: 22,
   },
   voteCard: {
-    backgroundColor: "#241b17",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#45332a",
+    borderColor: colors.border,
     borderRadius: 24,
     padding: spacing.md,
   },
@@ -530,8 +528,8 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#4a362d",
-    backgroundColor: "#1f1714",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
     alignItems: "center",
     justifyContent: "center",
   },

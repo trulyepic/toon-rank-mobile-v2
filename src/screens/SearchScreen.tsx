@@ -18,7 +18,7 @@ import { searchSeries } from "../api/series";
 import { ScreenShell } from "../components/ScreenShell";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 
 function SearchResultCard({
@@ -60,7 +60,7 @@ function SearchResultCard({
             {item.title}
           </Text>
           <Text style={styles.resultMeta}>
-            {item.type} · {Number(item.final_score || 0).toFixed(1)}
+            {item.type} / {Number(item.final_score || 0).toFixed(1)}
           </Text>
           <Text numberOfLines={2} style={styles.resultGenre}>
             {item.genre}
@@ -143,8 +143,7 @@ export function SearchScreen() {
       {isError ? (
         <View style={styles.notice}>
           <Text style={styles.noticeText}>
-            Search failed to load. Once the backend is reachable, matching titles
-            will appear here as you type.
+            Search failed to load. Check your connection and try again in a moment.
           </Text>
         </View>
       ) : null}
@@ -197,8 +196,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: "#4a362d",
-    backgroundColor: "#241b17",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -213,9 +212,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   resultCard: {
-    backgroundColor: "#241b17",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#45332a",
+    borderColor: colors.borderSoft,
     borderRadius: 24,
     padding: spacing.sm,
     gap: spacing.sm,
@@ -234,8 +233,8 @@ const styles = StyleSheet.create({
     width: 92,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#47342b",
-    backgroundColor: "#211714",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
   },
   resultImage: {
     width: "100%",
@@ -259,9 +258,9 @@ const styles = StyleSheet.create({
     left: spacing.xs,
     top: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(18, 14, 12, 0.88)",
+    backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
+    borderColor: colors.overlayBorder,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -281,12 +280,10 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     color: colors.text,
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: "800",
+    ...typography.cardTitle,
   },
   resultMeta: {
-    color: "#88a7ff",
+    color: colors.accentStrong,
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 0.9,
@@ -305,14 +302,14 @@ const styles = StyleSheet.create({
     gap: 6,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "#4a362d",
-    backgroundColor: "#1f1714",
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
   compareButtonActive: {
-    backgroundColor: "#315fdc",
-    borderColor: "#6d93ff",
+    backgroundColor: colors.accent,
+    borderColor: colors.accentBorder,
   },
   compareButtonText: {
     color: colors.text,
@@ -320,8 +317,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   notice: {
-    backgroundColor: "#221916",
-    borderColor: "#45332a",
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 24,
     padding: spacing.md,
@@ -342,9 +339,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: radii.pill,
-    backgroundColor: "#241b17",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#4a362d",
+    borderColor: colors.borderSoft,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
