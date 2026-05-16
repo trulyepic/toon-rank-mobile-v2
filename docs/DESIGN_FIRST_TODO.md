@@ -27,16 +27,16 @@ Suggested branch: `mobile-design-foundation`
 
 Suggested branch: `mobile-ui-primitives`
 
-- [ ] Add reusable `AppText`.
-- [ ] Add reusable `AppButton`.
-- [ ] Add reusable `IconButton`.
-- [ ] Add reusable `Chip`.
-- [ ] Add reusable `Surface`.
-- [ ] Add reusable `SectionHeader`.
-- [ ] Add reusable `EmptyState`.
-- [ ] Add reusable `ErrorState`.
-- [ ] Add reusable `LoadingState`.
-- [ ] Update existing screens to use these primitives gradually.
+- [x] Add reusable `AppText`.
+- [x] Add reusable `AppButton`.
+- [x] Add reusable `IconButton`.
+- [x] Add reusable `Chip`.
+- [x] Add reusable `Surface`.
+- [x] Add reusable `SectionHeader`.
+- [x] Add reusable `EmptyState`.
+- [x] Add reusable `ErrorState`.
+- [x] Add reusable `LoadingState`.
+- [x] Update existing screens to use these primitives gradually.
 
 ## Phase 3: Home And Search Polish
 

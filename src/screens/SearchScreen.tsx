@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { searchSeries } from "../api/series";
-import { ScreenShell } from "../components/ScreenShell";
+import { AppButton, ScreenShell } from "../components";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
@@ -25,13 +25,17 @@ function SearchResultCard({
   item,
   onPress,
   selectedForCompare,
+  canAddMore,
   onToggleCompare,
 }: {
   item: RankedSeries;
   onPress: () => void;
   selectedForCompare: boolean;
+  canAddMore: boolean;
   onToggleCompare: () => void;
 }) {
+  const compareDisabled = !selectedForCompare && !canAddMore;
+
   return (
     <View style={styles.resultCard}>
       <Pressable
@@ -69,22 +73,21 @@ function SearchResultCard({
       </Pressable>
 
       <View style={styles.resultActionRow}>
-        <Pressable
+        <AppButton
           onPress={onToggleCompare}
-          style={[
-            styles.compareButton,
-            selectedForCompare ? styles.compareButtonActive : null,
-          ]}
-        >
-          <Ionicons
-            name={selectedForCompare ? "checkmark" : "git-compare-outline"}
-            size={14}
-            color={colors.text}
-          />
-          <Text style={styles.compareButtonText}>
-            {selectedForCompare ? "Selected" : "Compare"}
-          </Text>
-        </Pressable>
+          size="sm"
+          disabled={compareDisabled}
+          selected={selectedForCompare}
+          label={selectedForCompare ? "Selected" : compareDisabled ? "Max 4" : "Compare"}
+          iconLeft={
+            <Ionicons
+              name={selectedForCompare ? "checkmark" : "git-compare-outline"}
+              size={14}
+              color={colors.text}
+            />
+          }
+          style={styles.compareButton}
+        />
       </View>
     </View>
   );
@@ -93,7 +96,7 @@ function SearchResultCard({
 export function SearchScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { compareItems, isSelected, toggleCompare } = useCompare();
+  const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -172,6 +175,7 @@ export function SearchScreen() {
                 navigation.navigate("SeriesDetail", { seriesId: item.id })
               }
               selectedForCompare={isSelected(item.id)}
+              canAddMore={canAddMore}
               onToggleCompare={() => toggleCompare(item)}
             />
           )}
@@ -297,24 +301,6 @@ const styles = StyleSheet.create({
   compareButton: {
     marginTop: spacing.xs,
     alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  compareButtonActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accentBorder,
-  },
-  compareButtonText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
   },
   notice: {
     backgroundColor: colors.surface,

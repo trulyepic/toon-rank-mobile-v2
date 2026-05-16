@@ -1,8 +1,9 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { colors, spacing, typography } from "../theme/tokens";
+import { colors, spacing } from "../theme/tokens";
+import { AppText } from "./AppText";
 
 type Props = PropsWithChildren<{
   title: string;
@@ -16,8 +17,8 @@ export function ScreenShell({ title, subtitle, rightSlot, children }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            <AppText variant="screenTitle">{title}</AppText>
+            {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
           </View>
           {rightSlot ? <View>{rightSlot}</View> : null}
         </View>
@@ -47,13 +48,5 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: spacing.xs,
-  },
-  title: {
-    color: colors.text,
-    ...typography.screenTitle,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    ...typography.body,
   },
 });

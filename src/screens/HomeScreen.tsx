@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -13,7 +12,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { fetchRankings } from "../api/series";
-import { ScreenShell } from "../components/ScreenShell";
+import { AppButton, EmptyState, ErrorState, LoadingState, ScreenShell } from "../components";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
@@ -30,14 +29,17 @@ function HomeCard({
   item,
   onPress,
   selectedForCompare,
+  canAddMore,
   onToggleCompare,
 }: {
   item: RankedSeries;
   onPress: () => void;
   selectedForCompare: boolean;
+  canAddMore: boolean;
   onToggleCompare: () => void;
 }) {
   const score = Number(item.final_score || 0).toFixed(1);
+  const compareDisabled = !selectedForCompare && !canAddMore;
 
   return (
     <View style={styles.posterCard}>
@@ -75,22 +77,21 @@ function HomeCard({
         </View>
       </Pressable>
 
-      <Pressable
+      <AppButton
         onPress={onToggleCompare}
-        style={[
-          styles.compareButton,
-          selectedForCompare ? styles.compareButtonActive : null,
-        ]}
-      >
-        <Ionicons
-          name={selectedForCompare ? "checkmark" : "git-compare-outline"}
-          size={14}
-          color={colors.text}
-        />
-        <Text style={styles.compareButtonText}>
-          {selectedForCompare ? "Selected" : "Compare"}
-        </Text>
-      </Pressable>
+        size="sm"
+        disabled={compareDisabled}
+        selected={selectedForCompare}
+        label={selectedForCompare ? "Selected" : compareDisabled ? "Max 4" : "Compare"}
+        iconLeft={
+          <Ionicons
+            name={selectedForCompare ? "checkmark" : "git-compare-outline"}
+            size={14}
+            color={colors.text}
+          />
+        }
+        style={styles.compareButton}
+      />
     </View>
   );
 }
@@ -98,7 +99,7 @@ function HomeCard({
 export function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { compareItems, isSelected, toggleCompare } = useCompare();
+  const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["rankings"],
     queryFn: () => fetchRankings(),
@@ -107,7 +108,6 @@ export function HomeScreen() {
   return (
     <ScreenShell
       title="Toon Ranks"
-      subtitle="Browse the same ranked titles and cover art that power the website."
       rightSlot={
         compareItems.length ? (
           <View style={styles.headerCounter}>
@@ -117,13 +117,9 @@ export function HomeScreen() {
         ) : null
       }
     >
-      {isLoading ? <ActivityIndicator color={colors.accent} /> : null}
+      {isLoading ? <LoadingState message="Loading rankings..." /> : null}
       {isError ? (
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>
-            Rankings failed to load. Check your connection and try again in a moment.
-          </Text>
-        </View>
+        <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
       ) : null}
 
       <FlatList
@@ -138,16 +134,13 @@ export function HomeScreen() {
             item={item}
             onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
             selectedForCompare={isSelected(item.id)}
+            canAddMore={canAddMore}
             onToggleCompare={() => toggleCompare(item)}
           />
         )}
         ListEmptyComponent={
           !isLoading && !isError ? (
-            <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                No rankings are available yet. Check back soon for ranked titles.
-              </Text>
-            </View>
+            <EmptyState message="No rankings are available yet. Check back soon for ranked titles." />
           ) : null
         }
       />
@@ -230,24 +223,6 @@ const styles = StyleSheet.create({
   compareButton: {
     marginTop: spacing.xs,
     alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  compareButtonActive: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accentBorder,
-  },
-  compareButtonText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
   },
   posterMeta: {
     gap: 4,
@@ -264,17 +239,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.7,
     fontWeight: "600",
-  },
-  notice: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-  },
-  noticeText: {
-    color: colors.textMuted,
-    lineHeight: 22,
   },
   headerCounter: {
     flexDirection: "row",

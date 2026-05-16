@@ -19,7 +19,7 @@ type CompareContextValue = {
 
 const CompareContext = createContext<CompareContextValue | null>(null);
 
-const MAX_COMPARE_ITEMS = 4;
+export const MAX_COMPARE_ITEMS = 4;
 
 export function CompareProvider({ children }: PropsWithChildren) {
   const [compareItems, setCompareItems] = useState<RankedSeries[]>([]);
