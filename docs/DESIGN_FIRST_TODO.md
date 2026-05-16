@@ -66,12 +66,12 @@ Suggested branch: `mobile-series-detail-polish`
 
 Suggested branch: `mobile-compare-polish`
 
-- [ ] Decide whether Compare remains a tab or becomes a secondary screen.
-- [ ] Improve selected-title header cards.
-- [ ] Improve horizontal swipe affordance.
-- [ ] Improve empty state and clear/remove actions.
-- [ ] Ensure comparison rows work on narrow phones.
-- [ ] Keep compare state local for now unless persistence is explicitly needed.
+- [x] Decide whether Compare remains a tab or becomes a secondary screen.
+- [x] Improve selected-title header cards.
+- [x] Improve horizontal swipe affordance.
+- [x] Improve empty state and clear/remove actions.
+- [x] Ensure comparison rows work on narrow phones.
+- [x] Keep compare state local for now unless persistence is explicitly needed.
 
 ## Phase 6: Account And More Shell
 

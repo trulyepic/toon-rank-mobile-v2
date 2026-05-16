@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   ScrollView,
@@ -15,7 +14,16 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getSeriesDetail } from "../api/series";
-import { ScreenShell } from "../components/ScreenShell";
+import {
+  AppButton,
+  AppText,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  LoadingState,
+  ScreenShell,
+  Surface,
+} from "../components";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -137,50 +145,41 @@ export function CompareScreen() {
   return (
     <ScreenShell
       title="Compare"
-      subtitle="Build a side-by-side board for titles you want to judge quickly at a glance."
       rightSlot={
         compareItems.length ? (
-          <Pressable onPress={clearCompare} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>Clear</Text>
-          </Pressable>
+          <AppButton label="Clear" size="sm" variant="ghost" onPress={clearCompare} />
         ) : null
       }
     >
       {!compareItems.length ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Pick at least two titles</Text>
-          <Text style={styles.emptyText}>
-            Use the Compare button on Home or Search to build a small side-by-side list here.
-          </Text>
-        </View>
+        <EmptyState
+          title="Pick titles to compare"
+          message="Use Compare on Home or Search to build a side-by-side board."
+        />
       ) : (
         <>
-          {loading ? <ActivityIndicator color={colors.accent} /> : null}
+          {loading ? <LoadingState message="Loading comparison..." /> : null}
 
           {hasError ? (
-            <View style={styles.notice}>
-              <Text style={styles.noticeText}>
-                Some comparison details could not be loaded right now. Try again in a moment.
-              </Text>
-            </View>
+            <ErrorState message="Some comparison details could not be loaded right now. Try again in a moment." />
           ) : null}
 
           <View style={styles.boardShell}>
             <View style={styles.boardHeader}>
               <View style={styles.boardHeading}>
-                <Text style={styles.boardEyebrow}>Compare board</Text>
-                <Text style={styles.boardTitle}>Side by side</Text>
+                <AppText variant="label" tone="muted">
+                  Compare board
+                </AppText>
+                <AppText variant="sectionTitle">Side by side</AppText>
               </View>
               <View style={styles.headerBadges}>
-                <View style={styles.countBadge}>
-                  <Text style={styles.countBadgeText}>
-                    {compareItems.length} selected
-                  </Text>
-                </View>
+                <Surface variant="accent" radius="md" padding="sm">
+                  <AppText variant="caption">{compareItems.length} selected</AppText>
+                </Surface>
                 {shouldScroll ? (
                   <View style={styles.scrollBadge}>
                     <Ionicons name="swap-horizontal" size={14} color={colors.textMuted} />
-                    <Text style={styles.scrollBadgeText}>Swipe</Text>
+                    <AppText variant="caption" tone="muted">Swipe</AppText>
                   </View>
                 ) : null}
               </View>
@@ -203,12 +202,13 @@ export function CompareScreen() {
                         key={`header-${summary.id}`}
                         style={[styles.headerCard, { width: columnWidth }]}
                       >
-                        <Pressable
+                        <IconButton
+                          label={`Remove ${summary.title}`}
+                          icon="close"
                           onPress={() => toggleCompare(summary)}
                           style={styles.removeIconButton}
-                        >
-                          <Ionicons name="close" size={14} color={colors.text} />
-                        </Pressable>
+                          size={28}
+                        />
 
                         <Pressable
                           onPress={() =>
@@ -257,8 +257,8 @@ export function CompareScreen() {
                   })}
                 </View>
 
-                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
-                  <Text style={styles.sectionTitle}>Snapshot</Text>
+                <Surface style={[styles.sectionBlock, { width: matrixWidth }]}>
+                  <AppText variant="cardTitle">Snapshot</AppText>
 
                   <View style={styles.dataRow}>
                     <RowLabel text="Overall" />
@@ -299,10 +299,10 @@ export function CompareScreen() {
                       </ValueCell>
                     ))}
                   </View>
-                </View>
+                </Surface>
 
-                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
-                  <Text style={styles.sectionTitle}>Creators</Text>
+                <Surface style={[styles.sectionBlock, { width: matrixWidth }]}>
+                  <AppText variant="cardTitle">Creators</AppText>
 
                   <View style={styles.dataRow}>
                     <RowLabel text="Author" />
@@ -321,10 +321,10 @@ export function CompareScreen() {
                       </ValueCell>
                     ))}
                   </View>
-                </View>
+                </Surface>
 
-                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
-                  <Text style={styles.sectionTitle}>Category scores</Text>
+                <Surface style={[styles.sectionBlock, { width: matrixWidth }]}>
+                  <AppText variant="cardTitle">Category scores</AppText>
 
                   {compareLabels.map(({ key, label }) => (
                     <View key={key} style={styles.dataRow}>
@@ -339,7 +339,7 @@ export function CompareScreen() {
                       ))}
                     </View>
                   ))}
-                </View>
+                </Surface>
               </View>
             </ScrollView>
           </View>
@@ -350,49 +350,6 @@ export function CompareScreen() {
 }
 
 const styles = StyleSheet.create({
-  clearButton: {
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  clearButtonText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  emptyCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  emptyTitle: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  notice: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: spacing.md,
-  },
-  noticeText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
   boardShell: {
     gap: spacing.md,
   },
@@ -406,35 +363,10 @@ const styles = StyleSheet.create({
     gap: 4,
     flex: 1,
   },
-  boardEyebrow: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    fontWeight: "700",
-  },
-  boardTitle: {
-    color: colors.text,
-    fontSize: 26,
-    fontWeight: "800",
-  },
   headerBadges: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  countBadge: {
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    borderRadius: radii.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  countBadgeText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
   },
   scrollBadge: {
     flexDirection: "row",
@@ -446,11 +378,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
-  },
-  scrollBadgeText: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
   },
   matrixScrollContent: {
     paddingBottom: 4,
@@ -580,16 +507,6 @@ const styles = StyleSheet.create({
   },
   sectionBlock: {
     gap: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: colors.backgroundSoft,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "800",
   },
   dataRow: {
     flexDirection: "row",
