@@ -29,7 +29,8 @@ const compareLabels = [
 ] as const;
 
 const LABEL_COLUMN_WIDTH = 92;
-const MIN_VALUE_COLUMN_WIDTH = 148;
+const MIN_VALUE_COLUMN_WIDTH = 132;
+const MIN_HEADER_COLUMN_WIDTH = 148;
 
 function formatAverage(total?: number, count?: number) {
   if (!total || !count) return "-";
@@ -39,6 +40,14 @@ function formatAverage(total?: number, count?: number) {
 function formatScore(score?: number | null) {
   if (score == null || Number.isNaN(Number(score))) return "-";
   return Number(score).toFixed(1);
+}
+
+function getScoreTone(score?: number | null) {
+  const numericScore = Number(score || 0);
+  if (numericScore >= 8) return colors.success;
+  if (numericScore >= 7.5) return colors.accentStrong;
+  if (numericScore >= 5) return colors.warning;
+  return colors.danger;
 }
 
 function compactGenre(genre?: string) {
@@ -110,17 +119,19 @@ export function CompareScreen() {
     [compareItems, detailQueries],
   );
 
-  const availableWidth = Math.max(screenWidth - spacing.lg * 2, 320);
-  const gapsWidth = Math.max(comparedItems.length - 1, 0) * spacing.sm;
+  const availableWidth = Math.max(screenWidth - spacing.md * 2, 320);
+  const innerWidth = availableWidth - spacing.md * 2;
+  const gapsWidth = comparedItems.length * spacing.sm;
   const naturalColumnWidth =
     comparedItems.length > 0
-      ? (availableWidth - LABEL_COLUMN_WIDTH - gapsWidth) / comparedItems.length
+      ? (innerWidth - LABEL_COLUMN_WIDTH - gapsWidth) / comparedItems.length
       : MIN_VALUE_COLUMN_WIDTH;
   const columnWidth =
     comparedItems.length <= 2
-      ? Math.max(naturalColumnWidth, 132)
+      ? Math.max(naturalColumnWidth, MIN_HEADER_COLUMN_WIDTH)
       : Math.max(naturalColumnWidth, MIN_VALUE_COLUMN_WIDTH);
-  const matrixWidth = LABEL_COLUMN_WIDTH + comparedItems.length * columnWidth + gapsWidth;
+  const rowWidth = LABEL_COLUMN_WIDTH + comparedItems.length * columnWidth + gapsWidth;
+  const matrixWidth = rowWidth + spacing.md * 2;
   const shouldScroll = matrixWidth > availableWidth + 4;
 
   return (
@@ -184,12 +195,21 @@ export function CompareScreen() {
               <View style={[styles.matrix, { width: matrixWidth }]}>
                 <View style={styles.matrixHeaderRow}>
                   <View style={[styles.headerSpacer, { width: LABEL_COLUMN_WIDTH }]} />
-                  {comparedItems.map(({ summary, detail }) => (
-                    <View
-                      key={`header-${summary.id}`}
-                      style={[styles.headerCard, { width: columnWidth }]}
-                    >
-                      <View style={styles.headerCardTop}>
+                  {comparedItems.map(({ summary }) => {
+                    const scoreColor = getScoreTone(summary.final_score);
+
+                    return (
+                      <View
+                        key={`header-${summary.id}`}
+                        style={[styles.headerCard, { width: columnWidth }]}
+                      >
+                        <Pressable
+                          onPress={() => toggleCompare(summary)}
+                          style={styles.removeIconButton}
+                        >
+                          <Ionicons name="close" size={14} color={colors.text} />
+                        </Pressable>
+
                         <Pressable
                           onPress={() =>
                             navigation.navigate("SeriesDetail", { seriesId: summary.id })
@@ -206,21 +226,14 @@ export function CompareScreen() {
                               <Text style={styles.posterFallbackText}>{summary.title}</Text>
                             </View>
                           )}
-
-                          <View style={styles.scorePill}>
-                            <Text style={styles.scorePillText}>
-                              {formatScore(summary.final_score)}
-                            </Text>
-                          </View>
                         </Pressable>
 
-                        <Pressable
-                          onPress={() => toggleCompare(summary)}
-                          style={styles.removeIconButton}
-                        >
-                          <Ionicons name="close" size={14} color={colors.text} />
-                        </Pressable>
-                      </View>
+                        <View style={styles.scoreRow}>
+                          <Text style={styles.scoreLabel}>Rating</Text>
+                          <Text style={[styles.scoreValue, { color: scoreColor }]}>
+                            {formatScore(summary.final_score)}
+                          </Text>
+                        </View>
 
                       <View style={styles.headerMetaWrap}>
                         <Text numberOfLines={2} style={styles.headerTitle}>
@@ -240,10 +253,11 @@ export function CompareScreen() {
                         </View>
                       </View>
                     </View>
-                  ))}
+                    );
+                  })}
                 </View>
 
-                <View style={styles.sectionBlock}>
+                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
                   <Text style={styles.sectionTitle}>Snapshot</Text>
 
                   <View style={styles.dataRow}>
@@ -287,7 +301,7 @@ export function CompareScreen() {
                   </View>
                 </View>
 
-                <View style={styles.sectionBlock}>
+                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
                   <Text style={styles.sectionTitle}>Creators</Text>
 
                   <View style={styles.dataRow}>
@@ -309,7 +323,7 @@ export function CompareScreen() {
                   </View>
                 </View>
 
-                <View style={styles.sectionBlock}>
+                <View style={[styles.sectionBlock, { width: matrixWidth }]}>
                   <Text style={styles.sectionTitle}>Category scores</Text>
 
                   {compareLabels.map(({ key, label }) => (
@@ -457,39 +471,45 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSoft,
     borderRadius: 24,
-    padding: 12,
-    gap: 10,
-  },
-  headerCardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
+    padding: spacing.sm,
+    gap: spacing.sm,
+    position: "relative",
   },
   headerCoverWrap: {
-    flex: 1,
+    alignSelf: "center",
     overflow: "hidden",
-    borderRadius: 16,
+    width: 96,
+    maxWidth: "100%",
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     backgroundColor: colors.backgroundSoft,
-    position: "relative",
   },
   headerCover: {
     width: "100%",
-    aspectRatio: 0.78,
+    aspectRatio: 0.76,
     backgroundColor: colors.surface,
   },
-  scorePill: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: colors.overlay,
+  scoreRow: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
     borderRadius: radii.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
-  scorePillText: {
-    color: colors.text,
+  scoreLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
+  },
+  scoreValue: {
     fontSize: 13,
     fontWeight: "800",
   },
@@ -505,6 +525,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   removeIconButton: {
+    position: "absolute",
+    right: spacing.sm,
+    top: spacing.sm,
+    zIndex: 2,
     width: 28,
     height: 28,
     alignItems: "center",

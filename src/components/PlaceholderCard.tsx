@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { colors, radii, spacing, typography } from "../theme/tokens";
+import { spacing } from "../theme/tokens";
+import { AppText } from "./AppText";
+import { Surface } from "./Surface";
 
 export function PlaceholderCard({
   title,
@@ -10,28 +12,15 @@ export function PlaceholderCard({
   body: string;
 }) {
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body}>{body}</Text>
-    </View>
+    <Surface style={styles.card}>
+      <AppText variant="cardTitle">{title}</AppText>
+      <AppText tone="muted">{body}</AppText>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
     gap: spacing.sm,
-  },
-  title: {
-    color: colors.text,
-    ...typography.cardTitle,
-  },
-  body: {
-    color: colors.textMuted,
-    ...typography.body,
   },
 });
