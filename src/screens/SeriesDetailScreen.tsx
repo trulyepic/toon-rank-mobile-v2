@@ -1,11 +1,21 @@
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { RouteProp, useRoute } from "@react-navigation/native";
 
 import { getSeriesDetail, getSeriesSummary } from "../api/series";
-import { ScreenShell } from "../components/ScreenShell";
+import {
+  AppButton,
+  AppText,
+  Chip,
+  ErrorState,
+  LoadingState,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+} from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
 
 type SeriesDetailRoute = RouteProp<RootStackParamList, "SeriesDetail">;
 
@@ -37,6 +47,13 @@ function getAverage(total?: number, count?: number) {
   return count && total ? total / count : 0;
 }
 
+function getScoreTone(score: number) {
+  if (score >= 8) return colors.success;
+  if (score >= 7.5) return colors.accentStrong;
+  if (score >= 5) return colors.warning;
+  return colors.danger;
+}
+
 function MetricCard({
   label,
   value,
@@ -47,12 +64,18 @@ function MetricCard({
   highlight?: boolean;
 }) {
   return (
-    <View style={[styles.metricCard, highlight ? styles.metricCardHighlight : null]}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={[styles.metricValue, highlight ? styles.metricValueHighlight : null]}>
+    <Surface
+      variant={highlight ? "accent" : "default"}
+      radius="lg"
+      style={styles.metricCard}
+    >
+      <AppText variant="label" tone="muted">
+        {label}
+      </AppText>
+      <AppText variant="cardTitle" style={highlight ? styles.metricValueHighlight : null}>
         {value}
-      </Text>
-    </View>
+      </AppText>
+    </Surface>
   );
 }
 
@@ -66,13 +89,17 @@ function BreakdownCard({
   votes: number;
 }) {
   return (
-    <View style={styles.breakdownCard}>
-      <Text style={styles.breakdownLabel}>{label}</Text>
-      <Text style={styles.breakdownScore}>{score > 0 ? score.toFixed(1) : "-"}</Text>
-      <Text style={styles.breakdownVotes}>
+    <Surface style={styles.breakdownCard}>
+      <View style={styles.breakdownTopRow}>
+        <AppText variant="cardTitle">{label}</AppText>
+        <AppText variant="sectionTitle" style={{ color: getScoreTone(score) }}>
+          {score > 0 ? score.toFixed(1) : "-"}
+        </AppText>
+      </View>
+      <AppText tone="muted" variant="caption">
         {votes > 0 ? `${votes} votes` : "No votes yet"}
-      </Text>
-    </View>
+      </AppText>
+    </Surface>
   );
 }
 
@@ -84,21 +111,15 @@ function VotePreviewCard({
   description: string;
 }) {
   return (
-    <View style={styles.voteCard}>
-      <View style={styles.voteCardHeader}>
-        <View style={styles.voteHeaderText}>
-          <Text style={styles.voteTitle}>{label}</Text>
-          <Text style={styles.voteDescription}>{description}</Text>
-        </View>
-        <View style={styles.votePillRow}>
-          {Array.from({ length: 10 }, (_, index) => (
-            <View key={index} style={styles.votePill}>
-              <Text style={styles.votePillText}>{index + 1}</Text>
-            </View>
-          ))}
-        </View>
+    <Surface variant="raised" style={styles.voteCard}>
+      <View style={styles.voteHeaderText}>
+        <AppText variant="cardTitle">{label}</AppText>
+        <AppText tone="muted">{description}</AppText>
       </View>
-    </View>
+      <View style={styles.voteScalePreview}>
+        <View style={styles.voteScaleFill} />
+      </View>
+    </Surface>
   );
 }
 
@@ -130,66 +151,75 @@ export function SeriesDetailScreen() {
     detail?.drama_or_fight_total,
     detail?.drama_or_fight_count,
   );
+  const averageScore = Number(summary?.final_score || 0);
 
   return (
     <ScreenShell
       title={summary?.title || detail?.title || "Series detail"}
-      subtitle="Scan the cover, rank, scores, synopsis, and reader voting breakdown."
     >
-      {isLoading ? <ActivityIndicator color={colors.accent} /> : null}
+      {isLoading ? <LoadingState message="Loading title..." /> : null}
 
       {isError ? (
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>
-            We couldn&apos;t load this title right now. Check your connection and try again.
-          </Text>
-        </View>
+        <ErrorState message="We couldn't load this title right now. Check your connection and try again." />
       ) : null}
 
       {summary && detail ? (
         <>
-          {heroImage ? (
-            <View style={styles.heroShell}>
+          <View style={styles.heroShell}>
+            {heroImage ? (
               <Image source={{ uri: heroImage }} style={styles.heroImage} />
-            </View>
-          ) : null}
-
-          <View style={styles.titleRow}>
-            <View style={styles.titleCol}>
-              <View style={styles.chipRow}>
-                <View style={styles.metaChip}>
-                  <Text style={styles.metaChipText}>{summary.type}</Text>
-                </View>
-                {summary.status ? (
-                  <View style={[styles.metaChip, styles.statusChip]}>
-                    <Text style={styles.metaChipText}>
-                      {summary.status.replace("_", " ")}
-                    </Text>
-                  </View>
-                ) : null}
+            ) : (
+              <View style={[styles.heroImage, styles.heroFallback]}>
+                <AppText variant="cardTitle" align="center">
+                  {summary.title}
+                </AppText>
               </View>
+            )}
+          </View>
 
-              <Text style={styles.seriesTitle}>{summary.title}</Text>
-
-              {genreChips.length ? (
-                <View style={styles.genreRow}>
-                  {genreChips.map((chip) => (
-                    <View key={chip} style={styles.genreChip}>
-                      <Text style={styles.genreChipText}>{chip}</Text>
-                    </View>
-                  ))}
-                </View>
+          <View style={styles.metaPanel}>
+            <View style={styles.chipRow}>
+              <Chip label={summary.type} tone="accent" />
+              {summary.status ? (
+                <Chip label={summary.status.replace("_", " ")} tone="neutral" />
               ) : null}
             </View>
 
-            <View style={styles.avgCard}>
-              <Text style={styles.avgLabel}>Avg. rating</Text>
-              <Text style={styles.avgScore}>
-                {Number(summary.final_score || 0).toFixed(1)}
-              </Text>
-              <Text style={styles.avgCaption}>out of 10</Text>
+            <View style={styles.scoreActionRow}>
+              <View style={styles.scoreCard}>
+                <AppText variant="label" tone="muted">
+                  Rating
+                </AppText>
+                <AppText variant="sectionTitle" style={{ color: getScoreTone(averageScore) }}>
+                  {averageScore.toFixed(1)}
+                </AppText>
+                <AppText variant="caption" tone="muted">
+                  {summary.vote_count.toLocaleString()} votes
+                </AppText>
+              </View>
+
+              <View style={styles.quickActions}>
+                <AppButton
+                  label="Save"
+                  size="sm"
+                  iconLeft={<Ionicons name="bookmark-outline" size={14} color={colors.text} />}
+                />
+                <AppButton
+                  label="Discuss"
+                  size="sm"
+                  iconLeft={<Ionicons name="chatbubble-outline" size={14} color={colors.text} />}
+                />
+              </View>
             </View>
           </View>
+
+          {genreChips.length ? (
+            <View style={styles.genreRow}>
+              {genreChips.map((chip) => (
+                <Chip key={chip} label={chip} tone="muted" />
+              ))}
+            </View>
+          ) : null}
 
           <View style={styles.metricGrid}>
             <MetricCard
@@ -201,17 +231,19 @@ export function SeriesDetailScreen() {
             <MetricCard label="Artist" value={detail.artist || "Unknown"} />
           </View>
 
-          <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>Synopsis</Text>
-            <Text style={styles.infoBody}>
+          <Surface style={styles.infoCard}>
+            <AppText variant="label" tone="muted">
+              Synopsis
+            </AppText>
+            <AppText style={styles.infoBody}>
               {detail.synopsis?.trim() || "Synopsis coming soon."}
-            </Text>
-          </View>
+            </AppText>
+          </Surface>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionEyebrow}>Rating Breakdown</Text>
-            <Text style={styles.sectionTitle}>How readers rate this series</Text>
-          </View>
+          <SectionHeader
+            eyebrow="Rating Breakdown"
+            title="How readers rate this series"
+          />
 
           <View style={styles.breakdownGrid}>
             <BreakdownCard
@@ -242,17 +274,14 @@ export function SeriesDetailScreen() {
           </View>
 
           <View style={styles.voteSection}>
-            <View style={styles.voteSectionHeader}>
-              <Text style={styles.sectionEyebrow}>Community Voting</Text>
-              <Text style={styles.sectionTitle}>Rate this series</Text>
-            </View>
+            <SectionHeader eyebrow="Community Voting" title="Rate this series" />
 
-            <View style={styles.voteNotice}>
-              <Text style={styles.voteNoticeText}>
-                Sign-in voting will use the same categories and one-vote-per-category flow
-                as Toon Ranks on the web.
-              </Text>
-            </View>
+            <Surface variant="warning" style={styles.voteNotice}>
+              <Ionicons name="lock-closed-outline" size={18} color={colors.warningText} />
+              <AppText tone="warning">
+                Sign in to vote, save titles, and join discussion when account support is connected.
+              </AppText>
+            </Surface>
 
             {(Object.entries(voteCategoryDescriptions) as [VoteCategory, string][]).map(
               ([label, description]) => (
@@ -271,36 +300,28 @@ export function SeriesDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  notice: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-  },
-  noticeText: {
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
   heroShell: {
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 360,
     overflow: "hidden",
-    borderRadius: radii.hero,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.borderSoft,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceRaised,
+    ...shadows.card,
   },
   heroImage: {
     width: "100%",
-    aspectRatio: 16 / 10,
+    aspectRatio: 3 / 2,
     backgroundColor: colors.surface,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
+  heroFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.sm,
   },
-  titleCol: {
-    flex: 1,
+  metaPanel: {
     gap: spacing.sm,
   },
   chipRow: {
@@ -308,76 +329,31 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  metaChip: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  statusChip: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-  },
-  metaChipText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.9,
-  },
-  seriesTitle: {
-    color: colors.text,
-    fontSize: 36,
-    lineHeight: 40,
-    fontWeight: "800",
-  },
   genreRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  genreChip: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  genreChipText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  avgCard: {
-    width: 132,
+  scoreCard: {
+    flex: 1,
+    minWidth: 132,
     backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
     borderColor: colors.borderSoft,
-    borderRadius: 24,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: radii.lg,
+    padding: spacing.md,
     gap: 4,
   },
-  avgLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    fontWeight: "700",
+  scoreActionRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: spacing.sm,
   },
-  avgScore: {
-    color: colors.text,
-    fontSize: 36,
-    fontWeight: "800",
-  },
-  avgCaption: {
-    color: colors.textMuted,
-    fontSize: 13,
+  quickActions: {
+    justifyContent: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   metricGrid: {
     flexDirection: "row",
@@ -387,155 +363,54 @@ const styles = StyleSheet.create({
   metricCard: {
     minWidth: "47%",
     flexGrow: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    padding: spacing.md,
     gap: spacing.xs,
-  },
-  metricCardHighlight: {
-    borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
-  },
-  metricLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    fontWeight: "700",
-  },
-  metricValue: {
-    color: colors.text,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: "700",
   },
   metricValueHighlight: {
     color: colors.text,
   },
   infoCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    padding: spacing.md,
     gap: spacing.sm,
   },
-  infoLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    fontWeight: "700",
-  },
   infoBody: {
-    color: colors.text,
     fontSize: 16,
     lineHeight: 28,
-  },
-  sectionHeader: {
-    gap: spacing.xs,
-  },
-  sectionEyebrow: {
-    color: colors.textMuted,
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1.3,
-    fontWeight: "700",
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: "800",
   },
   breakdownGrid: {
     gap: spacing.sm,
   },
   breakdownCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 22,
-    padding: spacing.md,
-    gap: 4,
+    gap: spacing.xs,
   },
-  breakdownLabel: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  breakdownScore: {
-    color: colors.accentStrong,
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  breakdownVotes: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
+  breakdownTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
   },
   voteSection: {
     gap: spacing.md,
   },
-  voteSectionHeader: {
-    gap: spacing.xs,
-  },
   voteNotice: {
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.warningBorder,
-    backgroundColor: colors.warningSurface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  voteNoticeText: {
-    color: colors.warningText,
-    fontSize: 14,
-    lineHeight: 22,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
   },
   voteCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 24,
-    padding: spacing.md,
-  },
-  voteCardHeader: {
     gap: spacing.md,
   },
   voteHeaderText: {
     gap: spacing.xs,
   },
-  voteTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "700",
+  voteScalePreview: {
+    height: 8,
+    overflow: "hidden",
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
   },
-  voteDescription: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  votePillRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  votePill: {
-    width: 38,
-    height: 38,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  votePillText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: "700",
+  voteScaleFill: {
+    width: "65%",
+    height: "100%",
+    borderRadius: radii.pill,
+    backgroundColor: colors.accentStrong,
   },
 });
