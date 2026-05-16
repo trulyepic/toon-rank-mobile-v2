@@ -2,21 +2,50 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { fetchRankings } from "../api/series";
-import { AppButton, EmptyState, ErrorState, LoadingState, ScreenShell } from "../components";
+import {
+  AppButton,
+  AppText,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  ScreenShell,
+} from "../components";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
+
+const titleTypeFilters = ["All", "Manga", "Manhwa", "Manhua"] as const;
+type TitleTypeFilter = (typeof titleTypeFilters)[number];
+const HOME_RANKINGS_PAGE_SIZE = 20;
+const HOME_RANKINGS_PAGES = 5;
+
+async function fetchHomeRankings() {
+  const pages = await Promise.all(
+    Array.from({ length: HOME_RANKINGS_PAGES }, (_, index) =>
+      fetchRankings(index + 1, HOME_RANKINGS_PAGE_SIZE),
+    ),
+  );
+  const byId = new Map<number, RankedSeries>();
+
+  pages.flat().forEach((item) => {
+    byId.set(item.id, item);
+  });
+
+  return Array.from(byId.values());
+}
 
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
@@ -100,10 +129,19 @@ export function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
+  const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["rankings"],
-    queryFn: () => fetchRankings(),
+    queryFn: fetchHomeRankings,
   });
+  const rankings = data ?? [];
+  const filteredRankings = useMemo(
+    () =>
+      activeType === "All"
+        ? rankings
+        : rankings.filter((item) => item.type.toLowerCase() === activeType.toLowerCase()),
+    [activeType, rankings],
+  );
 
   return (
     <ScreenShell
@@ -122,8 +160,41 @@ export function HomeScreen() {
         <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
       ) : null}
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.typeRail}
+      >
+        {titleTypeFilters.map((filter) => {
+          const selected = activeType === filter;
+
+          return (
+            <Pressable
+              key={filter}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              onPress={() => setActiveType(filter)}
+              style={({ pressed }) => [
+                styles.segmentButton,
+                selected ? styles.segmentButtonActive : null,
+                pressed ? styles.segmentButtonPressed : null,
+              ]}
+            >
+              {selected ? <View style={styles.typeDot} /> : null}
+              <AppText
+                variant="caption"
+                tone={selected ? "primary" : "muted"}
+                style={styles.typeButtonText}
+              >
+                {filter}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
       <FlatList
-        data={data ?? []}
+        data={filteredRankings}
         keyExtractor={(item) => String(item.id)}
         scrollEnabled={false}
         numColumns={2}
@@ -140,7 +211,14 @@ export function HomeScreen() {
         )}
         ListEmptyComponent={
           !isLoading && !isError ? (
-            <EmptyState message="No rankings are available yet. Check back soon for ranked titles." />
+            <EmptyState
+              title={activeType === "All" ? undefined : `No ${activeType} yet`}
+              message={
+                activeType === "All"
+                  ? "No rankings are available yet. Check back soon for ranked titles."
+                  : "Try another type filter or check back after more titles are ranked."
+              }
+            />
           ) : null
         }
       />
@@ -154,6 +232,40 @@ const styles = StyleSheet.create({
   },
   columnWrap: {
     gap: spacing.md,
+  },
+  typeRail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  segmentButton: {
+    minHeight: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.borderSoft,
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+  },
+  segmentButtonActive: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
+  },
+  segmentButtonPressed: {
+    opacity: 0.88,
+  },
+  typeButtonText: {
+    fontWeight: "800",
+  },
+  typeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accentStrong,
   },
   posterCard: {
     flex: 1,

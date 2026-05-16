@@ -1,6 +1,6 @@
 export { AppButton } from "./AppButton";
 export { AppText } from "./AppText";
-export { Chip } from "./Chip";
+export { Chip, ChipButton } from "./Chip";
 export { EmptyState, ErrorState, LoadingState } from "./StateMessage";
 export { IconButton } from "./IconButton";
 export { PlaceholderCard } from "./PlaceholderCard";

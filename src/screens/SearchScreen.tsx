@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -15,7 +14,14 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { searchSeries } from "../api/series";
-import { AppButton, ScreenShell } from "../components";
+import {
+  AppButton,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  ScreenShell,
+  Surface,
+} from "../components";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
@@ -117,7 +123,7 @@ export function SearchScreen() {
   return (
     <ScreenShell
       title="Search"
-      subtitle="Find titles by name, genre, creator, or type using the same public search data as Toon Ranks."
+      subtitle="Find titles, genres, creators, or formats."
       rightSlot={
         compareItems.length ? (
           <View style={styles.headerCounter}>
@@ -141,24 +147,20 @@ export function SearchScreen() {
         />
       </View>
 
-      {isFetching ? <ActivityIndicator color={colors.accent} /> : null}
+      {isFetching ? <LoadingState message="Searching..." /> : null}
 
       {isError ? (
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>
-            Search failed to load. Check your connection and try again in a moment.
-          </Text>
-        </View>
+        <ErrorState message="Search failed to load. Check your connection and try again in a moment." />
       ) : null}
 
       {!debouncedQuery ? (
-        <View style={styles.notice}>
+        <Surface style={styles.notice}>
+          <Ionicons name="sparkles-outline" size={22} color={colors.accentStrong} />
           <Text style={styles.noticeTitle}>Start typing</Text>
           <Text style={styles.noticeText}>
-            Type a title, genre, author, artist, or format and we&apos;ll show
-            matching covers you can tap straight into.
+            Try a title, genre, author, artist, or format.
           </Text>
-        </View>
+        </Surface>
       ) : null}
 
       {debouncedQuery && !isFetching && !isError ? (
@@ -180,13 +182,10 @@ export function SearchScreen() {
             />
           )}
           ListEmptyComponent={
-            <View style={styles.notice}>
-              <Text style={styles.noticeTitle}>No matches yet</Text>
-              <Text style={styles.noticeText}>
-                We couldn&apos;t find anything for "{debouncedQuery}". Try a broader
-                title, genre, or creator search.
-              </Text>
-            </View>
+            <EmptyState
+              title="No matches yet"
+              message={`We couldn't find anything for "${debouncedQuery}". Try a broader title, genre, or creator search.`}
+            />
           }
         />
       ) : null}
@@ -303,11 +302,6 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   notice: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: spacing.md,
     gap: spacing.xs,
   },
   noticeTitle: {

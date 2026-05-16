@@ -1,5 +1,13 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View, type ViewProps } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+  type ViewProps,
+} from "react-native";
 
 import { colors, radii, spacing } from "../theme/tokens";
 import { AppText } from "./AppText";
@@ -12,6 +20,13 @@ type Props = ViewProps & {
   iconLeft?: ReactNode;
 };
 
+type ChipButtonProps = Omit<PressableProps, "style"> & {
+  label: string;
+  selected?: boolean;
+  iconLeft?: ReactNode;
+  style?: StyleProp<ViewStyle>;
+};
+
 export function Chip({ label, tone = "neutral", iconLeft, style, ...props }: Props) {
   return (
     <View {...props} style={[styles.base, toneStyles[tone], style]}>
@@ -20,6 +35,33 @@ export function Chip({ label, tone = "neutral", iconLeft, style, ...props }: Pro
         {label}
       </AppText>
     </View>
+  );
+}
+
+export function ChipButton({
+  label,
+  selected = false,
+  iconLeft,
+  style,
+  ...props
+}: ChipButtonProps) {
+  return (
+    <Pressable
+      {...props}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      style={({ pressed }) => [
+        styles.base,
+        selected ? toneStyles.accent : toneStyles.neutral,
+        pressed ? styles.pressed : null,
+        style,
+      ]}
+    >
+      {iconLeft}
+      <AppText variant="label" tone={selected ? "primary" : "muted"} style={styles.text}>
+        {label}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -36,6 +78,10 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 11,
+  },
+  pressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.98 }],
   },
 });
 
