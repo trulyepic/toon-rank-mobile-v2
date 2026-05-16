@@ -54,13 +54,13 @@ Suggested branch: `mobile-home-search-polish`
 
 Suggested branch: `mobile-series-detail-polish`
 
-- [ ] Rework detail header/hero for mobile.
-- [ ] Make score/rank/vote summary easier to scan.
-- [ ] Polish metadata chips.
-- [ ] Polish synopsis card.
-- [ ] Polish rating breakdown cards.
-- [ ] Replace disabled voting preview with signed-out/product-ready action states.
-- [ ] Add design placeholders for Save/List and Discussion entry points.
+- [x] Rework detail header/hero for mobile.
+- [x] Make score/rank/vote summary easier to scan.
+- [x] Polish metadata chips.
+- [x] Polish synopsis card.
+- [x] Polish rating breakdown cards.
+- [x] Replace disabled voting preview with signed-out/product-ready action states.
+- [x] Add design placeholders for Save/List and Discussion entry points.
 
 ## Phase 5: Compare Polish
 
