@@ -43,11 +43,11 @@ Suggested branch: `mobile-ui-primitives`
 Suggested branch: `mobile-home-search-polish`
 
 - [ ] Polish Home ranking cards.
-- [ ] Add type/category filter UI concept for rankings.
+- [x] Add type/category filter UI concept for rankings.
 - [ ] Improve rank/score badge styling.
-- [ ] Improve Home loading/empty/error states.
+- [x] Improve Home loading/empty/error states.
 - [ ] Polish Search input and result cards.
-- [ ] Add better "no query" and "no results" states.
+- [x] Add better "no query" and "no results" states.
 - [ ] Ensure cover images and fallback states feel intentional.
 
 ## Phase 4: Series Detail Polish
