@@ -20,7 +20,7 @@ Suggested branch: `mobile-design-foundation`
 - [x] Align brand accent with Toon Ranks blue.
 - [x] Add stable typography tokens.
 - [x] Add shared shadow/elevation/border tokens where useful.
-- [x] Fix visible mojibake such as `Â·`.
+- [x] Fix visible mojibake and encoding artifacts.
 - [x] Replace phase-oriented placeholder copy with product copy.
 
 ## Phase 2: Reusable UI Primitives
@@ -42,13 +42,13 @@ Suggested branch: `mobile-ui-primitives`
 
 Suggested branch: `mobile-home-search-polish`
 
-- [ ] Polish Home ranking cards.
+- [x] Polish Home ranking cards.
 - [x] Add type/category filter UI concept for rankings.
-- [ ] Improve rank/score badge styling.
+- [x] Improve rank/score badge styling.
 - [x] Improve Home loading/empty/error states.
-- [ ] Polish Search input and result cards.
+- [x] Polish Search input and result cards.
 - [x] Add better "no query" and "no results" states.
-- [ ] Ensure cover images and fallback states feel intentional.
+- [x] Ensure cover images and fallback states feel intentional.
 
 ## Phase 4: Series Detail Polish
 
@@ -117,8 +117,8 @@ Suggested branch: `mobile-quality-baseline`
 ## Definition Of Done For Design-First Restart
 
 - [x] App passes `npm run typecheck`.
-- [ ] Main screens feel visually consistent.
-- [ ] No visible encoding artifacts remain.
-- [ ] User-facing copy sounds like a real app, not a project phase note.
-- [ ] Design leaves clear homes for auth, reading lists, forum, and voting.
+- [x] Main screens feel visually consistent.
+- [x] No visible encoding artifacts remain.
+- [x] User-facing copy sounds like a real app, not a project phase note.
+- [x] Design leaves clear homes for auth, reading lists, forum, and voting.
 - [x] Future agents can continue using `AGENTS.md` and these docs without needing extra context.

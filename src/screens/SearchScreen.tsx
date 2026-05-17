@@ -27,6 +27,13 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 
+function getScoreTone(score: number) {
+  if (score >= 8) return colors.success;
+  if (score >= 7.5) return colors.accentStrong;
+  if (score >= 5) return colors.warning;
+  return colors.danger;
+}
+
 function SearchResultCard({
   item,
   onPress,
@@ -41,6 +48,7 @@ function SearchResultCard({
   onToggleCompare: () => void;
 }) {
   const compareDisabled = !selectedForCompare && !canAddMore;
+  const score = Number(item.final_score || 0);
 
   return (
     <View style={styles.resultCard}>
@@ -66,15 +74,23 @@ function SearchResultCard({
               <Text style={styles.rankBadgeText}>#{item.rank}</Text>
             </View>
           ) : null}
+          <View style={styles.scoreBadge}>
+            <Text style={[styles.scoreBadgeText, { color: getScoreTone(score) }]}>
+              {score.toFixed(1)}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.resultContent}>
           <Text numberOfLines={2} style={styles.resultTitle}>
             {item.title}
           </Text>
-          <Text style={styles.resultMeta}>
-            {item.type} / {Number(item.final_score || 0).toFixed(1)}
-          </Text>
+          <View style={styles.resultMetaRow}>
+            <Text style={styles.resultType}>{item.type}</Text>
+            <Text style={styles.resultVotes}>
+              {item.vote_count.toLocaleString()} votes
+            </Text>
+          </View>
           <Text numberOfLines={2} style={styles.resultGenre}>
             {item.genre}
           </Text>
@@ -219,8 +235,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSoft,
     borderRadius: 24,
-    padding: spacing.sm,
-    gap: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   resultMainPressable: {
     flexDirection: "row",
@@ -235,9 +251,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     width: 92,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: "transparent",
   },
   resultImage: {
     width: "100%",
@@ -248,6 +262,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.sm,
+    backgroundColor: colors.accentSoft,
   },
   resultImageFallbackText: {
     color: colors.text,
@@ -272,6 +287,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
   },
+  scoreBadge: {
+    position: "absolute",
+    right: spacing.xs,
+    top: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  scoreBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
   resultContent: {
     flex: 1,
     justifyContent: "center",
@@ -285,12 +315,24 @@ const styles = StyleSheet.create({
     color: colors.text,
     ...typography.cardTitle,
   },
-  resultMeta: {
+  resultMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  resultType: {
     color: colors.accentStrong,
     fontSize: 12,
     textTransform: "uppercase",
     letterSpacing: 0.9,
-    fontWeight: "700",
+    fontWeight: "800",
+  },
+  resultVotes: {
+    color: colors.textMuted,
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+    fontWeight: "600",
   },
   resultGenre: {
     color: colors.textMuted,

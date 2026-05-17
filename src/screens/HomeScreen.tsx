@@ -102,9 +102,12 @@ function HomeCard({
           <Text numberOfLines={2} style={styles.posterTitle}>
             {item.title}
           </Text>
-          <Text style={styles.posterSubtitle}>
-            {item.type} / {item.vote_count.toLocaleString()} votes
-          </Text>
+          <View style={styles.posterMetaRow}>
+            <Text style={styles.posterType}>{item.type}</Text>
+            <Text style={styles.posterVotes}>
+              {item.vote_count.toLocaleString()} votes
+            </Text>
+          </View>
         </View>
       </Pressable>
 
@@ -270,6 +273,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
   },
   posterCardPressed: {
     opacity: 0.9,
@@ -279,9 +287,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: "transparent",
     ...shadows.card,
   },
   posterImage: {
@@ -293,6 +299,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.md,
+    backgroundColor: colors.accentSoft,
   },
   posterFallbackText: {
     color: colors.text,
@@ -307,7 +314,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.overlay,
     borderWidth: 1,
-    borderColor: colors.overlayBorder,
+    borderColor: colors.borderSoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -321,9 +328,9 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     top: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.overlay,
+    backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
-    borderColor: colors.overlayBorder,
+    borderColor: colors.borderSoft,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -336,17 +343,31 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   posterMeta: {
-    gap: 4,
+    gap: spacing.xs,
     paddingHorizontal: 2,
   },
   posterTitle: {
     color: colors.text,
     ...typography.cardTitle,
   },
-  posterSubtitle: {
+  posterMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xs,
+  },
+  posterType: {
+    color: colors.accentStrong,
+    fontSize: 11,
+    lineHeight: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+    fontWeight: "800",
+  },
+  posterVotes: {
     color: colors.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 16,
     textTransform: "uppercase",
     letterSpacing: 0.7,
     fontWeight: "600",

@@ -139,7 +139,6 @@ state.
 ## Current Known Issues
 
 - Some screens still need a final visual polish pass before app-store readiness.
-- Visible mojibake exists in UI strings, for example `Â·`.
 - App-store assets, icon, splash, bundle identifiers, privacy disclosures, and EAS build config are
   not ready.
 - Authentication and persistent secure token storage are not implemented.
