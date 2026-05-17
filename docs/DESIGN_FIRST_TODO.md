@@ -87,11 +87,11 @@ Suggested branch: `mobile-account-shell`
 
 Suggested branch: `mobile-api-readiness`
 
-- [ ] Review current API endpoint names against backend routes.
-- [ ] Add API modules for future auth, reading lists, forum, votes, and issues.
-- [ ] Add typed response models for account-backed data.
-- [ ] Add centralized API error handling.
-- [ ] Keep production backend URL configurable with `EXPO_PUBLIC_API_BASE_URL`.
+- [x] Review current API endpoint names against backend routes.
+- [x] Add API modules for future auth, reading lists, forum, votes, and issues.
+- [x] Add typed response models for account-backed data.
+- [x] Add centralized API error handling.
+- [x] Keep production backend URL configurable with `EXPO_PUBLIC_API_BASE_URL`.
 
 ## Phase 8: Auth Planning
 

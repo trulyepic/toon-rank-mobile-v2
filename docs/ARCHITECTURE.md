@@ -95,17 +95,32 @@ Current API files:
 
 - `src/api/client.ts`
 - `src/api/series.ts`
+- `src/api/auth.ts`
+- `src/api/readingLists.ts`
+- `src/api/forum.ts`
+- `src/api/issues.ts`
+- `src/api/votes.ts`
 
-Expected future API modules:
+Current typed data files:
 
-- `auth.ts`
-- `readingLists.ts`
-- `forum.ts`
-- `issues.ts`
-- `votes.ts`
-- `profile.ts`
+- `src/types/account.ts`
+- `src/types/forum.ts`
+- `src/types/issue.ts`
+- `src/types/readingList.ts`
+- `src/types/series.ts`
+
+Expected future API module:
+
+- `profile.ts`, once the backend exposes a non-admin current-user profile endpoint
 
 Do not hardcode production URLs in screens. Route all network calls through `src/api`.
+
+`src/api/client.ts` owns shared request behavior:
+
+- base URL from `EXPO_PUBLIC_API_BASE_URL`
+- request timeout
+- auth token attachment through `setApiAuthToken`
+- normalized errors through `ApiError` and `normalizeApiError`
 
 ## Shared Backend
 
