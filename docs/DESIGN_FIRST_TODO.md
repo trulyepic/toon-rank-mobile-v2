@@ -77,11 +77,11 @@ Suggested branch: `mobile-compare-polish`
 
 Suggested branch: `mobile-account-shell`
 
-- [ ] Replace placeholder More screen with an Account/More shell.
-- [ ] Add signed-out card with login/signup entry points.
-- [ ] Add disabled or preview entries for Reading Lists, Forum Activity, Settings, Terms, Privacy.
-- [ ] Include product-safe operator/legal wording where appropriate.
-- [ ] Do not implement auth yet unless this phase explicitly expands.
+- [x] Replace placeholder More screen with an Account/More shell.
+- [x] Add signed-out card with login/signup entry points.
+- [x] Add disabled or preview entries for Reading Lists, Forum Activity, Settings, Terms, Privacy.
+- [x] Include product-safe operator/legal wording where appropriate.
+- [x] Do not implement auth yet unless this phase explicitly expands.
 
 ## Phase 7: API Readiness Pass
 
