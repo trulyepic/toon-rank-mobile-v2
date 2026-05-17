@@ -97,12 +97,12 @@ Suggested branch: `mobile-api-readiness`
 
 Suggested branch: `mobile-auth-plan`
 
-- [ ] Document mobile auth flow against the existing backend.
-- [ ] Decide secure token storage package.
-- [ ] Plan login/signup screens.
-- [ ] Plan token refresh/expiry behavior if backend supports it.
-- [ ] Plan signed-out vs signed-in navigation states.
-- [ ] Confirm Google OAuth mobile path before implementation.
+- [x] Document mobile auth flow against the existing backend.
+- [x] Decide secure token storage package.
+- [x] Plan login/signup screens.
+- [x] Plan token refresh/expiry behavior if backend supports it.
+- [x] Plan signed-out vs signed-in navigation states.
+- [x] Confirm Google OAuth mobile path before implementation.
 
 ## Phase 9: Mobile Quality Baseline
 

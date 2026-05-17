@@ -136,10 +136,12 @@ Important backend concepts:
 
 ## Auth Direction
 
-Auth is not implemented yet. When it is added:
+Auth is not implemented yet. The detailed plan lives in `docs/AUTH_PLAN.md`.
+
+When it is added:
 
 - use the existing backend account system
-- store tokens securely using an Expo/native secure storage solution
+- store tokens securely using `expo-secure-store`
 - add request interceptors in the API client
 - handle signed-out, expired-token, and offline states
 - keep web/mobile identity shared
