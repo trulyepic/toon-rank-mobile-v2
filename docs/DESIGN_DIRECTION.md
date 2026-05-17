@@ -23,7 +23,6 @@ This is a usable start, but it needs refinement before app-store readiness.
 
 - Palette is too brown-heavy and does not yet lean enough into the Toon Ranks blue identity.
 - Many colors are hardcoded inside screen styles.
-- Visible encoding artifacts exist, such as `Â·`.
 - Several user-facing strings describe implementation phases instead of product value.
 - More tab is only a placeholder.
 - There is no Account design shell.
