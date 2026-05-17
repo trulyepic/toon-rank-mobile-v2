@@ -36,10 +36,7 @@ export async function createForumThread(payload: CreateForumThreadRequest) {
   return res.data;
 }
 
-export async function createForumPost(
-  threadId: number,
-  payload: CreateForumPostRequest,
-) {
+export async function createForumPost(threadId: number, payload: CreateForumPostRequest) {
   const res = await api.post<ForumPost>(`/forum/threads/${threadId}/posts`, payload);
   return res.data;
 }

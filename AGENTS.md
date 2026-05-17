@@ -35,10 +35,8 @@ The mobile project is early WIP but already has a meaningful foundation:
 - local compare state
 - public API calls pointed at the existing Railway backend
 
-As of the last review, `npm run typecheck` passes.
-
-The project currently is not initialized as a git repository. Before significant implementation work,
-the user plans to initialize git or otherwise decide how this mobile project should be tracked.
+As of the last review, `npm run verify` passes. The project is tracked in git and uses small
+phase-sized branches.
 
 ## Related Projects
 
@@ -68,6 +66,10 @@ Primary commands:
 
 ```powershell
 npm run typecheck
+npm run lint
+npm run format
+npm run test
+npm run verify
 npm run start
 npm run android
 npm run ios
@@ -136,13 +138,8 @@ state.
 
 ## Current Known Issues
 
-- `toon-ranks-mobile` is not yet git-initialized.
+- Some screens still need a final visual polish pass before app-store readiness.
 - Visible mojibake exists in UI strings, for example `Â·`.
-- Many colors are hardcoded inside screens instead of using tokens.
-- The current palette is usable but too brown-heavy compared with the updated Toon Ranks brand feel.
-- The `More` tab is a placeholder.
-- There is no Account tab/shell yet.
-- There are no mobile tests or CI yet.
 - App-store assets, icon, splash, bundle identifiers, privacy disclosures, and EAS build config are
   not ready.
 - Authentication and persistent secure token storage are not implemented.
@@ -151,7 +148,7 @@ state.
 
 - Keep changes small and branch-sized once git exists.
 - Prefer TypeScript-safe, reusable components over large one-off screen rewrites.
-- Run `npm run typecheck` before handing work back.
+- Run `npm run verify` before handing work back when dependencies are available.
 - Do not wire production-destructive behavior.
 - Do not introduce mobile-only data stores for data that must be shared with the website.
 - Do not fork product logic unless the backend contract requires it.

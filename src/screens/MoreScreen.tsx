@@ -2,13 +2,7 @@ import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import {
-  AppButton,
-  AppText,
-  ScreenShell,
-  SectionHeader,
-  Surface,
-} from "../components";
+import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
 import { colors, radii, spacing } from "../theme/tokens";
 
 type RowTone = "default" | "disabled";
@@ -112,26 +106,20 @@ export function MoreScreen() {
         <View style={styles.signInText}>
           <AppText variant="sectionTitle">Your Toon Ranks account</AppText>
           <AppText tone="muted">
-            Mobile will use the same account, saved titles, forum activity,
-            and voting history as the website.
+            Mobile will use the same account, saved titles, forum activity, and voting
+            history as the website.
           </AppText>
         </View>
         <View style={styles.buttonRow}>
           <AppButton
             label="Log in"
-            iconLeft={
-              <Ionicons name="log-in-outline" size={15} color={colors.text} />
-            }
+            iconLeft={<Ionicons name="log-in-outline" size={15} color={colors.text} />}
           />
           <AppButton
             label="Sign up"
             variant="ghost"
             iconLeft={
-              <Ionicons
-                name="person-add-outline"
-                size={15}
-                color={colors.text}
-              />
+              <Ionicons name="person-add-outline" size={15} color={colors.text} />
             }
           />
         </View>

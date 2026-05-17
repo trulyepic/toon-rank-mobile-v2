@@ -72,7 +72,10 @@ function HomeCard({
 
   return (
     <View style={styles.posterCard}>
-      <Pressable style={({ pressed }) => [pressed ? styles.posterCardPressed : null]} onPress={onPress}>
+      <Pressable
+        style={({ pressed }) => [pressed ? styles.posterCardPressed : null]}
+        onPress={onPress}
+      >
         <View style={styles.posterWrap}>
           {item.cover_url ? (
             <Image source={{ uri: item.cover_url }} style={styles.posterImage} />
@@ -93,7 +96,6 @@ function HomeCard({
               {score}
             </Text>
           </View>
-
         </View>
 
         <View style={styles.posterMeta}>
@@ -126,22 +128,19 @@ function HomeCard({
 }
 
 export function HomeScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["rankings"],
     queryFn: fetchHomeRankings,
   });
-  const rankings = data ?? [];
-  const filteredRankings = useMemo(
-    () =>
-      activeType === "All"
-        ? rankings
-        : rankings.filter((item) => item.type.toLowerCase() === activeType.toLowerCase()),
-    [activeType, rankings],
-  );
+  const filteredRankings = useMemo(() => {
+    const rankings = data ?? [];
+    return activeType === "All"
+      ? rankings
+      : rankings.filter((item) => item.type.toLowerCase() === activeType.toLowerCase());
+  }, [activeType, data]);
 
   return (
     <ScreenShell
