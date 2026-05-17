@@ -4,13 +4,7 @@ import { spacing } from "../theme/tokens";
 import { AppText } from "./AppText";
 import { Surface } from "./Surface";
 
-export function PlaceholderCard({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}) {
+export function PlaceholderCard({ title, body }: { title: string; body: string }) {
   return (
     <Surface style={styles.card}>
       <AppText variant="cardTitle">{title}</AppText>

@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { create, isAxiosError } from "axios";
 
 import { API_BASE_URL } from "../config/env";
 
-export const api = axios.create({
+export const api = create({
   baseURL: API_BASE_URL,
   timeout: 15000,
 });
@@ -67,7 +67,7 @@ function getErrorMessage(data: ErrorResponseBody | undefined, fallback: string) 
 export function normalizeApiError(error: unknown): ApiError {
   if (error instanceof ApiError) return error;
 
-  if (error instanceof AxiosError) {
+  if (isAxiosError(error)) {
     const status = error.response?.status;
     const data = error.response?.data as ErrorResponseBody | undefined;
     const code = getErrorCode(status);

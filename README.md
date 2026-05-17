@@ -11,14 +11,17 @@ Start here before working on the mobile app:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/DESIGN_DIRECTION.md](docs/DESIGN_DIRECTION.md)
 - [docs/DESIGN_FIRST_TODO.md](docs/DESIGN_FIRST_TODO.md)
+- [docs/QUALITY_BASELINE.md](docs/QUALITY_BASELINE.md)
 
 ## Direction
+
 - real app-store-ready mobile app
 - same backend and core data as the current Toon Ranks project
 - React Native with Expo
 - no web wrapper
 
 ## Phase 1 Focus
+
 - app shell
 - navigation
 - rankings/home
@@ -28,6 +31,7 @@ Start here before working on the mobile app:
 - shared theme/design system
 
 ## Not In Phase 1
+
 - login/signup
 - Google auth
 - reCAPTCHA
@@ -37,9 +41,11 @@ Start here before working on the mobile app:
 - contributor/admin tools
 
 ## Status
+
 - initial mobile workspace scaffolded
 - auth intentionally deferred
 - backend/data integration to reuse existing public endpoints
 
 ## Next Reference
-See [docs/PHASE1_TODO.md](F:/ma-review-project/toon-ranks-mobile/docs/PHASE1_TODO.md).
+
+See [docs/DESIGN_FIRST_TODO.md](F:/ma-review-project/toon-ranks-mobile/docs/DESIGN_FIRST_TODO.md).

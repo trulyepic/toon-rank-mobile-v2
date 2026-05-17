@@ -191,18 +191,24 @@ Expected primitives:
 
 ## Testing And CI
 
-Current mobile project has no tests and no CI. TypeScript check exists:
+The mobile quality baseline is documented in `docs/QUALITY_BASELINE.md`.
+
+Available checks:
 
 ```powershell
 npm run typecheck
+npm run lint
+npm run format
+npm run test
+npm run verify
 ```
 
-Future baseline:
+GitHub Actions runs separate jobs for:
 
-- add linting
-- add formatting
-- add unit/component tests for pure helpers and key components
-- add CI once git is initialized
+- Typecheck
+- Lint
+- Format
+- Tests
 
 Do not add a heavy mobile testing stack until the design foundation stabilizes.
 

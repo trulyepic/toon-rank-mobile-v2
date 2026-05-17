@@ -38,9 +38,7 @@ export async function updateReadingListItem(
 }
 
 export async function removeReadingListItem(listId: number, seriesId: number) {
-  const res = await api.delete<ReadingList>(
-    `/reading-lists/${listId}/items/${seriesId}`,
-  );
+  const res = await api.delete<ReadingList>(`/reading-lists/${listId}/items/${seriesId}`);
   return res.data;
 }
 

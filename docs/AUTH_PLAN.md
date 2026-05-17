@@ -23,7 +23,7 @@ Successful login and Google OAuth responses return:
     id: number;
     username: string;
     role: string;
-  };
+  }
 }
 ```
 

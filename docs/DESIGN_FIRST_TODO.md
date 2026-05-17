@@ -108,17 +108,17 @@ Suggested branch: `mobile-auth-plan`
 
 Suggested branch: `mobile-quality-baseline`
 
-- [ ] Add linting.
-- [ ] Add formatting.
-- [ ] Add CI once mobile repo is initialized.
-- [ ] Add basic unit tests for helpers/components if practical.
-- [ ] Document local development and verification commands.
+- [x] Add linting.
+- [x] Add formatting.
+- [x] Add CI once mobile repo is initialized.
+- [x] Add basic unit tests for helpers/components if practical.
+- [x] Document local development and verification commands.
 
 ## Definition Of Done For Design-First Restart
 
-- [ ] App passes `npm run typecheck`.
+- [x] App passes `npm run typecheck`.
 - [ ] Main screens feel visually consistent.
 - [ ] No visible encoding artifacts remain.
 - [ ] User-facing copy sounds like a real app, not a project phase note.
 - [ ] Design leaves clear homes for auth, reading lists, forum, and voting.
-- [ ] Future agents can continue using `AGENTS.md` and these docs without needing extra context.
+- [x] Future agents can continue using `AGENTS.md` and these docs without needing extra context.

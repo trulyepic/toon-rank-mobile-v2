@@ -46,7 +46,10 @@ function SearchResultCard({
     <View style={styles.resultCard}>
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [styles.resultMainPressable, pressed ? styles.resultCardPressed : null]}
+        style={({ pressed }) => [
+          styles.resultMainPressable,
+          pressed ? styles.resultCardPressed : null,
+        ]}
       >
         <View style={styles.resultImageWrap}>
           {item.cover_url ? (
@@ -100,8 +103,7 @@ function SearchResultCard({
 }
 
 export function SearchScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -173,9 +175,7 @@ export function SearchScreen() {
           renderItem={({ item }) => (
             <SearchResultCard
               item={item}
-              onPress={() =>
-                navigation.navigate("SeriesDetail", { seriesId: item.id })
-              }
+              onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
               selectedForCompare={isSelected(item.id)}
               canAddMore={canAddMore}
               onToggleCompare={() => toggleCompare(item)}

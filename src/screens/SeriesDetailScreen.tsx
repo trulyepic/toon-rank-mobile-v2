@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
 import { RouteProp, useRoute } from "@react-navigation/native";
@@ -15,7 +15,7 @@ import {
   Surface,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
+import { colors, radii, shadows, spacing } from "../theme/tokens";
 
 type SeriesDetailRoute = RouteProp<RootStackParamList, "SeriesDetail">;
 
@@ -31,7 +31,8 @@ const voteCategoryDescriptions: Record<VoteCategory, string> = {
   Characters: "Rate the uniqueness, depth, and development of the characters.",
   "World Building": "Is the universe immersive, consistent, and imaginative?",
   Art: "Judge the quality of the artwork, paneling, and style.",
-  "Drama / Fighting": "For drama: emotional depth. For action: excitement and choreography.",
+  "Drama / Fighting":
+    "For drama: emotional depth. For action: excitement and choreography.",
 };
 
 function getGenreChips(genre: string | undefined) {
@@ -154,9 +155,7 @@ export function SeriesDetailScreen() {
   const averageScore = Number(summary?.final_score || 0);
 
   return (
-    <ScreenShell
-      title={summary?.title || detail?.title || "Series detail"}
-    >
+    <ScreenShell title={summary?.title || detail?.title || "Series detail"}>
       {isLoading ? <LoadingState message="Loading title..." /> : null}
 
       {isError ? (
@@ -190,7 +189,10 @@ export function SeriesDetailScreen() {
                 <AppText variant="label" tone="muted">
                   Rating
                 </AppText>
-                <AppText variant="sectionTitle" style={{ color: getScoreTone(averageScore) }}>
+                <AppText
+                  variant="sectionTitle"
+                  style={{ color: getScoreTone(averageScore) }}
+                >
                   {averageScore.toFixed(1)}
                 </AppText>
                 <AppText variant="caption" tone="muted">
@@ -202,12 +204,16 @@ export function SeriesDetailScreen() {
                 <AppButton
                   label="Save"
                   size="sm"
-                  iconLeft={<Ionicons name="bookmark-outline" size={14} color={colors.text} />}
+                  iconLeft={
+                    <Ionicons name="bookmark-outline" size={14} color={colors.text} />
+                  }
                 />
                 <AppButton
                   label="Discuss"
                   size="sm"
-                  iconLeft={<Ionicons name="chatbubble-outline" size={14} color={colors.text} />}
+                  iconLeft={
+                    <Ionicons name="chatbubble-outline" size={14} color={colors.text} />
+                  }
                 />
               </View>
             </View>
@@ -279,17 +285,14 @@ export function SeriesDetailScreen() {
             <Surface variant="warning" style={styles.voteNotice}>
               <Ionicons name="lock-closed-outline" size={18} color={colors.warningText} />
               <AppText tone="warning">
-                Sign in to vote, save titles, and join discussion when account support is connected.
+                Sign in to vote, save titles, and join discussion when account support is
+                connected.
               </AppText>
             </Surface>
 
             {(Object.entries(voteCategoryDescriptions) as [VoteCategory, string][]).map(
               ([label, description]) => (
-                <VotePreviewCard
-                  key={label}
-                  label={label}
-                  description={description}
-                />
+                <VotePreviewCard key={label} label={label} description={description} />
               ),
             )}
           </View>

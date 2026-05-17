@@ -27,6 +27,7 @@ import {
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { compactGenre, formatAverage, formatScore } from "../utils/seriesFormatting";
 
 const compareLabels = [
   { key: "story", label: "Story" },
@@ -40,32 +41,12 @@ const LABEL_COLUMN_WIDTH = 92;
 const MIN_VALUE_COLUMN_WIDTH = 132;
 const MIN_HEADER_COLUMN_WIDTH = 148;
 
-function formatAverage(total?: number, count?: number) {
-  if (!total || !count) return "-";
-  return (total / count).toFixed(1);
-}
-
-function formatScore(score?: number | null) {
-  if (score == null || Number.isNaN(Number(score))) return "-";
-  return Number(score).toFixed(1);
-}
-
 function getScoreTone(score?: number | null) {
   const numericScore = Number(score || 0);
   if (numericScore >= 8) return colors.success;
   if (numericScore >= 7.5) return colors.accentStrong;
   if (numericScore >= 5) return colors.warning;
   return colors.danger;
-}
-
-function compactGenre(genre?: string) {
-  if (!genre) return "-";
-  return genre
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .slice(0, 4)
-    .join(" / ");
 }
 
 function RowLabel({ text }: { text: string }) {
@@ -103,8 +84,7 @@ function ValueCell({
 }
 
 export function CompareScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width: screenWidth } = useWindowDimensions();
   const { compareItems, clearCompare, toggleCompare } = useCompare();
 
@@ -179,7 +159,9 @@ export function CompareScreen() {
                 {shouldScroll ? (
                   <View style={styles.scrollBadge}>
                     <Ionicons name="swap-horizontal" size={14} color={colors.textMuted} />
-                    <AppText variant="caption" tone="muted">Swipe</AppText>
+                    <AppText variant="caption" tone="muted">
+                      Swipe
+                    </AppText>
                   </View>
                 ) : null}
               </View>
@@ -220,10 +202,15 @@ export function CompareScreen() {
                           ]}
                         >
                           {summary.cover_url ? (
-                            <Image source={{ uri: summary.cover_url }} style={styles.headerCover} />
+                            <Image
+                              source={{ uri: summary.cover_url }}
+                              style={styles.headerCover}
+                            />
                           ) : (
                             <View style={[styles.headerCover, styles.posterFallback]}>
-                              <Text style={styles.posterFallbackText}>{summary.title}</Text>
+                              <Text style={styles.posterFallbackText}>
+                                {summary.title}
+                              </Text>
                             </View>
                           )}
                         </Pressable>
@@ -235,24 +222,24 @@ export function CompareScreen() {
                           </Text>
                         </View>
 
-                      <View style={styles.headerMetaWrap}>
-                        <Text numberOfLines={2} style={styles.headerTitle}>
-                          {summary.title}
-                        </Text>
-                        <View style={styles.headerChipRow}>
-                          <View style={styles.headerChip}>
-                            <Text style={styles.headerChipText}>{summary.type}</Text>
-                          </View>
-                          {summary.status ? (
-                            <View style={[styles.headerChip, styles.headerChipMuted]}>
-                              <Text style={styles.headerChipMutedText}>
-                                {summary.status.replace("_", " ")}
-                              </Text>
+                        <View style={styles.headerMetaWrap}>
+                          <Text numberOfLines={2} style={styles.headerTitle}>
+                            {summary.title}
+                          </Text>
+                          <View style={styles.headerChipRow}>
+                            <View style={styles.headerChip}>
+                              <Text style={styles.headerChipText}>{summary.type}</Text>
                             </View>
-                          ) : null}
+                            {summary.status ? (
+                              <View style={[styles.headerChip, styles.headerChipMuted]}>
+                                <Text style={styles.headerChipMutedText}>
+                                  {summary.status.replace("_", " ")}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
                         </View>
                       </View>
-                    </View>
                     );
                   })}
                 </View>
@@ -263,11 +250,7 @@ export function CompareScreen() {
                   <View style={styles.dataRow}>
                     <RowLabel text="Overall" />
                     {comparedItems.map(({ summary }) => (
-                      <ValueCell
-                        key={`overall-${summary.id}`}
-                        width={columnWidth}
-                        accent
-                      >
+                      <ValueCell key={`overall-${summary.id}`} width={columnWidth} accent>
                         {formatScore(summary.final_score)}
                       </ValueCell>
                     ))}
@@ -332,8 +315,12 @@ export function CompareScreen() {
                       {comparedItems.map(({ detail, summary }) => (
                         <ValueCell key={`${summary.id}-${key}`} width={columnWidth}>
                           {formatAverage(
-                            detail?.[`${key}_total` as keyof typeof detail] as number | undefined,
-                            detail?.[`${key}_count` as keyof typeof detail] as number | undefined,
+                            detail?.[`${key}_total` as keyof typeof detail] as
+                              | number
+                              | undefined,
+                            detail?.[`${key}_count` as keyof typeof detail] as
+                              | number
+                              | undefined,
                           )}
                         </ValueCell>
                       ))}
