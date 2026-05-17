@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: spacing.sm,
-    padding: spacing.sm,
+    padding: 6,
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.borderSoft,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   posterWrap: {
     position: "relative",
     overflow: "hidden",
-    borderRadius: 22,
+    borderRadius: radii.xl,
     backgroundColor: "transparent",
     ...shadows.card,
   },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   posterMeta: {
     gap: spacing.xs,
-    paddingHorizontal: 2,
+    paddingHorizontal: spacing.xs,
   },
   posterTitle: {
     color: colors.text,
