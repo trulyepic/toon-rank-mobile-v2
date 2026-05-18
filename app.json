@@ -25,6 +25,7 @@
     },
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "plugins": ["expo-secure-store"]
   }
 }

@@ -180,13 +180,20 @@ The More tab should switch from preview rows to real account rows after `AuthPro
 
 ## First Implementation Phase After This Plan
 
-When it is time to build auth, keep the first branch narrow:
+First implementation slice completed in `mobile-auth-foundation`:
 
-1. Install `expo-secure-store`.
-2. Add secure token storage helpers.
-3. Add `AuthProvider`.
-4. Restore token on startup.
-5. Add logout only.
-6. Do not build login/signup forms in the same branch.
+- `expo-secure-store` installed.
+- Secure token/user storage helpers added in `src/auth/authStorage.ts`.
+- `AuthProvider` added in `src/auth/AuthContext.tsx`.
+- App startup restores stored sessions and calls `setApiAuthToken`.
+- Logout clears secure storage and removes the API auth header.
+- Login/signup forms remain deferred.
+
+When continuing auth, keep the next branch narrow:
+
+1. Add Login and Signup screens.
+2. Decide the mobile captcha path.
+3. Wire username/password login only after captcha is resolved.
+4. Keep Google OAuth in a separate branch.
 
 This keeps the riskiest app-wide state change separate from form UI, captcha, and Google OAuth work.

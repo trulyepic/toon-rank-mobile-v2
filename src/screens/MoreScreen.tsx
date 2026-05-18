@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import { useAuth } from "../auth/AuthContext";
 import { colors, radii, spacing } from "../theme/tokens";
 
 type RowTone = "default" | "disabled";
@@ -91,37 +92,66 @@ function MenuRow({ icon, title, subtitle, tone = "default" }: MenuRowProps) {
 }
 
 export function MoreScreen() {
+  const { isSignedIn, logout, status, user } = useAuth();
+  const isLoadingAuth = status === "loading";
+
   return (
     <ScreenShell title="More" subtitle="Account, support, and app information.">
       <SectionHeader
         eyebrow="Account"
-        title="Sync your Toon Ranks"
-        body="Sign in later to sync your Toon Ranks activity across web and mobile."
+        title={isSignedIn ? `Welcome, ${user?.username}` : "Sync your Toon Ranks"}
+        body={
+          isSignedIn
+            ? "Your mobile session is connected to the same Toon Ranks account used on the website."
+            : "Sign in later to sync your Toon Ranks activity across web and mobile."
+        }
       />
 
       <Surface variant="accent" radius="xl" style={styles.signInCard}>
         <View style={styles.signInIcon}>
-          <Ionicons name="person-outline" size={24} color={colors.text} />
+          <Ionicons
+            name={isSignedIn ? "person-circle-outline" : "person-outline"}
+            size={24}
+            color={colors.text}
+          />
         </View>
         <View style={styles.signInText}>
-          <AppText variant="sectionTitle">Your Toon Ranks account</AppText>
+          <AppText variant="sectionTitle">
+            {isSignedIn ? "Signed in" : "Your Toon Ranks account"}
+          </AppText>
           <AppText tone="muted">
-            Mobile will use the same account, saved titles, forum activity, and voting
-            history as the website.
+            {isSignedIn
+              ? "Secure session restore is ready. Account features will unlock as each screen is connected."
+              : "Mobile will use the same account, saved titles, forum activity, and voting history as the website."}
           </AppText>
         </View>
         <View style={styles.buttonRow}>
-          <AppButton
-            label="Log in"
-            iconLeft={<Ionicons name="log-in-outline" size={15} color={colors.text} />}
-          />
-          <AppButton
-            label="Sign up"
-            variant="ghost"
-            iconLeft={
-              <Ionicons name="person-add-outline" size={15} color={colors.text} />
-            }
-          />
+          {isSignedIn ? (
+            <AppButton
+              label="Log out"
+              variant="ghost"
+              onPress={logout}
+              iconLeft={<Ionicons name="log-out-outline" size={15} color={colors.text} />}
+            />
+          ) : (
+            <>
+              <AppButton
+                label={isLoadingAuth ? "Checking..." : "Log in"}
+                disabled={isLoadingAuth}
+                iconLeft={
+                  <Ionicons name="log-in-outline" size={15} color={colors.text} />
+                }
+              />
+              <AppButton
+                label="Sign up"
+                variant="ghost"
+                disabled={isLoadingAuth}
+                iconLeft={
+                  <Ionicons name="person-add-outline" size={15} color={colors.text} />
+                }
+              />
+            </>
+          )}
         </View>
       </Surface>
 
