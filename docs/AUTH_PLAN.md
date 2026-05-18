@@ -120,9 +120,16 @@ Future improvement:
 The existing backend requires `captcha_token` for username/password signup and login. Before building
 the final mobile login/signup screens, confirm the mobile reCAPTCHA approach.
 
-Likely options:
+Current interim path:
 
-- Use an in-app browser/web auth session for captcha-backed web flow.
+- Native login/signup screens remain present, but native submit is disabled.
+- Login and signup screens include buttons to open the live web login/signup pages.
+- This lets users use the existing captcha-protected web auth while mobile auth is finalized.
+
+Still-open implementation options:
+
+- Use a mobile-compatible captcha/token flow inside the native app.
+- Use an in-app browser/web auth session with a deep-link callback that returns a mobile session.
 - Add a mobile-friendly captcha provider path.
 - Add backend support for a mobile app attestation flow later.
 
@@ -204,5 +211,12 @@ When continuing auth, keep the next branch narrow:
 2. Wire username/password login only after captcha is resolved.
 3. Connect signup to the backend and navigate to `CheckEmail` on success.
 4. Keep Google OAuth in a separate branch.
+
+Third implementation slice completed in `mobile-auth-captcha-path`:
+
+- Added shared website auth URLs.
+- Added an external-link helper for safe web auth fallback.
+- Added `Open web login` and `Open web signup` actions to the native auth screens.
+- Updated screen copy to make the captcha blocker clear without pretending native submit works.
 
 This keeps the riskiest app-wide state change separate from form UI, captcha, and Google OAuth work.
