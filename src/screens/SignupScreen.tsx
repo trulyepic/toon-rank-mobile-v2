@@ -4,11 +4,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { openWebAuthBridge } from "../auth/webAuthBridge";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import { openExternalUrl } from "../utils/openExternalUrl";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -84,8 +84,8 @@ export function SignupScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Native signup is paused until mobile reCAPTCHA is connected. Use the web
-            signup for account creation today.
+            Account creation uses the website CAPTCHA step for now, then returns to the
+            mobile app once the callback is connected.
           </AppText>
         </Surface>
 
@@ -95,8 +95,8 @@ export function SignupScreen() {
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
         />
         <AppButton
-          label="Open web signup"
-          onPress={() => openExternalUrl(WEB_AUTH_URLS.signup)}
+          label="Continue with CAPTCHA signup"
+          onPress={() => openWebAuthBridge(WEB_AUTH_URLS.signup)}
           iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />
         <AppButton
