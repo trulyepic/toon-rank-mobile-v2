@@ -67,8 +67,9 @@ export function LoginScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account access uses the website CAPTCHA step for now, then returns to the
-            mobile app once the callback is connected.
+            Account access still depends on the website CAPTCHA flow. Opening
+            web login signs you into the website only until the mobile callback
+            handoff is added.
           </AppText>
         </Surface>
 
@@ -78,7 +79,7 @@ export function LoginScreen() {
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
         />
         <AppButton
-          label="Continue with CAPTCHA login"
+          label="Open web login"
           onPress={() => openWebAuthBridge(WEB_AUTH_URLS.login)}
           iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />

@@ -1,9 +1,12 @@
-export type UserRole = "GENERAL" | "ADMIN" | string;
+export type UserRole = "GENERAL" | "CONTRIBUTOR" | "ADMIN" | string;
+export type AvatarPreset = "blue" | "emerald" | "amber";
 
 export interface AuthUser {
   id: number;
   username: string;
   role: UserRole;
+  avatar_url?: string | null;
+  avatar_preset?: AvatarPreset | null;
 }
 
 export interface AuthSession {
