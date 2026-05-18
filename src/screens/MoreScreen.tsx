@@ -1,9 +1,12 @@
 import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
 import { useAuth } from "../auth/AuthContext";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 
 type RowTone = "default" | "disabled";
@@ -92,6 +95,7 @@ function MenuRow({ icon, title, subtitle, tone = "default" }: MenuRowProps) {
 }
 
 export function MoreScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn, logout, status, user } = useAuth();
   const isLoadingAuth = status === "loading";
 
@@ -138,6 +142,7 @@ export function MoreScreen() {
               <AppButton
                 label={isLoadingAuth ? "Checking..." : "Log in"}
                 disabled={isLoadingAuth}
+                onPress={() => navigation.navigate("Login")}
                 iconLeft={
                   <Ionicons name="log-in-outline" size={15} color={colors.text} />
                 }
@@ -146,6 +151,7 @@ export function MoreScreen() {
                 label="Sign up"
                 variant="ghost"
                 disabled={isLoadingAuth}
+                onPress={() => navigation.navigate("Signup")}
                 iconLeft={
                   <Ionicons name="person-add-outline" size={15} color={colors.text} />
                 }
