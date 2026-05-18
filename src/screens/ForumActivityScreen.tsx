@@ -35,9 +35,9 @@ export function ForumActivityScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Community trail</AppText>
           <AppText tone="muted">
-            Forum identity, avatars, and roles are shared with the website. This
-            screen is structured for user-specific activity once authenticated
-            forum APIs are connected.
+            Forum identity, avatars, and roles are shared with the website. This screen is
+            structured for user-specific activity once authenticated forum APIs are
+            connected.
           </AppText>
         </View>
       </Surface>

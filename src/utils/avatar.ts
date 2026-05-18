@@ -23,9 +23,7 @@ export const avatarPresetColors: Record<
   },
 };
 
-export function normalizeAvatarPreset(
-  preset?: string | null,
-): AvatarPreset {
+export function normalizeAvatarPreset(preset?: string | null): AvatarPreset {
   return preset && preset in avatarPresetColors
     ? (preset as AvatarPreset)
     : DEFAULT_AVATAR_PRESET;

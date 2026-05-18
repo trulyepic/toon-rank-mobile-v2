@@ -59,9 +59,8 @@ export function ProfileScreen() {
           <View style={styles.noticeText}>
             <AppText variant="cardTitle">Coming from web first</AppText>
             <AppText tone="muted">
-              The mobile app will reuse the same uploaded avatar and defaults.
-              Native image picking and crop controls are planned after the UI
-              shell is complete.
+              The mobile app will reuse the same uploaded avatar and defaults. Native
+              image picking and crop controls are planned after the UI shell is complete.
             </AppText>
           </View>
         </Surface>
@@ -78,7 +77,9 @@ export function ProfileScreen() {
           <AppButton
             label="Forum activity"
             variant="secondary"
-            iconLeft={<Ionicons name="chatbubbles-outline" size={15} color={colors.text} />}
+            iconLeft={
+              <Ionicons name="chatbubbles-outline" size={15} color={colors.text} />
+            }
           />
         </View>
       </View>

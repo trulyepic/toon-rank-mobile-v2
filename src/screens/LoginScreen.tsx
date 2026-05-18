@@ -67,9 +67,8 @@ export function LoginScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account access still depends on the website CAPTCHA flow. Opening
-            web login signs you into the website only until the mobile callback
-            handoff is added.
+            Account access still depends on the website CAPTCHA flow. Opening web login
+            signs you into the website only until the mobile callback handoff is added.
           </AppText>
         </Surface>
 

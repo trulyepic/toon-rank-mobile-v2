@@ -84,9 +84,9 @@ export function SignupScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account creation still depends on the website CAPTCHA flow. Opening
-            web signup creates or signs into the website only until the mobile
-            callback handoff is added.
+            Account creation still depends on the website CAPTCHA flow. Opening web signup
+            creates or signs into the website only until the mobile callback handoff is
+            added.
           </AppText>
         </Surface>
 

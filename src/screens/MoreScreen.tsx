@@ -64,7 +64,10 @@ function MenuRow({ icon, title, subtitle, tone = "default", onPress }: MenuRowPr
 
   if (onPress && !disabled) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => pressed ? styles.pressed : null}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => (pressed ? styles.pressed : null)}
+      >
         <Surface variant="raised" radius="lg" style={styles.row}>
           {content}
         </Surface>

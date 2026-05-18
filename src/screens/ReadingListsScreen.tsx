@@ -35,9 +35,8 @@ export function ReadingListsScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Library shell</AppText>
           <AppText tone="muted">
-            This screen is ready for the same saved list data used on the web.
-            The next pass can connect list fetch, item progress, and public
-            sharing.
+            This screen is ready for the same saved list data used on the web. The next
+            pass can connect list fetch, item progress, and public sharing.
           </AppText>
         </View>
       </Surface>
