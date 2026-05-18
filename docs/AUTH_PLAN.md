@@ -191,9 +191,18 @@ First implementation slice completed in `mobile-auth-foundation`:
 
 When continuing auth, keep the next branch narrow:
 
-1. Add Login and Signup screens.
-2. Decide the mobile captcha path.
-3. Wire username/password login only after captcha is resolved.
+Second implementation slice completed in `mobile-auth-screens`:
+
+- Added native `Login`, `Signup`, and `CheckEmail` screens.
+- Wired More tab buttons into the auth screen flow.
+- Kept username/password submission disabled because the backend requires `captcha_token`.
+- Left Google OAuth for a separate branch.
+
+When continuing auth, keep the next branch narrow:
+
+1. Decide the mobile captcha path.
+2. Wire username/password login only after captcha is resolved.
+3. Connect signup to the backend and navigate to `CheckEmail` on success.
 4. Keep Google OAuth in a separate branch.
 
 This keeps the riskiest app-wide state change separate from form UI, captcha, and Google OAuth work.
