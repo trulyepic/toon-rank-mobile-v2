@@ -2,6 +2,7 @@
   "expo": {
     "name": "Toon Ranks",
     "slug": "toon-ranks-mobile",
+    "scheme": "toonranks",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -26,6 +27,6 @@
     "experiments": {
       "typedRoutes": false
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": ["expo-secure-store", "expo-web-browser"]
   }
 }

@@ -123,8 +123,19 @@ the final mobile login/signup screens, confirm the mobile reCAPTCHA approach.
 Current interim path:
 
 - Native login/signup screens remain present, but native submit is disabled.
-- Login and signup screens include buttons to open the live web login/signup pages.
-- This lets users use the existing captcha-protected web auth while mobile auth is finalized.
+- Login and signup screens open the live web login/signup pages through an Expo auth browser
+  session.
+- The app registers the `toonranks://auth/callback` scheme as the planned return target.
+- The website URLs receive `mobile=1` and `redirect_uri=toonranks%3A%2F%2Fauth%2Fcallback`
+  query parameters so the web side has a clear future handoff contract.
+- This lets the app keep native account entry screens while using the existing captcha-protected
+  web auth step until a final native mobile captcha approach is chosen.
+
+Important limitation:
+
+- The current website login/signup pages do not yet redirect back to `toonranks://auth/callback`
+  with a mobile session token. Users can complete the web CAPTCHA/auth step, but the mobile app
+  cannot consume that login automatically until the web/backend callback endpoint exists.
 
 Still-open implementation options:
 
@@ -220,3 +231,20 @@ Third implementation slice completed in `mobile-auth-captcha-path`:
 - Updated screen copy to make the captcha blocker clear without pretending native submit works.
 
 This keeps the riskiest app-wide state change separate from form UI, captcha, and Google OAuth work.
+
+Fourth implementation slice completed in `mobile-auth-bridge-polish`:
+
+- Replaced plain external linking with `expo-web-browser` auth sessions.
+- Added the `toonranks` app scheme and `toonranks://auth/callback` return URL.
+- Updated auth screen copy and button labels to describe the current CAPTCHA bridge.
+- Documented the missing web/backend callback work required before mobile can automatically store
+  a returned session.
+
+Suggested next auth phase:
+
+1. Add a backend/web mobile auth callback contract that returns or exchanges a short-lived mobile
+   auth code.
+2. Parse `toonranks://auth/callback?code=...` in the mobile app.
+3. Exchange the code for the normal Toon Ranks JWT.
+4. Store the JWT/user through `AuthProvider`.
+5. Remove the disabled native submit buttons once the bridge is fully functional.
