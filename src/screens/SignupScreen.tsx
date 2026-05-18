@@ -5,8 +5,10 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
+import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { openExternalUrl } from "../utils/openExternalUrl";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -82,7 +84,8 @@ export function SignupScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Signup submission is paused until mobile reCAPTCHA is wired to the backend.
+            Native signup is paused until mobile reCAPTCHA is connected. Use the web
+            signup for account creation today.
           </AppText>
         </Surface>
 
@@ -90,6 +93,11 @@ export function SignupScreen() {
           label="Create account"
           disabled
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
+        />
+        <AppButton
+          label="Open web signup"
+          onPress={() => openExternalUrl(WEB_AUTH_URLS.signup)}
+          iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />
         <AppButton
           label="Already have an account?"
