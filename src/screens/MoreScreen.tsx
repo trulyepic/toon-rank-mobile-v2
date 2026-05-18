@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,34 +16,8 @@ type MenuRowProps = {
   title: string;
   subtitle: string;
   tone?: RowTone;
+  onPress?: () => void;
 };
-
-const accountRows: MenuRowProps[] = [
-  {
-    icon: "bookmark-outline",
-    title: "Reading Lists",
-    subtitle: "Saved, planned, reading, and completed titles.",
-    tone: "disabled",
-  },
-  {
-    icon: "chatbubbles-outline",
-    title: "Forum Activity",
-    subtitle: "Threads, replies, and discussion history.",
-    tone: "disabled",
-  },
-  {
-    icon: "person-circle-outline",
-    title: "Profile",
-    subtitle: "Username, account details, and public identity.",
-    tone: "disabled",
-  },
-  {
-    icon: "settings-outline",
-    title: "Settings",
-    subtitle: "Preferences, notifications, and app behavior.",
-    tone: "disabled",
-  },
-];
 
 const supportRows: MenuRowProps[] = [
   {
@@ -63,15 +37,10 @@ const supportRows: MenuRowProps[] = [
   },
 ];
 
-function MenuRow({ icon, title, subtitle, tone = "default" }: MenuRowProps) {
+function MenuRow({ icon, title, subtitle, tone = "default", onPress }: MenuRowProps) {
   const disabled = tone === "disabled";
-
-  return (
-    <Surface
-      variant={disabled ? "default" : "raised"}
-      radius="lg"
-      style={[styles.row, disabled ? styles.rowDisabled : null]}
-    >
+  const content = (
+    <>
       <View style={[styles.rowIcon, disabled ? styles.rowIconDisabled : null]}>
         <Ionicons
           name={icon}
@@ -90,6 +59,29 @@ function MenuRow({ icon, title, subtitle, tone = "default" }: MenuRowProps) {
         size={18}
         color={disabled ? colors.textSubtle : colors.textMuted}
       />
+    </>
+  );
+
+  if (onPress && !disabled) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => (pressed ? styles.pressed : null)}
+      >
+        <Surface variant="raised" radius="lg" style={styles.row}>
+          {content}
+        </Surface>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Surface
+      variant={disabled ? "default" : "raised"}
+      radius="lg"
+      style={[styles.row, disabled ? styles.rowDisabled : null]}
+    >
+      {content}
     </Surface>
   );
 }
@@ -98,6 +90,32 @@ export function MoreScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn, logout, status, user } = useAuth();
   const isLoadingAuth = status === "loading";
+  const accountRows: MenuRowProps[] = [
+    {
+      icon: "bookmark-outline",
+      title: "Reading Lists",
+      subtitle: "Saved, planned, reading, and completed titles.",
+      onPress: () => navigation.navigate("ReadingLists"),
+    },
+    {
+      icon: "chatbubbles-outline",
+      title: "Forum Activity",
+      subtitle: "Threads, replies, and discussion history.",
+      onPress: () => navigation.navigate("ForumActivity"),
+    },
+    {
+      icon: "person-circle-outline",
+      title: "Profile",
+      subtitle: "Username, account details, and public identity.",
+      onPress: () => navigation.navigate("Profile"),
+    },
+    {
+      icon: "settings-outline",
+      title: "Settings",
+      subtitle: "Preferences, notifications, and app behavior.",
+      onPress: () => navigation.navigate("Settings"),
+    },
+  ];
 
   return (
     <ScreenShell title="More" subtitle="Account, support, and app information.">
@@ -226,6 +244,10 @@ const styles = StyleSheet.create({
   },
   rowDisabled: {
     opacity: 0.78,
+  },
+  pressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
   },
   rowIcon: {
     width: 42,

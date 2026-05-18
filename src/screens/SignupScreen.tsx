@@ -84,8 +84,9 @@ export function SignupScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account creation uses the website CAPTCHA step for now, then returns to the
-            mobile app once the callback is connected.
+            Account creation still depends on the website CAPTCHA flow. Opening web signup
+            creates or signs into the website only until the mobile callback handoff is
+            added.
           </AppText>
         </Surface>
 
@@ -95,7 +96,7 @@ export function SignupScreen() {
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
         />
         <AppButton
-          label="Continue with CAPTCHA signup"
+          label="Open web signup"
           onPress={() => openWebAuthBridge(WEB_AUTH_URLS.signup)}
           iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />

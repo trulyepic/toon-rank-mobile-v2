@@ -7,3 +7,4 @@ export { PlaceholderCard } from "./PlaceholderCard";
 export { ScreenShell } from "./ScreenShell";
 export { SectionHeader } from "./SectionHeader";
 export { Surface } from "./Surface";
+export { UserAvatar } from "./UserAvatar";
