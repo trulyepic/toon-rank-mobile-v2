@@ -240,6 +240,13 @@ Fourth implementation slice completed in `mobile-auth-bridge-polish`:
 - Documented the missing web/backend callback work required before mobile can automatically store
   a returned session.
 
+Fifth implementation slice completed in `mobile-auth-callback-handling`:
+
+- Added mobile callback parsing for `toonranks://auth/callback`.
+- Recognizes successful `code`, callback `error`, and incomplete return URLs.
+- Wired the auth browser bridge through the parser so future token exchange has one entry point.
+- Added tests for success, error, unrelated URL, and missing-code callback cases.
+
 Suggested next auth phase:
 
 1. Add a backend/web mobile auth callback contract that returns or exchanges a short-lived mobile
