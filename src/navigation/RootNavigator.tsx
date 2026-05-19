@@ -10,6 +10,7 @@ import { ForumScreen } from "../screens/ForumScreen";
 import { ForumThreadScreen } from "../screens/ForumThreadScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ReadingListsScreen } from "../screens/ReadingListsScreen";
+import { ReportIssueScreen } from "../screens/ReportIssueScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   ForumThread: { threadId: number };
   ForumActivity: undefined;
   Profile: undefined;
+  ReportIssue: { pageUrl?: string; title?: string } | undefined;
   Settings: undefined;
 };
 
@@ -41,6 +43,7 @@ export function RootNavigator() {
       <Stack.Screen name="ForumThread" component={ForumThreadScreen} />
       <Stack.Screen name="ForumActivity" component={ForumActivityScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
