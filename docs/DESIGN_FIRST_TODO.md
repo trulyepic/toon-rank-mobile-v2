@@ -118,9 +118,9 @@ Suggested branch: `mobile-quality-baseline`
 
 Suggested branch: `mobile-legal-polish`
 
-- [ ] Decide whether Terms and Privacy should remain external website links or open in an in-app browser/native legal screen.
-- [ ] If keeping website-hosted legal copy, prefer an in-app browser presentation so users do not feel fully kicked out of the app.
-- [ ] Keep website Terms and Privacy as the canonical legal source for app store and public policy links.
+- [x] Decide whether Terms and Privacy should remain external website links or open in an in-app browser/native legal screen.
+- [x] If keeping website-hosted legal copy, prefer an in-app browser presentation so users do not feel fully kicked out of the app.
+- [x] Keep website Terms and Privacy as the canonical legal source for app store and public policy links.
 - [ ] Confirm Support email behavior on Android and iOS before app-store release.
 
 ## Definition Of Done For Design-First Restart

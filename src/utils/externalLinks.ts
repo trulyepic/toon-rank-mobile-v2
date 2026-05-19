@@ -1,14 +1,15 @@
 import { Alert, Linking } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
-export async function openExternalUrl(url: string) {
-  const supported = await Linking.canOpenURL(url);
-
-  if (!supported) {
+export async function openInAppBrowser(url: string) {
+  try {
+    await WebBrowser.openBrowserAsync(url, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+      controlsColor: "#6b8cff",
+    });
+  } catch {
     Alert.alert("Unable to open link", "Try again in a moment.");
-    return;
   }
-
-  await Linking.openURL(url);
 }
 
 export async function openSupportEmail(email: string) {

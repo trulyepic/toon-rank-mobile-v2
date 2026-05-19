@@ -9,7 +9,7 @@ import { useAuth } from "../auth/AuthContext";
 import { LEGAL_URLS, SUPPORT_EMAIL } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import { openExternalUrl, openSupportEmail } from "../utils/externalLinks";
+import { openInAppBrowser, openSupportEmail } from "../utils/externalLinks";
 
 type RowTone = "default" | "disabled";
 
@@ -94,11 +94,11 @@ export function MoreScreen() {
   const isLoadingAuth = status === "loading";
   const supportRowsWithActions: MenuRowProps[] = supportRows.map((row) => {
     if (row.title === "Terms") {
-      return { ...row, onPress: () => openExternalUrl(LEGAL_URLS.terms) };
+      return { ...row, onPress: () => openInAppBrowser(LEGAL_URLS.terms) };
     }
 
     if (row.title === "Privacy") {
-      return { ...row, onPress: () => openExternalUrl(LEGAL_URLS.privacy) };
+      return { ...row, onPress: () => openInAppBrowser(LEGAL_URLS.privacy) };
     }
 
     return { ...row, onPress: () => openSupportEmail(SUPPORT_EMAIL) };
