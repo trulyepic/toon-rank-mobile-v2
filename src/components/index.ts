@@ -1,3 +1,4 @@
+export { AccountRequiredCard } from "./AccountRequiredCard";
 export { AppButton } from "./AppButton";
 export { AppText } from "./AppText";
 export { Chip, ChipButton } from "./Chip";

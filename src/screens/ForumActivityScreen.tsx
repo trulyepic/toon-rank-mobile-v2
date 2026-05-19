@@ -1,7 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, View } from "react-native";
 
-import { AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import {
+  AccountRequiredCard,
+  AppText,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+} from "../components";
+import { useAuth } from "../auth/AuthContext";
 import { colors, radii, spacing } from "../theme/tokens";
 
 const activityItems = [
@@ -23,21 +30,32 @@ const activityItems = [
 ];
 
 export function ForumActivityScreen() {
+  const { isSignedIn, user } = useAuth();
+
   return (
     <ScreenShell
       title="Forum Activity"
       subtitle="A native home for discussions tied to the same account identity as the website."
     >
+      {!isSignedIn ? (
+        <AccountRequiredCard
+          title="Log in to see your forum trail"
+          body="Your threads, replies, reactions, avatar, and role will use the same Toon Ranks account as the website."
+        />
+      ) : null}
+
       <Surface variant="accent" radius="hero" style={styles.hero}>
         <View style={styles.heroIcon}>
           <Ionicons name="chatbubbles-outline" size={24} color={colors.text} />
         </View>
         <View style={styles.heroText}>
-          <AppText variant="sectionTitle">Community trail</AppText>
+          <AppText variant="sectionTitle">
+            {isSignedIn ? `${user?.username}'s activity` : "Community trail"}
+          </AppText>
           <AppText tone="muted">
-            Forum identity, avatars, and roles are shared with the website. This screen is
-            structured for user-specific activity once authenticated forum APIs are
-            connected.
+            {isSignedIn
+              ? "This screen is ready for user-specific threads, replies, and reactions once those mobile endpoints are expanded."
+              : "Forum identity, avatars, and roles are shared with the website. Sign in later to make this screen personal."}
           </AppText>
         </View>
       </Surface>
