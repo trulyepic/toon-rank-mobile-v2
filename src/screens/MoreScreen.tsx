@@ -6,8 +6,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
 import { useAuth } from "../auth/AuthContext";
+import { LEGAL_URLS, SUPPORT_EMAIL } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { openExternalUrl, openSupportEmail } from "../utils/externalLinks";
 
 type RowTone = "default" | "disabled";
 
@@ -33,7 +35,7 @@ const supportRows: MenuRowProps[] = [
   {
     icon: "mail-outline",
     title: "Support",
-    subtitle: "trulyepickstudios@gmail.com",
+    subtitle: SUPPORT_EMAIL,
   },
 ];
 
@@ -90,6 +92,17 @@ export function MoreScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn, logout, status, user } = useAuth();
   const isLoadingAuth = status === "loading";
+  const supportRowsWithActions: MenuRowProps[] = supportRows.map((row) => {
+    if (row.title === "Terms") {
+      return { ...row, onPress: () => openExternalUrl(LEGAL_URLS.terms) };
+    }
+
+    if (row.title === "Privacy") {
+      return { ...row, onPress: () => openExternalUrl(LEGAL_URLS.privacy) };
+    }
+
+    return { ...row, onPress: () => openSupportEmail(SUPPORT_EMAIL) };
+  });
   const accountRows: MenuRowProps[] = [
     {
       icon: "bookmark-outline",
@@ -191,7 +204,7 @@ export function MoreScreen() {
       <View style={styles.section}>
         <SectionHeader title="Legal and support" />
         <View style={styles.rowStack}>
-          {supportRows.map((row) => (
+          {supportRowsWithActions.map((row) => (
             <MenuRow key={row.title} {...row} />
           ))}
         </View>
