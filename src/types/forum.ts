@@ -12,6 +12,7 @@ export interface ForumThread {
   id: number;
   title: string;
   author_username?: string | null;
+  author_role?: string | null;
   created_at: string;
   updated_at: string;
   post_count: number;
@@ -24,6 +25,9 @@ export interface ForumThread {
 export interface ForumPost {
   id: number;
   author_username?: string | null;
+  author_role?: string | null;
+  author_avatar_url?: string | null;
+  author_avatar_preset?: string | null;
   content_markdown: string;
   created_at: string;
   updated_at: string;

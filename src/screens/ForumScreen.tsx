@@ -1,0 +1,219 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useQuery } from "@tanstack/react-query";
+import { Pressable, StyleSheet, View } from "react-native";
+
+import { getForumThreads } from "../api/forum";
+import {
+  AppText,
+  EmptyState,
+  ErrorState,
+  ForumSeriesStrip,
+  LoadingState,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+} from "../components";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, radii, spacing } from "../theme/tokens";
+import type { ForumThread } from "../types/forum";
+import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
+
+function ThreadCard({ thread }: { thread: ForumThread }) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const seriesLabel =
+    thread.series_refs.length > 0
+      ? thread.series_refs
+          .slice(0, 2)
+          .map((series) => series.title)
+          .filter(Boolean)
+          .join(" / ")
+      : "General discussion";
+
+  return (
+    <Pressable
+      onPress={() => navigation.navigate("ForumThread", { threadId: thread.id })}
+      style={({ pressed }) => (pressed ? styles.pressed : null)}
+    >
+      <Surface variant="raised" radius="xl" style={styles.threadCard}>
+        <View style={styles.threadHeader}>
+          <View style={styles.threadIcon}>
+            <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.text} />
+          </View>
+          <View style={styles.threadTitleWrap}>
+            <AppText variant="cardTitle">{thread.title}</AppText>
+            <AppText variant="caption" tone="muted">
+              {seriesLabel}
+            </AppText>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </View>
+
+        <View style={styles.metaRow}>
+          <AppText variant="caption" tone="muted">
+            {thread.author_username || "Unknown"}
+          </AppText>
+          <View style={styles.dot} />
+          <AppText variant="caption" tone="muted">
+            {formatForumDate(thread.last_post_at || thread.updated_at)}
+          </AppText>
+        </View>
+
+        <ForumSeriesStrip seriesRefs={thread.series_refs} />
+
+        <View style={styles.badgeRow}>
+          <View style={styles.badge}>
+            <Ionicons name="chatbubbles-outline" size={13} color={colors.accentStrong} />
+            <AppText variant="caption">
+              {formatForumCount(thread.post_count, "post")}
+            </AppText>
+          </View>
+          {thread.locked ? (
+            <View style={styles.badge}>
+              <Ionicons name="lock-closed-outline" size={13} color={colors.warningText} />
+              <AppText variant="caption">Locked</AppText>
+            </View>
+          ) : null}
+        </View>
+      </Surface>
+    </Pressable>
+  );
+}
+
+export function ForumScreen() {
+  const threadsQuery = useQuery({
+    queryKey: ["forum", "threads"],
+    queryFn: () => getForumThreads(1, 20),
+  });
+
+  return (
+    <ScreenShell
+      title="Forum"
+      subtitle="Browse Toon Ranks discussions. Posting and reactions will unlock after mobile login is connected."
+    >
+      <Surface variant="accent" radius="hero" style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <Ionicons name="chatbubbles-outline" size={24} color={colors.text} />
+        </View>
+        <View style={styles.heroText}>
+          <AppText variant="sectionTitle">Community discussions</AppText>
+          <AppText tone="muted">
+            Read public threads now. Creating posts, hearts, and replies will use the same
+            website account once mobile auth handoff is complete.
+          </AppText>
+        </View>
+      </Surface>
+
+      {threadsQuery.isLoading ? (
+        <LoadingState message="Loading forum threads..." />
+      ) : null}
+
+      {threadsQuery.isError ? (
+        <ErrorState message="Forum threads could not be loaded. Try again in a moment." />
+      ) : null}
+
+      {threadsQuery.data?.items.length === 0 ? (
+        <EmptyState
+          title="No discussions yet"
+          message="Public forum threads will appear here once the community starts posting."
+        />
+      ) : null}
+
+      {threadsQuery.data && threadsQuery.data.items.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Recent threads"
+            body={`${formatForumCount(threadsQuery.data.total, "thread")} available`}
+          />
+          <View style={styles.stack}>
+            {threadsQuery.data.items.map((thread) => (
+              <ThreadCard key={thread.id} thread={thread} />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </ScreenShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  heroText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  stack: {
+    gap: spacing.sm,
+  },
+  pressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
+  },
+  threadCard: {
+    gap: spacing.sm,
+  },
+  threadHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  threadIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.md,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  threadTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.textSubtle,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+});

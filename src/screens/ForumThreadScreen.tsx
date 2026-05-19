@@ -1,0 +1,367 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
+
+import { getForumThreadPosts } from "../api/forum";
+import {
+  AppText,
+  AppButton,
+  EmptyState,
+  ErrorState,
+  ForumMarkdown,
+  ForumSeriesStrip,
+  LoadingState,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+  UserAvatar,
+} from "../components";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { colors, radii, spacing } from "../theme/tokens";
+import type { ForumPost } from "../types/forum";
+import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
+
+type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
+const POSTS_PAGE_SIZE = 20;
+
+function PostCard({
+  post,
+  depth = 0,
+  label,
+}: {
+  post: ForumPost;
+  depth?: number;
+  label: string;
+}) {
+  return (
+    <Surface
+      variant="raised"
+      radius="xl"
+      style={[
+        styles.postCard,
+        depth > 0 ? styles.replyCard : null,
+        depth > 0 ? { marginLeft: Math.min(depth, 4) * 14 } : null,
+      ]}
+    >
+      <View style={styles.postHeader}>
+        <UserAvatar
+          username={post.author_username || "Reader"}
+          avatarUrl={post.author_avatar_url}
+          avatarPreset={post.author_avatar_preset}
+          size="md"
+        />
+        <View style={styles.postAuthor}>
+          <View style={styles.authorLine}>
+            <AppText variant="cardTitle">
+              {post.author_username || "Unknown reader"}
+            </AppText>
+            <View style={styles.replyLabel}>
+              <AppText variant="caption">{label}</AppText>
+            </View>
+          </View>
+          <AppText variant="caption" tone="muted">
+            {formatForumDate(post.created_at)}
+          </AppText>
+        </View>
+      </View>
+
+      <ForumMarkdown markdown={post.content_markdown} />
+
+      <ForumSeriesStrip seriesRefs={post.series_refs} />
+
+      <View style={styles.postFooter}>
+        <View style={styles.badge}>
+          <Ionicons name="heart-outline" size={13} color={colors.accentStrong} />
+          <AppText variant="caption">
+            {formatForumCount(post.heart_count, "heart")}
+          </AppText>
+        </View>
+        {post.parent_id ? (
+          <View style={styles.badge}>
+            <Ionicons
+              name="return-up-forward-outline"
+              size={13}
+              color={colors.textMuted}
+            />
+            <AppText variant="caption" tone="muted">
+              Reply
+            </AppText>
+          </View>
+        ) : null}
+      </View>
+    </Surface>
+  );
+}
+
+function ReplyTree({
+  post,
+  byParent,
+  depth,
+  topIndex,
+}: {
+  post: ForumPost;
+  byParent: Record<number, ForumPost[]>;
+  depth: number;
+  topIndex: number;
+}) {
+  const children = byParent[post.id] || [];
+  const label = depth === 0 ? `Reply ${topIndex}` : "Nested reply";
+
+  return (
+    <View style={styles.replyBranch}>
+      <PostCard post={post} depth={depth} label={label} />
+      {children.map((child) => (
+        <ReplyTree
+          key={child.id}
+          post={child}
+          byParent={byParent}
+          depth={depth + 1}
+          topIndex={topIndex}
+        />
+      ))}
+    </View>
+  );
+}
+
+export function ForumThreadScreen() {
+  const route = useRoute<ForumThreadRoute>();
+  const { threadId } = route.params;
+  const [page, setPage] = useState(1);
+  const postsQuery = useQuery({
+    queryKey: ["forum", "thread", threadId, page],
+    queryFn: () => getForumThreadPosts(threadId, page, POSTS_PAGE_SIZE),
+  });
+  const thread = postsQuery.data?.thread;
+  const posts = postsQuery.data?.posts ?? [];
+  const originalPost = posts[0];
+  const replies = posts.slice(1);
+  const byParent = replies.reduce<Record<number, ForumPost[]>>((acc, post) => {
+    if (post.parent_id) {
+      acc[post.parent_id] = [...(acc[post.parent_id] || []), post];
+    }
+    return acc;
+  }, {});
+  const topLevelReplies = replies.filter((post) => !post.parent_id);
+
+  return (
+    <ScreenShell
+      title="Thread"
+      subtitle="Read-only forum view. Posting and hearts will unlock after mobile login is connected."
+    >
+      {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
+
+      {postsQuery.isError ? (
+        <ErrorState message="This discussion could not be loaded. Try again in a moment." />
+      ) : null}
+
+      {thread ? (
+        <Surface variant="accent" radius="hero" style={styles.hero}>
+          <View style={styles.heroIcon}>
+            <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.text} />
+          </View>
+          <View style={styles.heroText}>
+            <AppText variant="sectionTitle">{thread.title}</AppText>
+            <AppText tone="muted">
+              Started by {thread.author_username || "Unknown"} /{" "}
+              {formatForumCount(thread.post_count, "post")} / Last active{" "}
+              {formatForumDate(thread.last_post_at || thread.updated_at)}
+            </AppText>
+            <View style={styles.threadFlags}>
+              {thread.locked ? (
+                <View style={[styles.threadFlag, styles.lockedFlag]}>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={13}
+                    color={colors.warningText}
+                  />
+                  <AppText variant="caption" style={styles.warningText}>
+                    Locked
+                  </AppText>
+                </View>
+              ) : null}
+              {thread.latest_first ? (
+                <View style={styles.threadFlag}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={13}
+                    color={colors.accentStrong}
+                  />
+                  <AppText variant="caption">Latest updates first</AppText>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </Surface>
+      ) : null}
+
+      {thread ? <ForumSeriesStrip seriesRefs={thread.series_refs} /> : null}
+
+      {originalPost ? (
+        <View style={styles.section}>
+          <SectionHeader title="Original post" />
+          <PostCard post={originalPost} label="Original" />
+        </View>
+      ) : null}
+
+      {postsQuery.data?.posts.length === 0 ? (
+        <EmptyState
+          title="No posts yet"
+          message="Posts for this discussion will appear here once available."
+        />
+      ) : null}
+
+      {postsQuery.data && topLevelReplies.length > 0 ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Replies"
+            body={`Page ${postsQuery.data.page} of ${postsQuery.data.total_pages} / ${formatForumCount(postsQuery.data.total_top_level, "top-level reply", "top-level replies")}`}
+          />
+          <View style={styles.stack}>
+            {topLevelReplies.map((post, index) => (
+              <ReplyTree
+                key={post.id}
+                post={post}
+                byParent={byParent}
+                depth={0}
+                topIndex={index + 1}
+              />
+            ))}
+          </View>
+          {postsQuery.data.total_pages > 1 ? (
+            <View style={styles.pager}>
+              <AppButton
+                label="Previous"
+                variant="ghost"
+                disabled={!postsQuery.data.has_prev || postsQuery.isFetching}
+                onPress={() => setPage((current) => Math.max(1, current - 1))}
+                iconLeft={<Ionicons name="chevron-back" size={15} color={colors.text} />}
+              />
+              <AppButton
+                label={thread?.latest_first ? "Older updates" : "More replies"}
+                disabled={!postsQuery.data.has_next || postsQuery.isFetching}
+                onPress={() =>
+                  setPage((current) =>
+                    Math.min(postsQuery.data?.total_pages ?? current, current + 1),
+                  )
+                }
+                iconRight={
+                  <Ionicons name="chevron-forward" size={15} color={colors.text} />
+                }
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </ScreenShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  hero: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  heroIcon: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  heroText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  threadFlags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  threadFlag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  lockedFlag: {
+    backgroundColor: colors.warningSurface,
+    borderColor: colors.warningBorder,
+  },
+  warningText: {
+    color: colors.warningText,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  stack: {
+    gap: spacing.sm,
+  },
+  postCard: {
+    gap: spacing.sm,
+  },
+  replyCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accentBorder,
+  },
+  replyBranch: {
+    gap: spacing.sm,
+  },
+  postHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  postAuthor: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  authorLine: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  replyLabel: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  postFooter: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  pager: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    justifyContent: "space-between",
+  },
+});

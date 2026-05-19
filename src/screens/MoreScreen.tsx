@@ -129,6 +129,14 @@ export function MoreScreen() {
       onPress: () => navigation.navigate("Settings"),
     },
   ];
+  const communityRows: MenuRowProps[] = [
+    {
+      icon: "chatbubble-ellipses-outline",
+      title: "Forum",
+      subtitle: "Browse public discussions and title threads.",
+      onPress: () => navigation.navigate("Forum"),
+    },
+  ];
 
   return (
     <ScreenShell title="More" subtitle="Account, support, and app information.">
@@ -196,6 +204,15 @@ export function MoreScreen() {
         <SectionHeader title="Account tools" />
         <View style={styles.rowStack}>
           {accountRows.map((row) => (
+            <MenuRow key={row.title} {...row} />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader title="Community" />
+        <View style={styles.rowStack}>
+          {communityRows.map((row) => (
             <MenuRow key={row.title} {...row} />
           ))}
         </View>

@@ -3,6 +3,8 @@ export { AppButton } from "./AppButton";
 export { AppText } from "./AppText";
 export { Chip, ChipButton } from "./Chip";
 export { EmptyState, ErrorState, LoadingState } from "./StateMessage";
+export { ForumMarkdown } from "./ForumMarkdown";
+export { ForumSeriesStrip } from "./ForumSeriesStrip";
 export { IconButton } from "./IconButton";
 export { PlaceholderCard } from "./PlaceholderCard";
 export { ScreenShell } from "./ScreenShell";
