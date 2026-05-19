@@ -149,6 +149,17 @@ Suggested branch: `mobile-forum-browse`
 - [x] Keep posting, replies, and hearts read-only until mobile auth handoff is complete.
 - [ ] Consider infinite scroll after the first paginated native forum view is reviewed.
 
+## Future Phase: Native Issue Reporting
+
+Suggested branch: `mobile-report-issue`
+
+- [x] Add a native report issue screen instead of sending users to the website.
+- [x] Reuse the existing anonymous `/issues/report` backend endpoint.
+- [x] Support issue type, summary, details, optional email, validation, success, and error states.
+- [x] Link report issue from the More tab legal/support section.
+- [x] Keep screenshots deferred until native image picker permissions are chosen.
+- [ ] Add contextual report entry points from series detail and forum thread screens if users ask for page-specific reporting.
+
 ## Definition Of Done For Design-First Restart
 
 - [x] App passes `npm run typecheck`.

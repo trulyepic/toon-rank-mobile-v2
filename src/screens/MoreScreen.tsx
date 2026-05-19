@@ -33,6 +33,11 @@ const supportRows: MenuRowProps[] = [
     subtitle: "How Toon Ranks handles account and activity data.",
   },
   {
+    icon: "bug-outline",
+    title: "Report an Issue",
+    subtitle: "Send bugs, content problems, and suggestions.",
+  },
+  {
     icon: "mail-outline",
     title: "Support",
     subtitle: SUPPORT_EMAIL,
@@ -99,6 +104,10 @@ export function MoreScreen() {
 
     if (row.title === "Privacy") {
       return { ...row, onPress: () => openInAppBrowser(LEGAL_URLS.privacy) };
+    }
+
+    if (row.title === "Report an Issue") {
+      return { ...row, onPress: () => navigation.navigate("ReportIssue") };
     }
 
     return { ...row, onPress: () => openSupportEmail(SUPPORT_EMAIL) };
