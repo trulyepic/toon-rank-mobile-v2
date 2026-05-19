@@ -123,6 +123,16 @@ Suggested branch: `mobile-legal-polish`
 - [x] Keep website Terms and Privacy as the canonical legal source for app store and public policy links.
 - [ ] Confirm Support email behavior on Android and iOS before app-store release.
 
+## Future Phase: Account-Gated Screens
+
+Suggested branch: `mobile-account-gated-screens`
+
+- [x] Add signed-out account-required states for account-backed screens.
+- [x] Connect Reading Lists to the existing authenticated reading-list API when a mobile session exists.
+- [x] Keep Forum Activity honest until user-specific forum activity endpoints exist.
+- [x] Add Settings session status and logout affordance.
+- [ ] Add native editing for settings only after real persisted preferences exist.
+
 ## Definition Of Done For Design-First Restart
 
 - [x] App passes `npm run typecheck`.

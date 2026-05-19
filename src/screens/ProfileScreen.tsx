@@ -1,7 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StyleSheet, View } from "react-native";
 
 import {
+  AccountRequiredCard,
   AppButton,
   AppText,
   ScreenShell,
@@ -10,17 +13,26 @@ import {
   UserAvatar,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { roleColor } from "../utils/avatar";
 
 export function ProfileScreen() {
   const { isSignedIn, user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <ScreenShell
       title="Profile"
       subtitle="Your public Toon Ranks identity will stay shared across web and mobile."
     >
+      {!isSignedIn ? (
+        <AccountRequiredCard
+          title="Log in to use your profile"
+          body="Your avatar, role, saved titles, votes, and forum identity all come from the same website account."
+        />
+      ) : null}
+
       <Surface variant="raised" radius="hero" shadow style={styles.hero}>
         <View style={styles.avatarWrap}>
           <UserAvatar
@@ -45,7 +57,7 @@ export function ProfileScreen() {
           <AppText tone="muted" align="center">
             {isSignedIn
               ? "Avatar and role data are synced from your Toon Ranks account. Mobile editing will be added after the web avatar flow settles."
-              : "Sign in to use your website profile, saved titles, ratings, and forum identity on mobile."}
+              : "This preview shows where your shared Toon Ranks identity will appear after mobile login is connected."}
           </AppText>
         </View>
       </Surface>
@@ -72,11 +84,13 @@ export function ProfileScreen() {
           <AppButton
             label="Reading lists"
             variant="secondary"
+            onPress={() => navigation.navigate("ReadingLists")}
             iconLeft={<Ionicons name="bookmark-outline" size={15} color={colors.text} />}
           />
           <AppButton
             label="Forum activity"
             variant="secondary"
+            onPress={() => navigation.navigate("ForumActivity")}
             iconLeft={
               <Ionicons name="chatbubbles-outline" size={15} color={colors.text} />
             }

@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, View } from "react-native";
 
-import { AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import { useAuth } from "../auth/AuthContext";
 import { colors, radii, spacing } from "../theme/tokens";
 
 const settingsRows = [
@@ -23,11 +24,43 @@ const settingsRows = [
 ];
 
 export function SettingsScreen() {
+  const { isSignedIn, logout, status, user } = useAuth();
+
   return (
     <ScreenShell
       title="Settings"
       subtitle="Preferences and account controls for the native mobile app."
     >
+      <Surface variant="accent" radius="hero" style={styles.sessionCard}>
+        <View style={styles.sessionIcon}>
+          <Ionicons
+            name={isSignedIn ? "person-circle-outline" : "person-outline"}
+            size={24}
+            color={colors.text}
+          />
+        </View>
+        <View style={styles.sessionText}>
+          <AppText variant="sectionTitle">
+            {isSignedIn ? user?.username : "Signed out"}
+          </AppText>
+          <AppText tone="muted">
+            {isSignedIn
+              ? "This device has a restored Toon Ranks mobile session."
+              : status === "loading"
+                ? "Checking for a saved mobile session."
+                : "Login is available through the account screen while the mobile auth callback is finished."}
+          </AppText>
+        </View>
+        {isSignedIn ? (
+          <AppButton
+            label="Log out"
+            variant="ghost"
+            onPress={logout}
+            iconLeft={<Ionicons name="log-out-outline" size={15} color={colors.text} />}
+          />
+        ) : null}
+      </Surface>
+
       <View style={styles.section}>
         <SectionHeader title="Preferences" />
         <View style={styles.stack}>
@@ -49,6 +82,22 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  sessionCard: {
+    gap: spacing.md,
+  },
+  sessionIcon: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  sessionText: {
+    gap: spacing.xs,
+  },
   section: {
     gap: spacing.sm,
   },
