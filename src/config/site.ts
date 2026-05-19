@@ -12,3 +12,10 @@ export const WEB_AUTH_URLS = {
   login: buildWebAuthUrl("/login"),
   signup: buildWebAuthUrl("/signup"),
 };
+
+export const LEGAL_URLS = {
+  terms: `${SITE_ORIGIN}/terms`,
+  privacy: `${SITE_ORIGIN}/privacy`,
+};
+
+export const SUPPORT_EMAIL = "trulyepickstudios@gmail.com";
