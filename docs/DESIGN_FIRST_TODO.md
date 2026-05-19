@@ -133,6 +133,22 @@ Suggested branch: `mobile-account-gated-screens`
 - [x] Add Settings session status and logout affordance.
 - [ ] Add native editing for settings only after real persisted preferences exist.
 
+## Future Phase: Public Forum Browsing
+
+Suggested branch: `mobile-forum-browse`
+
+- [x] Add a native public Forum screen backed by the existing thread list API.
+- [x] Add a native thread detail screen backed by the existing thread posts API.
+- [x] Link public Forum browsing from the More tab.
+- [x] Render forum markdown links, inline images, and series references in native thread posts.
+- [x] Link referenced series to native mobile series detail screens.
+- [x] Preserve nested reply structure in native thread detail.
+- [x] Render raw forum image/GIF URLs and HTML image tags in native thread posts.
+- [x] Add mobile thread pagination controls for longer discussions.
+- [x] Show locked and latest-updates-first thread status flags.
+- [x] Keep posting, replies, and hearts read-only until mobile auth handoff is complete.
+- [ ] Consider infinite scroll after the first paginated native forum view is reviewed.
+
 ## Definition Of Done For Design-First Restart
 
 - [x] App passes `npm run typecheck`.
