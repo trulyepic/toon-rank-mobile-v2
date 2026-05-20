@@ -25,18 +25,20 @@ Suggested branch: `mobile-core-auth-contract`
 Purpose: define the exact handoff that lets a user log in or sign up from the native app and return
 to the app with a real Toon Ranks session.
 
-- [ ] Review backend auth routes and current JWT response shape.
-- [ ] Review web login/signup pages and confirm where mobile query params are currently ignored.
-- [ ] Choose the first real mobile auth path:
+- [x] Review backend auth routes and current JWT response shape.
+- [x] Review web login/signup pages and confirm where mobile query params are currently ignored.
+- [x] Choose the first real mobile auth path:
   - preferred near-term path: web CAPTCHA/auth session returns a short-lived mobile auth code to `toonranks://auth/callback`
   - future option: native mobile CAPTCHA/app attestation path
-- [ ] Document backend endpoint(s) needed for mobile auth code exchange.
-- [ ] Document web frontend changes needed after successful login/signup when `mobile=1` and `redirect_uri` are present.
-- [ ] Document mobile app changes needed to parse `code`, exchange it for JWT/user, store it, and refresh UI.
-- [ ] Keep native username/password submit disabled until the session handoff really works.
+- [x] Document backend endpoint(s) needed for mobile auth code exchange.
+- [x] Document web frontend changes needed after successful login/signup when `mobile=1` and `redirect_uri` are present.
+- [x] Document mobile app changes needed to parse `code`, exchange it for JWT/user, store it, and refresh UI.
+- [x] Keep native username/password submit disabled until the session handoff really works.
 
 Done means a backend/frontend/mobile implementation plan exists with endpoint names, payloads,
 redirect behavior, error behavior, and security notes.
+
+Contract doc: `docs/MOBILE_AUTH_CONTRACT.md`.
 
 ## Phase 2: Real Mobile Login And Signup
 
