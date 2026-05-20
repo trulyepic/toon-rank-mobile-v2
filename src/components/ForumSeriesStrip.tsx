@@ -14,46 +14,67 @@ type Props = {
 
 export function ForumSeriesStrip({ seriesRefs }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const visibleSeriesRefs = getVisibleSeriesRefs(seriesRefs);
 
-  if (seriesRefs.length === 0) return null;
+  if (visibleSeriesRefs.length === 0) return null;
 
   return (
     <View style={styles.strip}>
-      {seriesRefs.slice(0, 3).map((series) => (
-        <Pressable
-          key={series.series_id}
-          onPress={() =>
-            navigation.navigate("SeriesDetail", { seriesId: series.series_id })
-          }
-          style={({ pressed }) => [styles.item, pressed ? styles.pressed : null]}
-          accessibilityRole="button"
-          accessibilityLabel={`Open ${series.title || "related title"}`}
-        >
-          {series.cover_url ? (
-            <Image
-              source={{ uri: series.cover_url }}
-              accessibilityLabel={`${series.title || "Related title"} cover`}
-              style={styles.cover}
-            />
-          ) : (
-            <View style={[styles.cover, styles.coverFallback]}>
-              <Ionicons name="book-outline" size={20} color={colors.textMuted} />
-            </View>
-          )}
-          <View style={styles.itemText}>
-            <AppText variant="caption" numberOfLines={1}>
-              {series.title || "Untitled"}
-            </AppText>
-            {series.type ? (
-              <AppText variant="caption" tone="subtle">
-                {series.type}
+      {visibleSeriesRefs.map((series) => {
+        const seriesId = Number(series.series_id);
+
+        return (
+          <Pressable
+            key={seriesId}
+            onPress={() => navigation.navigate("SeriesDetail", { seriesId })}
+            style={({ pressed }) => [styles.item, pressed ? styles.pressed : null]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${series.title || "related title"}`}
+            accessibilityHint="Opens the title detail screen"
+          >
+            {series.cover_url ? (
+              <Image
+                source={{ uri: series.cover_url }}
+                accessibilityLabel={`${series.title || "Related title"} cover`}
+                style={styles.cover}
+              />
+            ) : (
+              <View style={[styles.cover, styles.coverFallback]}>
+                <Ionicons name="book-outline" size={20} color={colors.textMuted} />
+              </View>
+            )}
+            <View style={styles.itemText}>
+              <AppText variant="caption" numberOfLines={1}>
+                {series.title || "Untitled"}
               </AppText>
-            ) : null}
-          </View>
-        </Pressable>
-      ))}
+              {series.type ? (
+                <AppText variant="caption" tone="subtle">
+                  {series.type}
+                </AppText>
+              ) : null}
+            </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+function getVisibleSeriesRefs(seriesRefs: SeriesRef[]) {
+  const seen = new Set<number>();
+
+  return seriesRefs
+    .filter((series) => {
+      const seriesId = Number(series.series_id);
+
+      if (!Number.isFinite(seriesId) || seriesId <= 0 || seen.has(seriesId)) {
+        return false;
+      }
+
+      seen.add(seriesId);
+      return true;
+    })
+    .slice(0, 3);
 }
 
 const styles = StyleSheet.create({
