@@ -78,15 +78,19 @@ npm run web
 
 ## Implementation Priorities
 
-The user wants to work design-first before deep functionality.
+The first design-first restart has already produced the native shell, shared UI primitives, public
+browsing screens, public forum browsing, native issue reporting, auth storage scaffolding, and a
+web-auth bridge shell. The current priority is no longer broad design polish.
 
 Immediate priority:
 
-1. Make the app look and feel like the mobile version of Toon Ranks.
-2. Establish reusable design primitives and a cleaner theme.
-3. Bring Home, Search, Series Detail, Compare, and More into a consistent app-store-ready direction.
-4. Add an Account area design shell so login/saved-lists/forum identity have a natural future home.
-5. Only then wire auth, reading lists, forum, voting, and other account features.
+1. Make mobile authentication real by coordinating backend, web frontend, and mobile callback work.
+2. Once mobile has a stored Toon Ranks session, connect account-backed actions in this order:
+   voting, reading lists, forum hearts/posts, profile/avatar/account surfaces.
+3. Keep public browsing reliable, but do not let small search/filter polish outrank shared-account
+   parity.
+4. Preserve one shared identity and data model across website and mobile.
+5. Move to app-store readiness only after the core account-backed product loop works.
 
 ## Product Identity
 
@@ -138,10 +142,13 @@ state.
 
 ## Current Known Issues
 
-- Some screens still need a final visual polish pass before app-store readiness.
+- Mobile login/signup screens can open the web auth flow, but the website/backend do not yet return a
+  usable mobile session to the app.
+- Auth storage and context exist, but a normal user cannot currently sign in to the native app.
+- Voting, reading-list editing, forum hearts/posts, and account identity surfaces depend on real
+  mobile auth before they should be considered complete.
 - App-store assets, icon, splash, bundle identifiers, privacy disclosures, and EAS build config are
   not ready.
-- Authentication and persistent secure token storage are not implemented.
 
 ## Safe Working Rules
 
@@ -154,14 +161,8 @@ state.
 - When adding auth later, use secure native storage. Do not store tokens in plain AsyncStorage.
 - Keep user-visible text polished and app-like.
 
-## Suggested First Work Slice
+## Active Work Slice
 
-After git is initialized, start with the design foundation:
-
-1. Clean theme tokens.
-2. Add reusable primitives.
-3. Fix mojibake.
-4. Polish Home/Search/Detail/Compare.
-5. Convert More into an Account/More shell.
-
-See `docs/DESIGN_FIRST_TODO.md` for the active detailed TODO.
+The active roadmap is now `docs/CORE_APP_EXPERIENCE_TODO.md`. Start there before choosing work.
+`docs/DESIGN_FIRST_TODO.md` is useful historical context, but it is no longer the primary source of
+truth for next steps.
