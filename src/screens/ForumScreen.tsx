@@ -1,11 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { getForumThreads } from "../api/forum";
 import {
+  AppButton,
   AppText,
   EmptyState,
   ErrorState,
@@ -82,10 +83,17 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
 }
 
 export function ForumScreen() {
-  const threadsQuery = useQuery({
+  const threadsQuery = useInfiniteQuery({
     queryKey: ["forum", "threads"],
-    queryFn: () => getForumThreads(1, 20),
+    queryFn: ({ pageParam }) => getForumThreads(pageParam, 20),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
   });
+  const pages = threadsQuery.data?.pages ?? [];
+  const threads = pages.flatMap((page) => page.items);
+  const totalThreads = pages[0]?.total ?? 0;
+  const hasThreads = threads.length > 0;
+  const hasNextPage = Boolean(threadsQuery.hasNextPage);
 
   return (
     <ScreenShell
@@ -113,24 +121,36 @@ export function ForumScreen() {
         <ErrorState message="Forum threads could not be loaded. Try again in a moment." />
       ) : null}
 
-      {threadsQuery.data?.items.length === 0 ? (
+      {threadsQuery.data && !hasThreads ? (
         <EmptyState
           title="No discussions yet"
           message="Public forum threads will appear here once the community starts posting."
         />
       ) : null}
 
-      {threadsQuery.data && threadsQuery.data.items.length > 0 ? (
+      {hasThreads ? (
         <View style={styles.section}>
           <SectionHeader
             title="Recent threads"
-            body={`${formatForumCount(threadsQuery.data.total, "thread")} available`}
+            body={`${formatForumCount(totalThreads, "thread")} available / ${threads.length} shown`}
           />
           <View style={styles.stack}>
-            {threadsQuery.data.items.map((thread) => (
+            {threads.map((thread) => (
               <ThreadCard key={thread.id} thread={thread} />
             ))}
           </View>
+          {hasNextPage ? (
+            <AppButton
+              label={threadsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+              disabled={threadsQuery.isFetchingNextPage}
+              onPress={() => threadsQuery.fetchNextPage()}
+              iconRight={<Ionicons name="chevron-down" size={15} color={colors.text} />}
+            />
+          ) : (
+            <AppText variant="caption" tone="subtle" align="center">
+              You are caught up.
+            </AppText>
+          )}
         </View>
       ) : null}
     </ScreenShell>

@@ -1,8 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { StyleSheet, View } from "react-native";
 
 import { getForumThreadPosts } from "../api/forum";
@@ -129,13 +128,22 @@ function ReplyTree({
 export function ForumThreadScreen() {
   const route = useRoute<ForumThreadRoute>();
   const { threadId } = route.params;
-  const [page, setPage] = useState(1);
-  const postsQuery = useQuery({
-    queryKey: ["forum", "thread", threadId, page],
-    queryFn: () => getForumThreadPosts(threadId, page, POSTS_PAGE_SIZE),
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["forum", "thread", threadId],
+    queryFn: ({ pageParam }) => getForumThreadPosts(threadId, pageParam, POSTS_PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
   });
-  const thread = postsQuery.data?.thread;
-  const posts = postsQuery.data?.posts ?? [];
+  const pages = postsQuery.data?.pages ?? [];
+  const thread = pages[0]?.thread;
+  const posts = pages
+    .flatMap((page) => page.posts)
+    .filter(
+      (post, index, allPosts) =>
+        allPosts.findIndex((candidate) => candidate.id === post.id) === index,
+    );
+  const totalReplies = pages[0]?.total_top_level ?? 0;
+  const totalPages = pages[0]?.total_pages ?? 1;
   const originalPost = posts[0];
   const replies = posts.slice(1);
   const byParent = replies.reduce<Record<number, ForumPost[]>>((acc, post) => {
@@ -206,7 +214,7 @@ export function ForumThreadScreen() {
         </View>
       ) : null}
 
-      {postsQuery.data?.posts.length === 0 ? (
+      {postsQuery.data && posts.length === 0 ? (
         <EmptyState
           title="No posts yet"
           message="Posts for this discussion will appear here once available."
@@ -217,7 +225,7 @@ export function ForumThreadScreen() {
         <View style={styles.section}>
           <SectionHeader
             title="Replies"
-            body={`Page ${postsQuery.data.page} of ${postsQuery.data.total_pages} / ${formatForumCount(postsQuery.data.total_top_level, "top-level reply", "top-level replies")}`}
+            body={`${formatForumCount(totalReplies, "top-level reply", "top-level replies")} / ${topLevelReplies.length} shown`}
           />
           <View style={styles.stack}>
             {topLevelReplies.map((post, index) => (
@@ -230,28 +238,23 @@ export function ForumThreadScreen() {
               />
             ))}
           </View>
-          {postsQuery.data.total_pages > 1 ? (
-            <View style={styles.pager}>
-              <AppButton
-                label="Previous"
-                variant="ghost"
-                disabled={!postsQuery.data.has_prev || postsQuery.isFetching}
-                onPress={() => setPage((current) => Math.max(1, current - 1))}
-                iconLeft={<Ionicons name="chevron-back" size={15} color={colors.text} />}
-              />
-              <AppButton
-                label={thread?.latest_first ? "Older updates" : "More replies"}
-                disabled={!postsQuery.data.has_next || postsQuery.isFetching}
-                onPress={() =>
-                  setPage((current) =>
-                    Math.min(postsQuery.data?.total_pages ?? current, current + 1),
-                  )
-                }
-                iconRight={
-                  <Ionicons name="chevron-forward" size={15} color={colors.text} />
-                }
-              />
-            </View>
+          {postsQuery.hasNextPage ? (
+            <AppButton
+              label={
+                postsQuery.isFetchingNextPage
+                  ? "Loading..."
+                  : thread?.latest_first
+                    ? "Load older updates"
+                    : "Load more replies"
+              }
+              disabled={postsQuery.isFetchingNextPage}
+              onPress={() => postsQuery.fetchNextPage()}
+              iconRight={<Ionicons name="chevron-down" size={15} color={colors.text} />}
+            />
+          ) : totalPages > 1 ? (
+            <AppText variant="caption" tone="subtle" align="center">
+              All replies are loaded.
+            </AppText>
           ) : null}
         </View>
       ) : null}
@@ -357,11 +360,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
-  },
-  pager: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    justifyContent: "space-between",
   },
 });
