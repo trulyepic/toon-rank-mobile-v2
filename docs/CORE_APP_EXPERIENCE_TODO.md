@@ -50,18 +50,39 @@ Suggested branch group:
 
 Purpose: make app login/signup actually sign the user into the app, not just the website.
 
-- [ ] Add backend support for short-lived mobile auth codes or another agreed mobile-safe session exchange.
-- [ ] Add tests for code creation, expiry, one-time use, invalid codes, and returned JWT/user shape.
-- [ ] Update web login/signup success flow to redirect to the provided mobile callback only when the request is explicitly mobile.
-- [ ] Update mobile `openWebAuthBridge` to exchange the returned code for the normal Toon Ranks JWT/user.
-- [ ] Store JWT/user with `expo-secure-store` through `AuthProvider`.
-- [ ] Restore signed-in state on app launch.
-- [ ] Add session-expired handling for `401` and auth-related `403` responses.
-- [ ] Update Login/Signup screen copy so it no longer implies the flow is incomplete after it works.
+- [x] Add backend support for short-lived mobile auth codes or another agreed mobile-safe session exchange.
+- [x] Add tests for code creation, expiry, one-time use, invalid codes, and returned JWT/user shape.
+- [x] Update web login/signup success flow to redirect to the provided mobile callback only when the request is explicitly mobile.
+- [x] Update mobile `openWebAuthBridge` to exchange the returned code for the normal Toon Ranks JWT/user.
+- [x] Store JWT/user with `expo-secure-store` through `AuthProvider`.
+- [x] Restore signed-in state on app launch.
+- [x] Add session-expired handling for `401` and auth-related `403` responses.
+- [x] Update Login/Signup screen copy so it no longer implies the flow is incomplete after it works.
 
 Done means a user can start login or signup in the app, complete the existing CAPTCHA-protected web
 step if needed, return to the app, and see signed-in state without manually going back from the
 website.
+
+Session strategy doc: `docs/MOBILE_SESSION_STRATEGY.md`.
+
+## Phase 2.5: Long-Lived Mobile Sessions
+
+Suggested branch group:
+
+- `backend-mobile-refresh-tokens`
+- `mobile-refresh-token-session`
+
+Purpose: keep mobile users signed in for about 30 days using a standard refresh-token flow.
+
+- [ ] Add backend refresh-token storage with hashed tokens, expiry, revocation, and last-used tracking.
+- [ ] Return a refresh token from the mobile auth-code exchange endpoint.
+- [ ] Add a backend refresh endpoint that returns a new access token for a valid mobile refresh token.
+- [ ] Store the refresh token in mobile secure storage.
+- [ ] Try a one-time refresh when an authenticated request returns `401` before clearing the session.
+- [ ] Revoke/clear the refresh token on logout.
+
+Done means mobile sessions behave like a real app: users stay logged in for roughly a month without
+making the main access JWT dangerously long-lived.
 
 ## Phase 3: Voting On Series
 

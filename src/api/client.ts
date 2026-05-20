@@ -1,6 +1,7 @@
 import { create, isAxiosError } from "axios";
 
 import { API_BASE_URL } from "../config/env";
+import { notifySessionExpired } from "../auth/sessionEvents";
 
 export const api = create({
   baseURL: API_BASE_URL,
@@ -87,5 +88,18 @@ export function normalizeApiError(error: unknown): ApiError {
 
 api.interceptors.response.use(
   (response) => response,
-  (error: unknown) => Promise.reject(normalizeApiError(error)),
+  (error: unknown) => {
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      const authorization = error.config?.headers?.Authorization;
+      const hadAuthHeader =
+        typeof authorization === "string" && authorization.startsWith("Bearer ");
+
+      if (hadAuthHeader && (status === 401 || status === 403)) {
+        notifySessionExpired();
+      }
+    }
+
+    return Promise.reject(normalizeApiError(error));
+  },
 );
