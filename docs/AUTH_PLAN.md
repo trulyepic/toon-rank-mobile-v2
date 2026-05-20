@@ -198,6 +198,9 @@ The More tab should switch from preview rows to real account rows after `AuthPro
 
 ## First Implementation Phase After This Plan
 
+The concrete cross-project handoff contract now lives in `docs/MOBILE_AUTH_CONTRACT.md`. Use that
+document as the source of truth for the backend, web frontend, and mobile implementation branches.
+
 First implementation slice completed in `mobile-auth-foundation`:
 
 - `expo-secure-store` installed.
@@ -249,9 +252,9 @@ Fifth implementation slice completed in `mobile-auth-callback-handling`:
 
 Suggested next auth phase:
 
-1. Add a backend/web mobile auth callback contract that returns or exchanges a short-lived mobile
-   auth code.
-2. Parse `toonranks://auth/callback?code=...` in the mobile app.
-3. Exchange the code for the normal Toon Ranks JWT.
-4. Store the JWT/user through `AuthProvider`.
-5. Remove the disabled native submit buttons once the bridge is fully functional.
+1. Add backend `/auth/mobile-code` and `/auth/mobile-token` endpoints.
+2. Update web login/signup to honor `mobile=1`, `redirect_uri`, and `state`.
+3. Parse `toonranks://auth/callback?code=...` in the mobile app.
+4. Exchange the code for the normal Toon Ranks JWT.
+5. Store the JWT/user through `AuthProvider`.
+6. Remove the disabled native submit buttons once the bridge is fully functional.

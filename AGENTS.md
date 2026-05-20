@@ -166,3 +166,6 @@ state.
 The active roadmap is now `docs/CORE_APP_EXPERIENCE_TODO.md`. Start there before choosing work.
 `docs/DESIGN_FIRST_TODO.md` is useful historical context, but it is no longer the primary source of
 truth for next steps.
+
+For the next real authentication work, use `docs/MOBILE_AUTH_CONTRACT.md` as the source of truth
+before editing backend, web frontend, or mobile auth code.
