@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { openWebAuthBridge } from "../auth/webAuthBridge";
+import { useAuth } from "../auth/AuthContext";
+import { createMobileAuthState, openWebAuthBridge } from "../auth/webAuthBridge";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -14,8 +15,38 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function LoginScreen() {
   const navigation = useNavigation<Navigation>();
+  const { setSession } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [openingWebAuth, setOpeningWebAuth] = useState(false);
+
+  const handleWebLogin = async () => {
+    const state = createMobileAuthState();
+    setOpeningWebAuth(true);
+
+    try {
+      const result = await openWebAuthBridge(WEB_AUTH_URLS.login(state), state);
+
+      if (result.status === "success") {
+        await setSession(result.session);
+        Alert.alert("Signed in", "Your Toon Ranks account is connected.");
+        navigation.navigate("MainTabs");
+        return;
+      }
+
+      if (result.status === "check_email") {
+        Alert.alert("Check your email", result.message);
+        navigation.navigate("CheckEmail");
+        return;
+      }
+
+      if (result.status === "error") {
+        Alert.alert("Sign-in stopped", result.message);
+      }
+    } finally {
+      setOpeningWebAuth(false);
+    }
+  };
 
   return (
     <ScreenShell title="Log in" subtitle="Use your Toon Ranks website account.">
@@ -67,8 +98,8 @@ export function LoginScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account access still depends on the website CAPTCHA flow. Opening web login
-            signs you into the website only until the mobile callback handoff is added.
+            Account access uses the secure website CAPTCHA step, then returns you to the
+            app automatically.
           </AppText>
         </Surface>
 
@@ -78,8 +109,9 @@ export function LoginScreen() {
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
         />
         <AppButton
-          label="Open web login"
-          onPress={() => openWebAuthBridge(WEB_AUTH_URLS.login)}
+          label={openingWebAuth ? "Opening login..." : "Continue with CAPTCHA login"}
+          onPress={handleWebLogin}
+          disabled={openingWebAuth}
           iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />
         <AppButton

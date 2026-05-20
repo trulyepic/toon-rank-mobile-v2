@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { openWebAuthBridge } from "../auth/webAuthBridge";
+import { useAuth } from "../auth/AuthContext";
+import { createMobileAuthState, openWebAuthBridge } from "../auth/webAuthBridge";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -14,9 +15,39 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function SignupScreen() {
   const navigation = useNavigation<Navigation>();
+  const { setSession } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [openingWebAuth, setOpeningWebAuth] = useState(false);
+
+  const handleWebSignup = async () => {
+    const state = createMobileAuthState();
+    setOpeningWebAuth(true);
+
+    try {
+      const result = await openWebAuthBridge(WEB_AUTH_URLS.signup(state), state);
+
+      if (result.status === "success") {
+        await setSession(result.session);
+        Alert.alert("Signed in", "Your Toon Ranks account is connected.");
+        navigation.navigate("MainTabs");
+        return;
+      }
+
+      if (result.status === "check_email") {
+        Alert.alert("Check your email", result.message);
+        navigation.navigate("CheckEmail");
+        return;
+      }
+
+      if (result.status === "error") {
+        Alert.alert("Signup stopped", result.message);
+      }
+    } finally {
+      setOpeningWebAuth(false);
+    }
+  };
 
   return (
     <ScreenShell title="Sign up" subtitle="Create one account for web and mobile.">
@@ -84,9 +115,8 @@ export function SignupScreen() {
             color={colors.warningText}
           />
           <AppText tone="muted" style={styles.noticeText}>
-            Account creation still depends on the website CAPTCHA flow. Opening web signup
-            creates or signs into the website only until the mobile callback handoff is
-            added.
+            Account creation uses the secure website CAPTCHA step. New username/password
+            accounts still need email verification before logging in.
           </AppText>
         </Surface>
 
@@ -96,8 +126,9 @@ export function SignupScreen() {
           iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
         />
         <AppButton
-          label="Open web signup"
-          onPress={() => openWebAuthBridge(WEB_AUTH_URLS.signup)}
+          label={openingWebAuth ? "Opening signup..." : "Continue with CAPTCHA signup"}
+          onPress={handleWebSignup}
+          disabled={openingWebAuth}
           iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
         />
         <AppButton
