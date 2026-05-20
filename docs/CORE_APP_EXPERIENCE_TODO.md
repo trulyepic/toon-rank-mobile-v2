@@ -27,9 +27,9 @@ Suggested branch: `mobile-core-title-detail`
 
 Suggested branch: `mobile-core-search-reliability`
 
-- [ ] Confirm backend search response size and ordering.
-- [ ] Add minimum query length or helpful guidance if needed.
-- [ ] Add better loading state when switching quickly between searches.
+- [x] Confirm backend search response size and ordering.
+- [x] Add minimum query length or helpful guidance if needed.
+- [x] Add better loading state when switching quickly between searches.
 - [ ] Ensure compare and detail navigation work from search results.
 
 ## Phase 4: Auth Contract Planning For Real Login
