@@ -1,9 +1,9 @@
 import { api } from "./client";
-import type { RankedSeries, SeriesDetailData } from "../types/series";
+import type { RankedSeries, SeriesDetailData, SeriesType } from "../types/series";
 
-export async function fetchRankings(page = 1, pageSize = 20) {
+export async function fetchRankings(page = 1, pageSize = 20, type?: SeriesType) {
   const res = await api.get<RankedSeries[]>("/series/rankings", {
-    params: { page, page_size: pageSize },
+    params: { page, page_size: pageSize, type },
   });
   return res.data;
 }

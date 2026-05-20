@@ -7,8 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -25,26 +25,14 @@ import {
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
-import type { RankedSeries } from "../types/series";
+import type { RankedSeries, SeriesType } from "../types/series";
 
 const titleTypeFilters = ["All", "Manga", "Manhwa", "Manhua"] as const;
 type TitleTypeFilter = (typeof titleTypeFilters)[number];
 const HOME_RANKINGS_PAGE_SIZE = 20;
-const HOME_RANKINGS_PAGES = 5;
 
-async function fetchHomeRankings() {
-  const pages = await Promise.all(
-    Array.from({ length: HOME_RANKINGS_PAGES }, (_, index) =>
-      fetchRankings(index + 1, HOME_RANKINGS_PAGE_SIZE),
-    ),
-  );
-  const byId = new Map<number, RankedSeries>();
-
-  pages.flat().forEach((item) => {
-    byId.set(item.id, item);
-  });
-
-  return Array.from(byId.values());
+function getTypeParam(filter: TitleTypeFilter): SeriesType | undefined {
+  return filter === "All" ? undefined : (filter.toUpperCase() as SeriesType);
 }
 
 function getScoreTone(score: number) {
@@ -134,16 +122,15 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["rankings"],
-    queryFn: fetchHomeRankings,
+  const rankingsQuery = useInfiniteQuery({
+    queryKey: ["rankings", activeType],
+    queryFn: ({ pageParam }) =>
+      fetchRankings(pageParam, HOME_RANKINGS_PAGE_SIZE, getTypeParam(activeType)),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === HOME_RANKINGS_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
-  const filteredRankings = useMemo(() => {
-    const rankings = data ?? [];
-    return activeType === "All"
-      ? rankings
-      : rankings.filter((item) => item.type.toLowerCase() === activeType.toLowerCase());
-  }, [activeType, data]);
+  const rankings = rankingsQuery.data?.pages.flat() ?? [];
 
   return (
     <ScreenShell
@@ -157,8 +144,8 @@ export function HomeScreen() {
         ) : null
       }
     >
-      {isLoading ? <LoadingState message="Loading rankings..." /> : null}
-      {isError ? (
+      {rankingsQuery.isLoading ? <LoadingState message="Loading rankings..." /> : null}
+      {rankingsQuery.isError ? (
         <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
       ) : null}
 
@@ -196,7 +183,7 @@ export function HomeScreen() {
       </ScrollView>
 
       <FlatList
-        data={filteredRankings}
+        data={rankings}
         keyExtractor={(item) => String(item.id)}
         scrollEnabled={false}
         numColumns={2}
@@ -212,7 +199,7 @@ export function HomeScreen() {
           />
         )}
         ListEmptyComponent={
-          !isLoading && !isError ? (
+          !rankingsQuery.isLoading && !rankingsQuery.isError ? (
             <EmptyState
               title={activeType === "All" ? undefined : `No ${activeType} yet`}
               message={
@@ -223,6 +210,28 @@ export function HomeScreen() {
             />
           ) : null
         }
+        ListFooterComponent={
+          rankings.length ? (
+            <View style={styles.listFooter}>
+              {rankingsQuery.hasNextPage ? (
+                <AppButton
+                  label={rankingsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                  disabled={rankingsQuery.isFetchingNextPage}
+                  onPress={() => rankingsQuery.fetchNextPage()}
+                  iconRight={
+                    <Ionicons name="chevron-down" size={15} color={colors.text} />
+                  }
+                />
+              ) : (
+                <AppText variant="caption" tone="subtle" align="center">
+                  {activeType === "All"
+                    ? "You are caught up."
+                    : `All loaded for ${activeType}.`}
+                </AppText>
+              )}
+            </View>
+          ) : null
+        }
       />
     </ScreenShell>
   );
@@ -231,6 +240,9 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   listContent: {
     gap: spacing.md,
+  },
+  listFooter: {
+    paddingTop: spacing.sm,
   },
   columnWrap: {
     gap: spacing.md,
