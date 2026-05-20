@@ -15,6 +15,7 @@ import {
   getStoredAuthSession,
   setStoredAuthSession,
 } from "./authStorage";
+import { subscribeToSessionExpired } from "./sessionEvents";
 
 type AuthStatus = "loading" | "signed_out" | "signed_in";
 
@@ -75,6 +76,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(null);
     setStatus("signed_out");
   }, []);
+
+  useEffect(() => {
+    return subscribeToSessionExpired(() => {
+      void logout();
+    });
+  }, [logout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
