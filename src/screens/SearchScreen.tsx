@@ -16,8 +16,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { searchSeries } from "../api/series";
 import {
   AppButton,
+  AppText,
   EmptyState,
-  ErrorState,
   LoadingState,
   ScreenShell,
   Surface,
@@ -26,6 +26,8 @@ import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
+
+const MIN_SEARCH_LENGTH = 2;
 
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
@@ -132,11 +134,14 @@ export function SearchScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const { data, isFetching, isError } = useQuery({
+  const hasSearchQuery = debouncedQuery.length >= MIN_SEARCH_LENGTH;
+  const { data, isFetching, isLoading, isError, refetch } = useQuery({
     queryKey: ["series-search", debouncedQuery],
     queryFn: () => searchSeries(debouncedQuery),
-    enabled: debouncedQuery.length > 0,
+    enabled: hasSearchQuery,
   });
+  const results = data ?? [];
+  const showSearchingOverlay = isFetching && !isLoading && results.length > 0;
 
   return (
     <ScreenShell
@@ -165,13 +170,28 @@ export function SearchScreen() {
         />
       </View>
 
-      {isFetching ? <LoadingState message="Searching..." /> : null}
+      {isLoading ? <LoadingState message="Searching..." /> : null}
 
       {isError ? (
-        <ErrorState message="Search failed to load. Check your connection and try again in a moment." />
+        <Surface variant="warning" radius="xl" style={styles.searchIssueCard}>
+          <Ionicons name="alert-circle-outline" size={22} color={colors.warningText} />
+          <View style={styles.searchIssueText}>
+            <AppText variant="cardTitle">Search could not load</AppText>
+            <AppText tone="warning">
+              Check your connection and try again. Your last typed query is still here.
+            </AppText>
+          </View>
+          <AppButton
+            label="Retry"
+            size="sm"
+            variant="ghost"
+            onPress={() => refetch()}
+            iconLeft={<Ionicons name="refresh" size={15} color={colors.text} />}
+          />
+        </Surface>
       ) : null}
 
-      {!debouncedQuery ? (
+      {!query.trim() ? (
         <Surface style={styles.notice}>
           <Ionicons name="sparkles-outline" size={22} color={colors.accentStrong} />
           <Text style={styles.noticeTitle}>Start typing</Text>
@@ -181,29 +201,57 @@ export function SearchScreen() {
         </Surface>
       ) : null}
 
-      {debouncedQuery && !isFetching && !isError ? (
-        <FlatList
-          data={data ?? []}
-          keyExtractor={(item) => String(item.id)}
-          scrollEnabled={false}
-          contentContainerStyle={styles.resultsList}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-          renderItem={({ item }) => (
-            <SearchResultCard
-              item={item}
-              onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
-              selectedForCompare={isSelected(item.id)}
-              canAddMore={canAddMore}
-              onToggleCompare={() => toggleCompare(item)}
-            />
-          )}
-          ListEmptyComponent={
-            <EmptyState
-              title="No matches yet"
-              message={`We couldn't find anything for "${debouncedQuery}". Try a broader title, genre, or creator search.`}
-            />
-          }
-        />
+      {query.trim() && debouncedQuery.length < MIN_SEARCH_LENGTH ? (
+        <Surface style={styles.notice}>
+          <Ionicons name="text-outline" size={22} color={colors.accentStrong} />
+          <Text style={styles.noticeTitle}>Keep typing</Text>
+          <Text style={styles.noticeText}>
+            Enter at least {MIN_SEARCH_LENGTH} characters to search titles.
+          </Text>
+        </Surface>
+      ) : null}
+
+      {hasSearchQuery && !isError ? (
+        <>
+          {results.length > 0 ? (
+            <View style={styles.resultSummary}>
+              <AppText variant="caption" tone="muted">
+                {`${results.length.toLocaleString()} result${results.length === 1 ? "" : "s"} for "${debouncedQuery}"`}
+              </AppText>
+              {showSearchingOverlay ? (
+                <View style={styles.refreshPill}>
+                  <Ionicons name="sync" size={12} color={colors.accentStrong} />
+                  <AppText variant="caption" tone="accent">
+                    Updating
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          <FlatList
+            data={results}
+            keyExtractor={(item) => String(item.id)}
+            scrollEnabled={false}
+            contentContainerStyle={styles.resultsList}
+            ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+            renderItem={({ item }) => (
+              <SearchResultCard
+                item={item}
+                onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
+                selectedForCompare={isSelected(item.id)}
+                canAddMore={canAddMore}
+                onToggleCompare={() => toggleCompare(item)}
+              />
+            )}
+            ListEmptyComponent={
+              <EmptyState
+                title="No matches yet"
+                message={`We couldn't find anything for "${debouncedQuery}". Try a broader title, genre, or creator search.`}
+              />
+            }
+          />
+        </>
       ) : null}
     </ScreenShell>
   );
@@ -345,6 +393,29 @@ const styles = StyleSheet.create({
   },
   notice: {
     gap: spacing.xs,
+  },
+  searchIssueCard: {
+    gap: spacing.md,
+  },
+  searchIssueText: {
+    gap: spacing.xs,
+  },
+  resultSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  refreshPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
   },
   noticeTitle: {
     color: colors.text,
