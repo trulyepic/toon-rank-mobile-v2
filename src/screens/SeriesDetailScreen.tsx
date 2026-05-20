@@ -8,7 +8,6 @@ import {
   AppButton,
   AppText,
   Chip,
-  ErrorState,
   LoadingState,
   ScreenShell,
   SectionHeader,
@@ -136,10 +135,17 @@ export function SeriesDetailScreen() {
   });
 
   const isLoading = summaryQuery.isLoading || detailQuery.isLoading;
-  const isError = summaryQuery.isError || detailQuery.isError;
+  const isMissingTitle = !isLoading && summaryQuery.isError && detailQuery.isError;
+  const hasPartialError =
+    !isMissingTitle && (summaryQuery.isError || detailQuery.isError);
 
   const summary = summaryQuery.data;
   const detail = detailQuery.data;
+  const title = summary?.title || detail?.title || "Series detail";
+  const type = summary?.type || detail?.type;
+  const status = summary?.status || detail?.status;
+  const rank = summary?.rank;
+  const voteCount = summary?.vote_count ?? 0;
 
   const heroImage = detail?.series_cover_url || summary?.cover_url || detail?.cover_url;
   const genreChips = getGenreChips(detail?.genre || summary?.genre);
@@ -155,22 +161,70 @@ export function SeriesDetailScreen() {
   const averageScore = Number(summary?.final_score || 0);
 
   return (
-    <ScreenShell title={summary?.title || detail?.title || "Series detail"}>
+    <ScreenShell title={title}>
       {isLoading ? <LoadingState message="Loading title..." /> : null}
 
-      {isError ? (
-        <ErrorState message="We couldn't load this title right now. Check your connection and try again." />
+      {isMissingTitle ? (
+        <Surface variant="warning" radius="xl" style={styles.retryCard}>
+          <Ionicons name="alert-circle-outline" size={22} color={colors.warningText} />
+          <View style={styles.retryText}>
+            <AppText variant="cardTitle">Title could not be loaded</AppText>
+            <AppText tone="warning">
+              Check your connection and try again. We could not load the title summary or
+              detail data.
+            </AppText>
+          </View>
+          <AppButton
+            label="Retry"
+            onPress={() => {
+              summaryQuery.refetch();
+              detailQuery.refetch();
+            }}
+            iconLeft={<Ionicons name="refresh" size={15} color={colors.text} />}
+          />
+        </Surface>
       ) : null}
 
-      {summary && detail ? (
+      {hasPartialError ? (
+        <Surface variant="warning" radius="xl" style={styles.retryCard}>
+          <Ionicons
+            name="information-circle-outline"
+            size={22}
+            color={colors.warningText}
+          />
+          <View style={styles.retryText}>
+            <AppText variant="cardTitle">Some title data is unavailable</AppText>
+            <AppText tone="warning">
+              The page is showing everything that loaded. Retry to refresh the missing
+              pieces.
+            </AppText>
+          </View>
+          <AppButton
+            label="Retry"
+            size="sm"
+            variant="ghost"
+            onPress={() => {
+              if (summaryQuery.isError) summaryQuery.refetch();
+              if (detailQuery.isError) detailQuery.refetch();
+            }}
+            iconLeft={<Ionicons name="refresh" size={15} color={colors.text} />}
+          />
+        </Surface>
+      ) : null}
+
+      {summary || detail ? (
         <>
           <View style={styles.heroShell}>
             {heroImage ? (
               <Image source={{ uri: heroImage }} style={styles.heroImage} />
             ) : (
               <View style={[styles.heroImage, styles.heroFallback]}>
+                <Ionicons name="image-outline" size={28} color={colors.accentStrong} />
                 <AppText variant="cardTitle" align="center">
-                  {summary.title}
+                  {title}
+                </AppText>
+                <AppText tone="muted" align="center">
+                  Cover art has not been added yet.
                 </AppText>
               </View>
             )}
@@ -178,10 +232,8 @@ export function SeriesDetailScreen() {
 
           <View style={styles.metaPanel}>
             <View style={styles.chipRow}>
-              <Chip label={summary.type} tone="accent" />
-              {summary.status ? (
-                <Chip label={summary.status.replace("_", " ")} tone="neutral" />
-              ) : null}
+              {type ? <Chip label={type} tone="accent" /> : null}
+              {status ? <Chip label={status.replace("_", " ")} tone="neutral" /> : null}
             </View>
 
             <View style={styles.scoreActionRow}>
@@ -196,7 +248,7 @@ export function SeriesDetailScreen() {
                   {averageScore.toFixed(1)}
                 </AppText>
                 <AppText variant="caption" tone="muted">
-                  {summary.vote_count.toLocaleString()} votes
+                  {voteCount.toLocaleString()} votes
                 </AppText>
               </View>
 
@@ -228,13 +280,10 @@ export function SeriesDetailScreen() {
           ) : null}
 
           <View style={styles.metricGrid}>
-            <MetricCard
-              label="Rank"
-              value={summary.rank ? `#${summary.rank}` : "Unranked"}
-            />
-            <MetricCard label="Votes" value={summary.vote_count.toLocaleString()} />
-            <MetricCard label="Author" value={detail.author || "Unknown"} />
-            <MetricCard label="Artist" value={detail.artist || "Unknown"} />
+            <MetricCard label="Rank" value={rank ? `#${rank}` : "Unranked"} />
+            <MetricCard label="Votes" value={voteCount.toLocaleString()} />
+            <MetricCard label="Author" value={detail?.author || "Unknown"} />
+            <MetricCard label="Artist" value={detail?.artist || "Unknown"} />
           </View>
 
           <Surface style={styles.infoCard}>
@@ -242,7 +291,8 @@ export function SeriesDetailScreen() {
               Synopsis
             </AppText>
             <AppText style={styles.infoBody}>
-              {detail.synopsis?.trim() || "Synopsis coming soon."}
+              {detail?.synopsis?.trim() ||
+                "Synopsis has not been added yet. The ranking summary is still available above."}
             </AppText>
           </Surface>
 
@@ -255,27 +305,27 @@ export function SeriesDetailScreen() {
             <BreakdownCard
               label="Story"
               score={storyScore}
-              votes={detail.vote_counts?.Story ?? 0}
+              votes={detail?.vote_counts?.Story ?? 0}
             />
             <BreakdownCard
               label="Characters"
               score={characterScore}
-              votes={detail.vote_counts?.Characters ?? 0}
+              votes={detail?.vote_counts?.Characters ?? 0}
             />
             <BreakdownCard
               label="World Building"
               score={worldScore}
-              votes={detail.vote_counts?.["World Building"] ?? 0}
+              votes={detail?.vote_counts?.["World Building"] ?? 0}
             />
             <BreakdownCard
               label="Art"
               score={artScore}
-              votes={detail.vote_counts?.Art ?? 0}
+              votes={detail?.vote_counts?.Art ?? 0}
             />
             <BreakdownCard
               label="Drama / Fighting"
               score={dramaScore}
-              votes={detail.vote_counts?.["Drama / Fighting"] ?? 0}
+              votes={detail?.vote_counts?.["Drama / Fighting"] ?? 0}
             />
           </View>
 
@@ -322,7 +372,14 @@ const styles = StyleSheet.create({
   heroFallback: {
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.sm,
     padding: spacing.sm,
+  },
+  retryCard: {
+    gap: spacing.md,
+  },
+  retryText: {
+    gap: spacing.xs,
   },
   metaPanel: {
     gap: spacing.sm,

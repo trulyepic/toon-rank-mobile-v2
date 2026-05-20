@@ -18,9 +18,9 @@ Suggested branch: `mobile-core-title-loading`
 
 Suggested branch: `mobile-core-title-detail`
 
-- [ ] Add clearer retry behavior for Series Detail summary/detail fetch failures.
-- [ ] Keep summary-visible data available if detail fetch fails.
-- [ ] Make missing cover/synopsis/creator data look intentional.
+- [x] Add clearer retry behavior for Series Detail summary/detail fetch failures.
+- [x] Keep summary-visible data available if detail fetch fails.
+- [x] Make missing cover/synopsis/creator data look intentional.
 - [ ] Confirm detail page works when opened from Home, Search, Compare, and Forum.
 
 ## Phase 3: Search Reliability
