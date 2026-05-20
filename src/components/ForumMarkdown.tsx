@@ -42,11 +42,13 @@ function parseMarkdown(markdown: string): Segment[] {
       const seriesMatch = url.match(/(?:series:\s*|\/series\/)(\d+)/i);
 
       if (seriesMatch) {
-        segments.push({
-          kind: "series",
-          label,
-          seriesId: Number(seriesMatch[1]),
-        });
+        const seriesId = Number(seriesMatch[1]);
+
+        segments.push(
+          Number.isFinite(seriesId) && seriesId > 0
+            ? { kind: "series", label, seriesId }
+            : { kind: "text", value: label },
+        );
       } else {
         segments.push({ kind: "link", label, url });
       }
@@ -102,6 +104,7 @@ export function ForumMarkdown({ markdown }: Props) {
               style={({ pressed }) => [styles.linkPill, pressed ? styles.pressed : null]}
               accessibilityRole="button"
               accessibilityLabel={`Open ${segment.label}`}
+              accessibilityHint="Opens the title detail screen"
             >
               <Ionicons name="book-outline" size={14} color={colors.accentStrong} />
               <AppText variant="caption" style={styles.linkText}>

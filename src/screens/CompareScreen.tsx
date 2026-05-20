@@ -222,7 +222,18 @@ export function CompareScreen() {
                           </Text>
                         </View>
 
-                        <View style={styles.headerMetaWrap}>
+                        <Pressable
+                          onPress={() =>
+                            navigation.navigate("SeriesDetail", { seriesId: summary.id })
+                          }
+                          style={({ pressed }) => [
+                            styles.headerMetaWrap,
+                            pressed ? styles.dimmed : null,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${summary.title}`}
+                          accessibilityHint="Opens the title detail screen"
+                        >
                           <Text numberOfLines={2} style={styles.headerTitle}>
                             {summary.title}
                           </Text>
@@ -238,7 +249,7 @@ export function CompareScreen() {
                               </View>
                             ) : null}
                           </View>
-                        </View>
+                        </Pressable>
                       </View>
                     );
                   })}
