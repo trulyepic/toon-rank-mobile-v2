@@ -147,7 +147,8 @@ Suggested branch: `mobile-forum-browse`
 - [x] Add mobile thread pagination controls for longer discussions.
 - [x] Show locked and latest-updates-first thread status flags.
 - [x] Keep posting, replies, and hearts read-only until mobile auth handoff is complete.
-- [ ] Consider infinite scroll after the first paginated native forum view is reviewed.
+- [x] Replace manual page switching with native load-more behavior after review.
+- [ ] Consider true scroll-end infinite loading if manual load-more still feels too slow on long threads.
 
 ## Future Phase: Native Issue Reporting
 
