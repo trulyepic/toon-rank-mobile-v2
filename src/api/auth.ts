@@ -24,6 +24,11 @@ export async function loginWithGoogle(payload: GoogleOAuthRequest) {
   return res.data;
 }
 
+export async function exchangeMobileAuthCode(code: string) {
+  const res = await api.post<AuthSession>("/auth/mobile-token", { code });
+  return res.data;
+}
+
 export async function verifyEmail(token: string) {
   const res = await api.get<MessageResponse>("/auth/verify-email", {
     params: { token },

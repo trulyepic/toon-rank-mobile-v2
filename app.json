@@ -3,6 +3,7 @@
     "name": "Toon Ranks",
     "slug": "toon-ranks-mobile",
     "scheme": "toonranks",
+    "newArchEnabled": false,
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -19,7 +20,18 @@
         "backgroundColor": "#17110f"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.toonranksmobile"
+      "package": "com.anonymous.toonranksmobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "toonranks"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro"
