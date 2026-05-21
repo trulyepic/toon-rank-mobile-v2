@@ -4,7 +4,14 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import {
+  AppButton,
+  AppText,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+  UserIdentity,
+} from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { LEGAL_URLS, SUPPORT_EMAIL } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -160,23 +167,25 @@ export function MoreScreen() {
       />
 
       <Surface variant="accent" radius="xl" style={styles.signInCard}>
-        <View style={styles.signInIcon}>
-          <Ionicons
-            name={isSignedIn ? "person-circle-outline" : "person-outline"}
-            size={24}
-            color={colors.text}
+        {isSignedIn ? (
+          <UserIdentity
+            user={user}
+            subtitle="Your mobile session is connected to the same Toon Ranks account used on the website."
           />
-        </View>
-        <View style={styles.signInText}>
-          <AppText variant="sectionTitle">
-            {isSignedIn ? "Signed in" : "Your Toon Ranks account"}
-          </AppText>
-          <AppText tone="muted">
-            {isSignedIn
-              ? "Secure session restore is ready. Account features will unlock as each screen is connected."
-              : "Mobile will use the same account, saved titles, forum activity, and voting history as the website."}
-          </AppText>
-        </View>
+        ) : (
+          <View style={styles.signInContent}>
+            <View style={styles.signInIcon}>
+              <Ionicons name="person-outline" size={24} color={colors.text} />
+            </View>
+            <View style={styles.signInText}>
+              <AppText variant="sectionTitle">Your Toon Ranks account</AppText>
+              <AppText tone="muted">
+                Mobile will use the same account, saved titles, forum activity, and voting
+                history as the website.
+              </AppText>
+            </View>
+          </View>
+        )}
         <View style={styles.buttonRow}>
           {isSignedIn ? (
             <AppButton
@@ -252,6 +261,11 @@ const styles = StyleSheet.create({
   signInCard: {
     gap: spacing.md,
   },
+  signInContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
   signInIcon: {
     width: 52,
     height: 52,
@@ -263,6 +277,8 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
   },
   signInText: {
+    flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
   },
   buttonRow: {

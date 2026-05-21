@@ -143,13 +143,30 @@ Suggested branch: `mobile-core-profile-account`
 Purpose: make the account area reflect the user's real website identity.
 
 - [ ] Add or consume a backend current-user profile endpoint if needed.
-- [ ] Show username, role color, avatar URL, and avatar preset consistently.
+- [x] Show username, role color, avatar URL, and avatar preset consistently.
 - [ ] Add default avatar preset selection if backend supports it.
-- [ ] Decide whether custom avatar upload/cropping belongs in mobile v1 or remains web-only at first.
+- [x] Decide whether custom avatar upload/cropping belongs in mobile v1 or remains web-only at first.
 - [ ] Connect Settings session status and logout to the real session.
-- [ ] Update More/Profile/Forum author surfaces to use the same role/avatar conventions as the website.
+- [x] Update More/Profile/Forum author surfaces to use the same role/avatar conventions as the website.
 
 Done means the signed-in user identity feels shared across web and mobile.
+
+## Phase 6.5: Native Avatar Upload
+
+Suggested branch: `mobile-native-avatar-upload`
+
+Purpose: let users manage their Toon Ranks avatar directly in the native app while still storing the
+final image through the existing website/backend avatar pipeline and S3 storage.
+
+- [ ] Choose a native image picker/cropper package that works cleanly with Expo and store builds.
+- [ ] Request photo-library permissions with clear Android/iOS copy.
+- [ ] Crop selected images to the same square avatar standard used by the website.
+- [ ] Upload the cropped image through the existing backend/S3 avatar endpoint.
+- [ ] Allow users to choose one of the default avatar presets from mobile.
+- [ ] Refresh the stored mobile `AuthUser` after avatar or preset changes.
+- [ ] Confirm updated avatars appear on Profile, More, forum posts, and website account surfaces.
+
+Done means a mobile user can upload, crop, save, and see their avatar without needing the website.
 
 ## Phase 7: Issue Reporting Completion
 

@@ -11,3 +11,4 @@ export { ScreenShell } from "./ScreenShell";
 export { SectionHeader } from "./SectionHeader";
 export { Surface } from "./Surface";
 export { UserAvatar } from "./UserAvatar";
+export { UserIdentity } from "./UserIdentity";
