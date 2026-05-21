@@ -10,12 +10,11 @@ import {
   ScreenShell,
   SectionHeader,
   Surface,
-  UserAvatar,
+  UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import { roleColor } from "../utils/avatar";
 
 export function ProfileScreen() {
   const { isSignedIn, user } = useAuth();
@@ -34,45 +33,31 @@ export function ProfileScreen() {
       ) : null}
 
       <Surface variant="raised" radius="hero" shadow style={styles.hero}>
-        <View style={styles.avatarWrap}>
-          <UserAvatar
-            username={user?.username || "Guest"}
-            avatarUrl={user?.avatar_url}
-            avatarPreset={user?.avatar_preset}
-            size="xl"
-          />
-        </View>
-
-        <View style={styles.profileText}>
-          <AppText
-            variant="sectionTitle"
-            align="center"
-            style={{ color: roleColor(user?.role) }}
-          >
-            {user?.username || "Guest reader"}
-          </AppText>
-          <AppText variant="label" tone="muted" align="center">
-            {user?.role || "SIGNED OUT"}
-          </AppText>
-          <AppText tone="muted" align="center">
-            {isSignedIn
-              ? "Avatar and role data are synced from your Toon Ranks account. Mobile editing will be added after the web avatar flow settles."
-              : "This preview shows where your shared Toon Ranks identity will appear after mobile login is connected."}
-          </AppText>
-        </View>
+        <UserIdentity
+          user={user}
+          titleFallback="Guest reader"
+          avatarSize="xl"
+          centered
+          subtitle={
+            isSignedIn
+              ? "Avatar and role data are synced from your Toon Ranks account."
+              : "This preview shows where your shared Toon Ranks identity appears after login."
+          }
+        />
       </Surface>
 
       <View style={styles.section}>
-        <SectionHeader title="Avatar controls" />
+        <SectionHeader title="Avatar editing" />
         <Surface variant="default" radius="xl" style={styles.notice}>
           <View style={styles.noticeIcon}>
             <Ionicons name="image-outline" size={20} color={colors.accentStrong} />
           </View>
           <View style={styles.noticeText}>
-            <AppText variant="cardTitle">Coming from web first</AppText>
+            <AppText variant="cardTitle">Native upload is a dedicated phase</AppText>
             <AppText tone="muted">
-              The mobile app will reuse the same uploaded avatar and defaults. Native
-              image picking and crop controls are planned after the UI shell is complete.
+              Mobile currently uses the same uploaded avatar and default preset from the
+              website. Native image picking, cropping, and upload will be added in the
+              mobile-native-avatar-upload phase.
             </AppText>
           </View>
         </Surface>
@@ -105,17 +90,6 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: "center",
     gap: spacing.md,
-  },
-  avatarWrap: {
-    padding: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  profileText: {
-    gap: spacing.xs,
-    alignItems: "center",
   },
   section: {
     gap: spacing.sm,
