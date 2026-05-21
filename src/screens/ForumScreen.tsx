@@ -107,7 +107,7 @@ export function ForumScreen() {
   return (
     <ScreenShell
       title="Forum"
-      subtitle="Browse Toon Ranks discussions. Posting and reactions will unlock after mobile login is connected."
+      subtitle="Browse Toon Ranks discussions. Heart posts with your account; posting and replies are next."
     >
       <Surface variant="accent" radius="hero" style={styles.hero}>
         <View style={styles.heroIcon}>
@@ -116,8 +116,8 @@ export function ForumScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Community discussions</AppText>
           <AppText tone="muted">
-            Read public threads now. Creating posts, hearts, and replies will use the same
-            website account once mobile auth handoff is complete.
+            Read public threads now. Hearts use the same website account; creating posts
+            and replies will unlock in the next forum slice.
           </AppText>
         </View>
       </Surface>

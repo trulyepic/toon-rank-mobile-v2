@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useState } from "react";
 import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
 
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -15,10 +16,11 @@ type Segment =
   | { kind: "text"; value: string }
   | { kind: "image"; alt: string; url: string }
   | { kind: "series"; label: string; seriesId: number }
-  | { kind: "link"; label: string; url: string };
+  | { kind: "link"; label: string; url: string }
+  | { kind: "spoiler"; summary: string; body: string };
 
 const tokenPattern =
-  /<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>|!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((series:\s*\d+|\/series\/\d+(?:[?#][^)]+)?|https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s<>()]+)?)/gi;
+  /<details\b[^>]*>\s*<summary\b[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>|<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>|!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((series:\s*\d+|\/series\/\d+(?:[?#][^)]+)?|https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s<>()]+)?)/gi;
 
 function parseMarkdown(markdown: string): Segment[] {
   const segments: Segment[] = [];
@@ -32,13 +34,19 @@ function parseMarkdown(markdown: string): Segment[] {
       segments.push({ kind: "text", value: markdown.slice(lastIndex, index) });
     }
 
-    if (match[1]) {
-      segments.push({ kind: "image", alt: "Forum image", url: match[1] });
-    } else if (match[2] !== undefined && match[3]) {
-      segments.push({ kind: "image", alt: match[2] || "Forum image", url: match[3] });
-    } else if (match[4] && match[5]) {
-      const label = match[4];
-      const url = match[5].trim();
+    if (match[1] !== undefined && match[2] !== undefined) {
+      segments.push({
+        kind: "spoiler",
+        summary: cleanText(match[1]) || "Spoiler",
+        body: match[2].trim(),
+      });
+    } else if (match[3]) {
+      segments.push({ kind: "image", alt: "Forum image", url: match[3] });
+    } else if (match[4] !== undefined && match[5]) {
+      segments.push({ kind: "image", alt: match[4] || "Forum image", url: match[5] });
+    } else if (match[6] && match[7]) {
+      const label = match[6];
+      const url = match[7].trim();
       const seriesMatch = url.match(/(?:series:\s*|\/series\/)(\d+)/i);
 
       if (seriesMatch) {
@@ -52,8 +60,8 @@ function parseMarkdown(markdown: string): Segment[] {
       } else {
         segments.push({ kind: "link", label, url });
       }
-    } else if (match[6]) {
-      segments.push({ kind: "image", alt: "Forum image", url: match[6] });
+    } else if (match[8]) {
+      segments.push({ kind: "image", alt: "Forum image", url: match[8] });
     }
 
     lastIndex = index + fullMatch.length;
@@ -69,10 +77,40 @@ function parseMarkdown(markdown: string): Segment[] {
 function cleanText(value: string) {
   return value
     .replace(/```([\s\S]*?)```/g, "$1")
+    .replace(/<\/?(?:b|strong|i|em|u|span)\b[^>]*>/gi, "")
     .replace(/^\s{0,3}#{1,6}\s+/gm, "")
     .replace(/[*_`>]/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function SpoilerBlock({ summary, body }: { summary: string; body: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <View style={styles.spoiler}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isOpen ? `Hide ${summary}` : `Show ${summary}`}
+        onPress={() => setIsOpen((current) => !current)}
+        style={({ pressed }) => [styles.spoilerHeader, pressed ? styles.pressed : null]}
+      >
+        <Ionicons
+          name={isOpen ? "chevron-down" : "chevron-forward"}
+          size={15}
+          color={colors.accentStrong}
+        />
+        <AppText variant="caption" style={styles.linkText}>
+          {summary}
+        </AppText>
+      </Pressable>
+      {isOpen ? (
+        <View style={styles.spoilerBody}>
+          <ForumMarkdown markdown={body} />
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export function ForumMarkdown({ markdown }: Props) {
@@ -131,6 +169,16 @@ export function ForumMarkdown({ markdown }: Props) {
           );
         }
 
+        if (segment.kind === "spoiler") {
+          return (
+            <SpoilerBlock
+              key={`${segment.summary}-${index}`}
+              summary={segment.summary}
+              body={segment.body}
+            />
+          );
+        }
+
         const text = cleanText(segment.value);
 
         if (!text) return null;
@@ -176,5 +224,23 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.86,
+  },
+  spoiler: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  spoilerHeader: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    maxWidth: "100%",
+  },
+  spoilerBody: {
+    paddingTop: spacing.xs,
   },
 });
