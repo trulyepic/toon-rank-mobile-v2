@@ -1,10 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { StyleSheet, View } from "react-native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
-import { getForumThreadPosts } from "../api/forum";
+import { getForumThreadPosts, toggleForumPostHeart } from "../api/forum";
+import { useAuth } from "../auth/AuthContext";
 import {
   AppText,
   AppButton,
@@ -21,20 +28,29 @@ import {
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import type { ForumPost } from "../types/forum";
+import type {
+  ForumPost,
+  ForumThreadPostsPage,
+  HeartToggleResponse,
+} from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
+type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
 const POSTS_PAGE_SIZE = 20;
 
 function PostCard({
   post,
   depth = 0,
   label,
+  isHearting,
+  onToggleHeart,
 }: {
   post: ForumPost;
   depth?: number;
   label: string;
+  isHearting: boolean;
+  onToggleHeart: (post: ForumPost) => void;
 }) {
   return (
     <Surface
@@ -73,12 +89,29 @@ function PostCard({
       <ForumSeriesStrip seriesRefs={post.series_refs} />
 
       <View style={styles.postFooter}>
-        <View style={styles.badge}>
-          <Ionicons name="heart-outline" size={13} color={colors.accentStrong} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            post.viewer_has_hearted ? "Remove heart from post" : "Heart post"
+          }
+          disabled={isHearting}
+          onPress={() => onToggleHeart(post)}
+          style={({ pressed }) => [
+            styles.badge,
+            post.viewer_has_hearted ? styles.heartedBadge : null,
+            isHearting ? styles.disabledBadge : null,
+            pressed && !isHearting ? styles.pressedBadge : null,
+          ]}
+        >
+          <Ionicons
+            name={post.viewer_has_hearted ? "heart" : "heart-outline"}
+            size={13}
+            color={post.viewer_has_hearted ? colors.danger : colors.accentStrong}
+          />
           <AppText variant="caption">
-            {formatForumCount(post.heart_count, "heart")}
+            {formatForumCount(post.heart_count ?? 0, "heart")}
           </AppText>
-        </View>
+        </Pressable>
         {post.parent_id ? (
           <View style={styles.badge}>
             <Ionicons
@@ -101,18 +134,28 @@ function ReplyTree({
   byParent,
   depth,
   topIndex,
+  heartingPostId,
+  onToggleHeart,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
   depth: number;
   topIndex: number;
+  heartingPostId: number | null;
+  onToggleHeart: (post: ForumPost) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = depth === 0 ? `Reply ${topIndex}` : "Nested reply";
 
   return (
     <View style={styles.replyBranch}>
-      <PostCard post={post} depth={depth} label={label} />
+      <PostCard
+        post={post}
+        depth={depth}
+        label={label}
+        isHearting={heartingPostId === post.id}
+        onToggleHeart={onToggleHeart}
+      />
       {children.map((child) => (
         <ReplyTree
           key={child.id}
@@ -120,6 +163,8 @@ function ReplyTree({
           byParent={byParent}
           depth={depth + 1}
           topIndex={topIndex}
+          heartingPostId={heartingPostId}
+          onToggleHeart={onToggleHeart}
         />
       ))}
     </View>
@@ -128,12 +173,43 @@ function ReplyTree({
 
 export function ForumThreadScreen() {
   const route = useRoute<ForumThreadRoute>();
+  const navigation = useNavigation<ForumThreadNavigation>();
+  const queryClient = useQueryClient();
+  const { isSignedIn } = useAuth();
   const { threadId } = route.params;
+  const queryKey = ["forum", "thread", threadId] as const;
   const postsQuery = useInfiniteQuery({
-    queryKey: ["forum", "thread", threadId],
+    queryKey,
     queryFn: ({ pageParam }) => getForumThreadPosts(threadId, pageParam, POSTS_PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
+  });
+  const heartMutation = useMutation({
+    mutationFn: (postId: number) => toggleForumPostHeart(threadId, postId),
+    onSuccess: (response, postId) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((post) =>
+                post.id === postId ? applyHeartResponseToPost(post, response) : post,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Heart not saved",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
   });
   const pages = postsQuery.data?.pages ?? [];
   const thread = pages[0]?.thread;
@@ -154,11 +230,22 @@ export function ForumThreadScreen() {
     return acc;
   }, {});
   const topLevelReplies = replies.filter((post) => !post.parent_id);
+  const handleToggleHeart = (post: ForumPost) => {
+    if (!isSignedIn) {
+      Alert.alert("Log in to heart posts", "Use your Toon Ranks account to react.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log in", onPress: () => navigation.navigate("Login") },
+      ]);
+      return;
+    }
+
+    heartMutation.mutate(post.id);
+  };
 
   return (
     <ScreenShell
       title="Thread"
-      subtitle="Read-only forum view. Posting and hearts will unlock after mobile login is connected."
+      subtitle="Read public discussions and heart posts with your Toon Ranks account. Replies will unlock in a later forum slice."
     >
       {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
 
@@ -216,7 +303,14 @@ export function ForumThreadScreen() {
       {originalPost ? (
         <View style={styles.section}>
           <SectionHeader title="Original post" />
-          <PostCard post={originalPost} label="Original" />
+          <PostCard
+            post={originalPost}
+            label="Original"
+            isHearting={
+              heartMutation.isPending && heartMutation.variables === originalPost.id
+            }
+            onToggleHeart={handleToggleHeart}
+          />
         </View>
       ) : null}
 
@@ -241,6 +335,10 @@ export function ForumThreadScreen() {
                 byParent={byParent}
                 depth={0}
                 topIndex={index + 1}
+                heartingPostId={
+                  heartMutation.isPending ? (heartMutation.variables ?? null) : null
+                }
+                onToggleHeart={handleToggleHeart}
               />
             ))}
           </View>
@@ -266,6 +364,17 @@ export function ForumThreadScreen() {
       ) : null}
     </ScreenShell>
   );
+}
+
+function applyHeartResponseToPost(
+  post: ForumPost,
+  response: HeartToggleResponse,
+): ForumPost {
+  return {
+    ...post,
+    heart_count: response.count,
+    viewer_has_hearted: response.hearted,
+  };
 }
 
 const styles = StyleSheet.create({
@@ -372,5 +481,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
+  },
+  heartedBadge: {
+    backgroundColor: "rgba(235, 106, 90, 0.14)",
+    borderColor: colors.danger,
+  },
+  disabledBadge: {
+    opacity: 0.65,
+  },
+  pressedBadge: {
+    opacity: 0.82,
+    transform: [{ scale: 0.98 }],
   },
 });

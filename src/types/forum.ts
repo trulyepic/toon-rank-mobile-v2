@@ -79,5 +79,5 @@ export interface CreateForumPostRequest {
 
 export interface HeartToggleResponse {
   hearted: boolean;
-  heart_count: number;
+  count: number;
 }
