@@ -107,14 +107,14 @@ Suggested branch: `mobile-core-reading-lists`
 
 Purpose: make mobile saved lists useful, not only a preview.
 
-- [ ] Load the signed-in user's lists using the existing reading-list endpoints.
-- [ ] Add a native Reading List Detail screen.
-- [ ] Show list items with title summaries, cover art, rank, rating, type, status, and left-off chapter.
-- [ ] Add Save/Add to List from Series Detail.
-- [ ] Add remove-from-list.
-- [ ] Add edit left-off chapter.
-- [ ] Add create list if the backend limit allows it.
-- [ ] Show list limits and backend validation errors clearly.
+- [x] Load the signed-in user's lists using the existing reading-list endpoints.
+- [x] Add a native Reading List Detail screen.
+- [x] Show list items with title summaries, cover art, rank, rating, type, status, and left-off chapter.
+- [x] Add Save/Add to List from Series Detail.
+- [x] Add remove-from-list.
+- [x] Add edit left-off chapter.
+- [x] Add create list if the backend limit allows it.
+- [x] Show list limits and backend validation errors clearly.
 - [ ] Keep public/private share controls for a later slice unless needed immediately.
 
 Done means a signed-in mobile user can see and manage the same saved titles they use on the website.

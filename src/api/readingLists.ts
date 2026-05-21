@@ -2,6 +2,7 @@ import { api } from "./client";
 import type {
   AddReadingListItemRequest,
   CreateReadingListRequest,
+  PaginatedReadingListItems,
   PublicReadingList,
   ReadingList,
   UpdateReadingListItemRequest,
@@ -9,6 +10,16 @@ import type {
 
 export async function getMyReadingLists() {
   const res = await api.get<ReadingList[]>("/reading-lists/me");
+  return res.data;
+}
+
+export async function getReadingListItemsPaged(listId: number, page = 1, pageSize = 25) {
+  const res = await api.get<PaginatedReadingListItems>(
+    `/reading-lists/${listId}/items/paged`,
+    {
+      params: { page, page_size: pageSize },
+    },
+  );
   return res.data;
 }
 

@@ -16,6 +16,15 @@ export interface PublicReadingList {
   items: ReadingListItem[];
 }
 
+export type PaginatedReadingListItems = {
+  items: ReadingListItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  has_more?: boolean;
+  has_next?: boolean;
+};
+
 export interface CreateReadingListRequest {
   name: string;
 }
