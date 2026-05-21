@@ -13,6 +13,7 @@ import {
   ForumMarkdown,
   ForumSeriesStrip,
   LoadingState,
+  RoleNameText,
   ScreenShell,
   SectionHeader,
   Surface,
@@ -54,9 +55,9 @@ function PostCard({
         />
         <View style={styles.postAuthor}>
           <View style={styles.authorLine}>
-            <AppText variant="cardTitle">
+            <RoleNameText variant="cardTitle" role={post.author_role}>
               {post.author_username || "Unknown reader"}
-            </AppText>
+            </RoleNameText>
             <View style={styles.replyLabel}>
               <AppText variant="caption">{label}</AppText>
             </View>
@@ -172,11 +173,16 @@ export function ForumThreadScreen() {
           </View>
           <View style={styles.heroText}>
             <AppText variant="sectionTitle">{thread.title}</AppText>
-            <AppText tone="muted">
-              Started by {thread.author_username || "Unknown"} /{" "}
-              {formatForumCount(thread.post_count, "post")} / Last active{" "}
-              {formatForumDate(thread.last_post_at || thread.updated_at)}
-            </AppText>
+            <View style={styles.startedByLine}>
+              <AppText tone="muted">Started by</AppText>
+              <RoleNameText variant="caption" role={thread.author_role}>
+                {thread.author_username || "Unknown"}
+              </RoleNameText>
+              <AppText tone="muted">
+                / {formatForumCount(thread.post_count, "post")} / Last active{" "}
+                {formatForumDate(thread.last_post_at || thread.updated_at)}
+              </AppText>
+            </View>
             <View style={styles.threadFlags}>
               {thread.locked ? (
                 <View style={[styles.threadFlag, styles.lockedFlag]}>
@@ -279,6 +285,12 @@ const styles = StyleSheet.create({
   },
   heroText: {
     flex: 1,
+    gap: spacing.xs,
+  },
+  startedByLine: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.xs,
   },
   threadFlags: {

@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AppButton,
   AppText,
+  RoleNameText,
   ScreenShell,
   SectionHeader,
   Surface,
@@ -156,20 +157,36 @@ export function MoreScreen() {
 
   return (
     <ScreenShell title="More" subtitle="Account, support, and app information.">
-      <SectionHeader
-        eyebrow="Account"
-        title={isSignedIn ? `Welcome, ${user?.username}` : "Sync your Toon Ranks"}
-        body={
-          isSignedIn
-            ? "Your mobile session is connected to the same Toon Ranks account used on the website."
-            : "Sign in later to sync your Toon Ranks activity across web and mobile."
-        }
-      />
+      {isSignedIn ? (
+        <View style={styles.accountIntro}>
+          <AppText variant="label" tone="muted">
+            Account
+          </AppText>
+          <View style={styles.welcomeLine}>
+            <AppText variant="sectionTitle">Welcome, </AppText>
+            <RoleNameText variant="sectionTitle" role={user?.role}>
+              {user?.username || "Reader"}
+            </RoleNameText>
+          </View>
+          <AppText tone="muted">
+            Your mobile session is connected to the same Toon Ranks account used on the
+            website.
+          </AppText>
+        </View>
+      ) : (
+        <SectionHeader
+          eyebrow="Account"
+          title="Sync your Toon Ranks"
+          body="Sign in later to sync your Toon Ranks activity across web and mobile."
+        />
+      )}
 
       <Surface variant="accent" radius="xl" style={styles.signInCard}>
         {isSignedIn ? (
           <UserIdentity
             user={user}
+            avatarSize="lg"
+            avatarVariant="portrait"
             subtitle="Your mobile session is connected to the same Toon Ranks account used on the website."
           />
         ) : (
@@ -260,6 +277,14 @@ export function MoreScreen() {
 const styles = StyleSheet.create({
   signInCard: {
     gap: spacing.md,
+  },
+  accountIntro: {
+    gap: spacing.xs,
+  },
+  welcomeLine: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "baseline",
   },
   signInContent: {
     flexDirection: "row",

@@ -16,12 +16,14 @@ import {
 } from "../utils/avatar";
 
 type AvatarSize = "sm" | "md" | "lg" | "xl";
+type AvatarVariant = "circle" | "portrait";
 
 type Props = {
   username?: string | null;
   avatarUrl?: string | null;
   avatarPreset?: AvatarPreset | string | null;
   size?: AvatarSize;
+  variant?: AvatarVariant;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -32,14 +34,29 @@ const sizes: Record<AvatarSize, number> = {
   xl: 96,
 };
 
+const portraitSizes: Record<
+  AvatarSize,
+  { width: number; height: number; radius: number }
+> = {
+  sm: { width: 34, height: 44, radius: 12 },
+  md: { width: 48, height: 62, radius: 16 },
+  lg: { width: 76, height: 96, radius: 22 },
+  xl: { width: 92, height: 118, radius: 26 },
+};
+
 export function UserAvatar({
   username,
   avatarUrl,
   avatarPreset,
   size = "md",
+  variant = "circle",
   style,
 }: Props) {
   const dimension = sizes[size];
+  const avatarFrame =
+    variant === "portrait"
+      ? portraitSizes[size]
+      : { width: dimension, height: dimension, radius: dimension / 2 };
   const preset = normalizeAvatarPreset(avatarPreset);
   const presetColors = avatarPresetColors[preset];
 
@@ -51,9 +68,9 @@ export function UserAvatar({
         style={[
           styles.base,
           {
-            width: dimension,
-            height: dimension,
-            borderRadius: dimension / 2,
+            width: avatarFrame.width,
+            height: avatarFrame.height,
+            borderRadius: avatarFrame.radius,
             borderColor: presetColors.border,
           },
           style as StyleProp<ImageStyle>,
@@ -69,9 +86,9 @@ export function UserAvatar({
         styles.base,
         styles.fallback,
         {
-          width: dimension,
-          height: dimension,
-          borderRadius: dimension / 2,
+          width: avatarFrame.width,
+          height: avatarFrame.height,
+          borderRadius: avatarFrame.radius,
           backgroundColor: presetColors.background,
           borderColor: presetColors.border,
         },
