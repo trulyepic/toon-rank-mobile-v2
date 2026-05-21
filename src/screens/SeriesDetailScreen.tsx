@@ -1,9 +1,12 @@
-import { Image, StyleSheet, View } from "react-native";
+import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useQuery } from "@tanstack/react-query";
-import { RouteProp, useRoute } from "@react-navigation/native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getSeriesDetail, getSeriesSummary } from "../api/series";
+import { voteSeriesDetail } from "../api/votes";
+import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
   AppText,
@@ -15,24 +18,15 @@ import {
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, shadows, spacing } from "../theme/tokens";
+import {
+  getUserVoteForCategory,
+  voteCategories,
+  voteCategoryDescriptions,
+  type VoteCategory,
+} from "../utils/voting";
 
 type SeriesDetailRoute = RouteProp<RootStackParamList, "SeriesDetail">;
-
-type VoteCategory =
-  | "Story"
-  | "Characters"
-  | "World Building"
-  | "Art"
-  | "Drama / Fighting";
-
-const voteCategoryDescriptions: Record<VoteCategory, string> = {
-  Story: "Evaluate how engaging and well-paced the plot is.",
-  Characters: "Rate the uniqueness, depth, and development of the characters.",
-  "World Building": "Is the universe immersive, consistent, and imaginative?",
-  Art: "Judge the quality of the artwork, paneling, and style.",
-  "Drama / Fighting":
-    "For drama: emotional depth. For action: excitement and choreography.",
-};
+type SeriesDetailNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 function getGenreChips(genre: string | undefined) {
   if (!genre) return [];
@@ -103,21 +97,66 @@ function BreakdownCard({
   );
 }
 
-function VotePreviewCard({
+function VoteCategoryCard({
   label,
   description,
+  selectedScore,
+  disabled,
+  isSubmitting,
+  onVote,
 }: {
   label: VoteCategory;
   description: string;
+  selectedScore: number | null;
+  disabled: boolean;
+  isSubmitting: boolean;
+  onVote: (category: VoteCategory, score: number) => void;
 }) {
+  const hasVoted = selectedScore !== null;
+
   return (
-    <Surface variant="raised" style={styles.voteCard}>
+    <Surface variant={hasVoted ? "accent" : "raised"} style={styles.voteCard}>
       <View style={styles.voteHeaderText}>
-        <AppText variant="cardTitle">{label}</AppText>
+        <View style={styles.voteTitleRow}>
+          <AppText variant="cardTitle">{label}</AppText>
+          {hasVoted ? (
+            <View style={styles.votedPill}>
+              <Ionicons name="checkmark" size={13} color={colors.text} />
+              <AppText variant="caption">{selectedScore}/10 locked</AppText>
+            </View>
+          ) : null}
+        </View>
         <AppText tone="muted">{description}</AppText>
       </View>
-      <View style={styles.voteScalePreview}>
-        <View style={styles.voteScaleFill} />
+
+      <View style={styles.scoreGrid}>
+        {Array.from({ length: 10 }, (_, index) => {
+          const score = index + 1;
+          const isSelected = selectedScore === score;
+
+          return (
+            <Pressable
+              key={score}
+              disabled={disabled || hasVoted || isSubmitting}
+              onPress={() => onVote(label, score)}
+              style={({ pressed }) => [
+                styles.scoreButton,
+                isSelected ? styles.scoreButtonSelected : null,
+                pressed && !disabled && !hasVoted ? styles.scoreButtonPressed : null,
+                disabled || hasVoted || isSubmitting ? styles.scoreButtonDisabled : null,
+              ]}
+            >
+              <AppText
+                variant="caption"
+                style={
+                  isSelected ? styles.scoreButtonTextSelected : styles.scoreButtonText
+                }
+              >
+                {score}
+              </AppText>
+            </Pressable>
+          );
+        })}
       </View>
     </Surface>
   );
@@ -125,13 +164,33 @@ function VotePreviewCard({
 
 export function SeriesDetailScreen() {
   const route = useRoute<SeriesDetailRoute>();
+  const navigation = useNavigation<SeriesDetailNavigation>();
+  const queryClient = useQueryClient();
+  const { isSignedIn } = useAuth();
+  const seriesId = route.params.seriesId;
   const summaryQuery = useQuery({
-    queryKey: ["series-summary", route.params.seriesId],
-    queryFn: () => getSeriesSummary(route.params.seriesId),
+    queryKey: ["series-summary", seriesId],
+    queryFn: () => getSeriesSummary(seriesId),
   });
   const detailQuery = useQuery({
-    queryKey: ["series-detail", route.params.seriesId],
-    queryFn: () => getSeriesDetail(route.params.seriesId),
+    queryKey: ["series-detail", seriesId],
+    queryFn: () => getSeriesDetail(seriesId),
+  });
+  const voteMutation = useMutation({
+    mutationFn: ({ category, score }: { category: VoteCategory; score: number }) =>
+      voteSeriesDetail(seriesId, { category, score }),
+    onSuccess: (updatedDetail) => {
+      queryClient.setQueryData(["series-detail", seriesId], updatedDetail);
+      void detailQuery.refetch();
+      void summaryQuery.refetch();
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Your vote could not be submitted. Please try again.";
+      Alert.alert("Vote not submitted", message);
+    },
   });
 
   const isLoading = summaryQuery.isLoading || detailQuery.isLoading;
@@ -159,6 +218,17 @@ export function SeriesDetailScreen() {
     detail?.drama_or_fight_count,
   );
   const averageScore = Number(summary?.final_score || 0);
+  const handleVote = (category: VoteCategory, score: number) => {
+    if (!isSignedIn) {
+      Alert.alert("Log in to vote", "Use your Toon Ranks account to rate this series.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log in", onPress: () => navigation.navigate("Login") },
+      ]);
+      return;
+    }
+
+    voteMutation.mutate({ category, score });
+  };
 
   return (
     <ScreenShell title={title}>
@@ -332,19 +402,36 @@ export function SeriesDetailScreen() {
           <View style={styles.voteSection}>
             <SectionHeader eyebrow="Community Voting" title="Rate this series" />
 
-            <Surface variant="warning" style={styles.voteNotice}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.warningText} />
-              <AppText tone="warning">
-                Sign in to vote, save titles, and join discussion when account support is
-                connected.
+            <Surface
+              variant={isSignedIn ? "default" : "warning"}
+              style={styles.voteNotice}
+            >
+              <Ionicons
+                name={isSignedIn ? "information-circle-outline" : "lock-closed-outline"}
+                size={18}
+                color={isSignedIn ? colors.accentStrong : colors.warningText}
+              />
+              <AppText
+                tone={isSignedIn ? "muted" : "warning"}
+                style={styles.voteNoticeText}
+              >
+                {isSignedIn
+                  ? "Each category can be rated once. After you submit a score, that choice is locked in."
+                  : "Log in with your Toon Ranks account to rate this series."}
               </AppText>
             </Surface>
 
-            {(Object.entries(voteCategoryDescriptions) as [VoteCategory, string][]).map(
-              ([label, description]) => (
-                <VotePreviewCard key={label} label={label} description={description} />
-              ),
-            )}
+            {voteCategories.map((label) => (
+              <VoteCategoryCard
+                key={label}
+                label={label}
+                description={voteCategoryDescriptions[label]}
+                selectedScore={getUserVoteForCategory(detail, label)}
+                disabled={!isSignedIn}
+                isSubmitting={voteMutation.isPending}
+                onVote={handleVote}
+              />
+            ))}
           </View>
         </>
       ) : null}
@@ -455,22 +542,64 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.sm,
   },
+  voteNoticeText: {
+    flex: 1,
+    minWidth: 0,
+  },
   voteCard: {
     gap: spacing.md,
   },
   voteHeaderText: {
     gap: spacing.xs,
   },
-  voteScalePreview: {
-    height: 8,
-    overflow: "hidden",
+  voteTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  votedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  scoreGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  scoreButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
     backgroundColor: colors.backgroundSoft,
   },
-  voteScaleFill: {
-    width: "65%",
-    height: "100%",
-    borderRadius: radii.pill,
+  scoreButtonSelected: {
+    borderColor: colors.accentBorder,
     backgroundColor: colors.accentStrong,
+  },
+  scoreButtonPressed: {
+    transform: [{ scale: 0.96 }],
+  },
+  scoreButtonDisabled: {
+    opacity: 0.58,
+  },
+  scoreButtonText: {
+    fontWeight: "900",
+    color: colors.textMuted,
+  },
+  scoreButtonTextSelected: {
+    fontWeight: "900",
+    color: colors.background,
   },
 });

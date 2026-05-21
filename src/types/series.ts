@@ -25,6 +25,7 @@ export interface SeriesDetailData {
   cover_url?: string;
   series_cover_url?: string;
   synopsis?: string;
+  vote_scores?: Record<string, number>;
   vote_counts?: Record<string, number>;
   story_total?: number;
   story_count?: number;

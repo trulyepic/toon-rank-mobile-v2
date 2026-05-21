@@ -90,13 +90,13 @@ Suggested branch: `mobile-core-voting`
 
 Purpose: match the website's "Rate this series" behavior in native mobile.
 
-- [ ] Replace the current disabled meter-style voting preview with 1-10 native score buttons per category.
-- [ ] Use existing `POST /series-details/{series_id}/vote`.
-- [ ] Use `vote_scores` from `GET /series-details/{series_id}` to show categories already voted by the signed-in user.
-- [ ] Disable categories already voted by the current user and explain that each category is locked after voting.
-- [ ] Require sign-in before voting and route signed-out users to Login.
-- [ ] Refresh detail/ranking data after a vote so category averages and vote counts update.
-- [ ] Show clear duplicate-vote, expired-session, and network-error states.
+- [x] Replace the current disabled meter-style voting preview with 1-10 native score buttons per category.
+- [x] Use existing `POST /series-details/{series_id}/vote`.
+- [x] Use `vote_scores` from `GET /series-details/{series_id}` to show categories already voted by the signed-in user.
+- [x] Disable categories already voted by the current user and explain that each category is locked after voting.
+- [x] Require sign-in before voting and route signed-out users to Login.
+- [x] Refresh detail/ranking data after a vote so category averages and vote counts update.
+- [x] Show clear duplicate-vote, expired-session, and network-error states.
 
 Done means mobile users can rate the same categories as web users and those votes appear correctly on
 the website.
