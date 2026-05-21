@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import {
   AccountRequiredCard,
   AppText,
+  RoleNameText,
   ScreenShell,
   SectionHeader,
   Surface,
@@ -49,9 +50,16 @@ export function ForumActivityScreen() {
           <Ionicons name="chatbubbles-outline" size={24} color={colors.text} />
         </View>
         <View style={styles.heroText}>
-          <AppText variant="sectionTitle">
-            {isSignedIn ? `${user?.username}'s activity` : "Community trail"}
-          </AppText>
+          {isSignedIn ? (
+            <View style={styles.activityTitleLine}>
+              <RoleNameText variant="sectionTitle" role={user?.role}>
+                {user?.username || "Reader"}
+              </RoleNameText>
+              <AppText variant="sectionTitle"> activity</AppText>
+            </View>
+          ) : (
+            <AppText variant="sectionTitle">Community trail</AppText>
+          )}
           <AppText tone="muted">
             {isSignedIn
               ? "This screen is ready for user-specific threads, replies, and reactions once those mobile endpoints are expanded."
@@ -98,6 +106,11 @@ const styles = StyleSheet.create({
   heroText: {
     flex: 1,
     gap: spacing.xs,
+  },
+  activityTitleLine: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "baseline",
   },
   section: {
     gap: spacing.sm,

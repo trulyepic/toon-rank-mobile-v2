@@ -13,6 +13,8 @@ export interface ForumThread {
   title: string;
   author_username?: string | null;
   author_role?: string | null;
+  author_avatar_url?: string | null;
+  author_avatar_preset?: string | null;
   created_at: string;
   updated_at: string;
   post_count: number;

@@ -1,8 +1,18 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StyleSheet, View } from "react-native";
 
-import { AppButton, AppText, ScreenShell, SectionHeader, Surface } from "../components";
+import {
+  AppButton,
+  AppText,
+  ScreenShell,
+  SectionHeader,
+  Surface,
+  UserIdentity,
+} from "../components";
 import { useAuth } from "../auth/AuthContext";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 
 const settingsRows = [
@@ -25,6 +35,8 @@ const settingsRows = [
 
 export function SettingsScreen() {
   const { isSignedIn, logout, status, user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const isLoadingAuth = status === "loading";
 
   return (
     <ScreenShell
@@ -32,25 +44,27 @@ export function SettingsScreen() {
       subtitle="Preferences and account controls for the native mobile app."
     >
       <Surface variant="accent" radius="hero" style={styles.sessionCard}>
-        <View style={styles.sessionIcon}>
-          <Ionicons
-            name={isSignedIn ? "person-circle-outline" : "person-outline"}
-            size={24}
-            color={colors.text}
+        {isSignedIn ? (
+          <UserIdentity
+            user={user}
+            subtitle="This device is connected to your Toon Ranks account."
           />
-        </View>
-        <View style={styles.sessionText}>
-          <AppText variant="sectionTitle">
-            {isSignedIn ? user?.username : "Signed out"}
-          </AppText>
-          <AppText tone="muted">
-            {isSignedIn
-              ? "This device has a restored Toon Ranks mobile session."
-              : status === "loading"
-                ? "Checking for a saved mobile session."
-                : "Login is available through the account screen while the mobile auth callback is finished."}
-          </AppText>
-        </View>
+        ) : (
+          <View style={styles.signedOutContent}>
+            <View style={styles.sessionIcon}>
+              <Ionicons name="person-outline" size={24} color={colors.text} />
+            </View>
+            <View style={styles.sessionText}>
+              <AppText variant="sectionTitle">Signed out</AppText>
+              <AppText tone="muted">
+                {isLoadingAuth
+                  ? "Checking for a saved mobile session."
+                  : "Log in or sign up to sync votes, reading lists, profile identity, and forum activity."}
+              </AppText>
+            </View>
+          </View>
+        )}
+
         {isSignedIn ? (
           <AppButton
             label="Log out"
@@ -58,7 +72,25 @@ export function SettingsScreen() {
             onPress={logout}
             iconLeft={<Ionicons name="log-out-outline" size={15} color={colors.text} />}
           />
-        ) : null}
+        ) : (
+          <View style={styles.buttonRow}>
+            <AppButton
+              label={isLoadingAuth ? "Checking..." : "Log in"}
+              disabled={isLoadingAuth}
+              onPress={() => navigation.navigate("Login")}
+              iconLeft={<Ionicons name="log-in-outline" size={15} color={colors.text} />}
+            />
+            <AppButton
+              label="Sign up"
+              variant="ghost"
+              disabled={isLoadingAuth}
+              onPress={() => navigation.navigate("Signup")}
+              iconLeft={
+                <Ionicons name="person-add-outline" size={15} color={colors.text} />
+              }
+            />
+          </View>
+        )}
       </Surface>
 
       <View style={styles.section}>
@@ -85,6 +117,11 @@ const styles = StyleSheet.create({
   sessionCard: {
     gap: spacing.md,
   },
+  signedOutContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
   sessionIcon: {
     width: 52,
     height: 52,
@@ -96,7 +133,14 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
   },
   sessionText: {
+    flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   section: {
     gap: spacing.sm,
@@ -120,6 +164,7 @@ const styles = StyleSheet.create({
   },
   rowText: {
     flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
   },
 });

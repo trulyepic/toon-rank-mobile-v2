@@ -12,9 +12,11 @@ import {
   ErrorState,
   ForumSeriesStrip,
   LoadingState,
+  RoleNameText,
   ScreenShell,
   SectionHeader,
   Surface,
+  UserAvatar,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -52,13 +54,20 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
         </View>
 
         <View style={styles.metaRow}>
-          <AppText variant="caption" tone="muted">
-            {thread.author_username || "Unknown"}
-          </AppText>
-          <View style={styles.dot} />
-          <AppText variant="caption" tone="muted">
-            {formatForumDate(thread.last_post_at || thread.updated_at)}
-          </AppText>
+          <UserAvatar
+            username={thread.author_username || "Unknown"}
+            avatarUrl={thread.author_avatar_url}
+            avatarPreset={thread.author_avatar_preset}
+            size="sm"
+          />
+          <View style={styles.metaText}>
+            <RoleNameText variant="caption" role={thread.author_role}>
+              {thread.author_username || "Unknown"}
+            </RoleNameText>
+            <AppText variant="caption" tone="muted">
+              {formatForumDate(thread.last_post_at || thread.updated_at)}
+            </AppText>
+          </View>
         </View>
 
         <ForumSeriesStrip seriesRefs={thread.series_refs} />
@@ -212,13 +221,12 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.textSubtle,
+  metaText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
   },
   badgeRow: {
     flexDirection: "row",

@@ -2,8 +2,8 @@ import { StyleSheet, View } from "react-native";
 
 import { spacing } from "../theme/tokens";
 import type { AuthUser } from "../types/account";
-import { roleColor } from "../utils/avatar";
 import { AppText } from "./AppText";
+import { RoleNameText } from "./RoleNameText";
 import { UserAvatar } from "./UserAvatar";
 
 type Props = {
@@ -11,6 +11,7 @@ type Props = {
   titleFallback?: string;
   subtitle?: string;
   avatarSize?: "sm" | "md" | "lg" | "xl";
+  avatarVariant?: "circle" | "portrait";
   centered?: boolean;
 };
 
@@ -19,6 +20,7 @@ export function UserIdentity({
   titleFallback = "Guest reader",
   subtitle,
   avatarSize = "md",
+  avatarVariant = "circle",
   centered = false,
 }: Props) {
   const username = user?.username || titleFallback;
@@ -32,16 +34,17 @@ export function UserIdentity({
           avatarUrl={user?.avatar_url}
           avatarPreset={user?.avatar_preset}
           size={avatarSize}
+          variant={avatarVariant}
         />
       </View>
       <View style={[styles.text, centered ? styles.centeredText : null]}>
-        <AppText
+        <RoleNameText
           variant={avatarSize === "xl" ? "sectionTitle" : "cardTitle"}
           align={centered ? "center" : "left"}
-          style={{ color: roleColor(user?.role) }}
+          role={user?.role}
         >
           {username}
-        </AppText>
+        </RoleNameText>
         <AppText variant="label" tone="muted" align={centered ? "center" : "left"}>
           {role}
         </AppText>
