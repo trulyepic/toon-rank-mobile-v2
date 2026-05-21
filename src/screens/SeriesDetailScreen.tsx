@@ -1,10 +1,20 @@
-import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import {
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getSeriesDetail, getSeriesSummary } from "../api/series";
+import { addReadingListItem, getMyReadingLists } from "../api/readingLists";
 import { voteSeriesDetail } from "../api/votes";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -168,6 +178,8 @@ export function SeriesDetailScreen() {
   const queryClient = useQueryClient();
   const { isSignedIn } = useAuth();
   const seriesId = route.params.seriesId;
+  const [savePickerVisible, setSavePickerVisible] = useState(false);
+  const [leftOffChapter, setLeftOffChapter] = useState("");
   const summaryQuery = useQuery({
     queryKey: ["series-summary", seriesId],
     queryFn: () => getSeriesSummary(seriesId),
@@ -175,6 +187,11 @@ export function SeriesDetailScreen() {
   const detailQuery = useQuery({
     queryKey: ["series-detail", seriesId],
     queryFn: () => getSeriesDetail(seriesId),
+  });
+  const readingListsQuery = useQuery({
+    queryKey: ["reading-lists", "me"],
+    queryFn: getMyReadingLists,
+    enabled: isSignedIn && savePickerVisible,
   });
   const voteMutation = useMutation({
     mutationFn: ({ category, score }: { category: VoteCategory; score: number }) =>
@@ -190,6 +207,25 @@ export function SeriesDetailScreen() {
           ? error.message
           : "Your vote could not be submitted. Please try again.";
       Alert.alert("Vote not submitted", message);
+    },
+  });
+  const saveMutation = useMutation({
+    mutationFn: (listId: number) =>
+      addReadingListItem(listId, {
+        series_id: seriesId,
+        left_off_chapter: leftOffChapter.trim() || null,
+      }),
+    onSuccess: () => {
+      setSavePickerVisible(false);
+      setLeftOffChapter("");
+      void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
+      Alert.alert("Saved", "Title added to your reading list.");
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Title not saved",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
     },
   });
 
@@ -326,6 +362,20 @@ export function SeriesDetailScreen() {
                 <AppButton
                   label="Save"
                   size="sm"
+                  onPress={() => {
+                    if (!isSignedIn) {
+                      Alert.alert(
+                        "Log in to save",
+                        "Use your Toon Ranks account to add this title to a reading list.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Log in", onPress: () => navigation.navigate("Login") },
+                        ],
+                      );
+                      return;
+                    }
+                    setSavePickerVisible(true);
+                  }}
                   iconLeft={
                     <Ionicons name="bookmark-outline" size={14} color={colors.text} />
                   }
@@ -435,6 +485,70 @@ export function SeriesDetailScreen() {
           </View>
         </>
       ) : null}
+
+      <Modal transparent visible={savePickerVisible} animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <Surface radius="xl" style={styles.saveModal}>
+            <View style={styles.saveModalHeader}>
+              <AppText variant="sectionTitle">Save to list</AppText>
+              <Pressable onPress={() => setSavePickerVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+            <AppText tone="muted">
+              Choose one of your Toon Ranks reading lists. You can also add a left-off
+              chapter.
+            </AppText>
+            <TextInput
+              value={leftOffChapter}
+              onChangeText={setLeftOffChapter}
+              placeholder="Left-off chapter, optional"
+              placeholderTextColor={colors.textSubtle}
+              style={styles.input}
+            />
+
+            {readingListsQuery.isLoading ? (
+              <LoadingState message="Loading lists..." />
+            ) : null}
+
+            {readingListsQuery.data?.length === 0 ? (
+              <AppText tone="muted">
+                No lists found. Create a reading list on the website first.
+              </AppText>
+            ) : null}
+
+            <View style={styles.saveListStack}>
+              {readingListsQuery.data?.map((list) => (
+                <Pressable
+                  key={list.id}
+                  disabled={saveMutation.isPending}
+                  onPress={() => saveMutation.mutate(list.id)}
+                >
+                  <Surface variant="raised" radius="lg" style={styles.saveListRow}>
+                    <Ionicons
+                      name={list.is_public ? "earth-outline" : "lock-closed-outline"}
+                      size={18}
+                      color={colors.accentStrong}
+                    />
+                    <View style={styles.saveListText}>
+                      <AppText variant="cardTitle">{list.name}</AppText>
+                      <AppText tone="muted">
+                        {list.items.length} saved{" "}
+                        {list.items.length === 1 ? "title" : "titles"}
+                      </AppText>
+                    </View>
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={22}
+                      color={colors.accentStrong}
+                    />
+                  </Surface>
+                </Pressable>
+              ))}
+            </View>
+          </Surface>
+        </View>
+      </Modal>
     </ScreenShell>
   );
 }
@@ -601,5 +715,45 @@ const styles = StyleSheet.create({
   scoreButtonTextSelected: {
     fontWeight: "900",
     color: colors.background,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    padding: spacing.lg,
+    backgroundColor: "rgba(0,0,0,0.62)",
+  },
+  saveModal: {
+    maxHeight: "82%",
+    gap: spacing.md,
+  },
+  saveModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  input: {
+    minHeight: 54,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    color: colors.text,
+    backgroundColor: colors.backgroundSoft,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  saveListStack: {
+    gap: spacing.sm,
+  },
+  saveListRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  saveListText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
 });
