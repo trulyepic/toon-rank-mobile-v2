@@ -48,4 +48,4 @@ Start here before working on the mobile app:
 
 ## Next Reference
 
-See [docs/DESIGN_FIRST_TODO.md](F:/ma-review-project/toon-ranks-mobile/docs/DESIGN_FIRST_TODO.md).
+See [docs/DESIGN_FIRST_TODO.md](docs/DESIGN_FIRST_TODO.md).

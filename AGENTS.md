@@ -42,9 +42,9 @@ phase-sized branches.
 
 Sibling directories in the same workspace:
 
-- `F:\ma-review-project\man-review`
+- `F:\ma-review-project\toonranks-frontend`
   Production web frontend for Toon Ranks.
-- `F:\ma-review-project\man-review-backend`
+- `F:\ma-review-project\toonranks-backend`
   Production backend API shared by web and mobile.
 - `F:\ma-review-project\toon-ranks-mobile`
   Native mobile app WIP.
