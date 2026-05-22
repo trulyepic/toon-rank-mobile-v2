@@ -146,7 +146,7 @@ Suggested branch: `mobile-forum-browse`
 - [x] Render raw forum image/GIF URLs and HTML image tags in native thread posts.
 - [x] Add mobile thread pagination controls for longer discussions.
 - [x] Show locked and latest-updates-first thread status flags.
-- [x] Keep posting, replies, and hearts read-only until mobile auth handoff is complete.
+- [x] Keep posting, replies, and forum votes read-only until mobile auth handoff is complete.
 - [x] Replace manual page switching with native load-more behavior after review.
 - [ ] Consider true scroll-end infinite loading if manual load-more still feels too slow on long threads.
 

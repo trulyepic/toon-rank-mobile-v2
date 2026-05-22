@@ -236,5 +236,5 @@ Recommended order:
 3. `mobile-auth-code-exchange`
    Add state generation, token exchange, secure session storage, and signed-in UI handoff.
 
-Do not enable voting, reading lists, forum hearts, or forum posting until this contract is complete
+Do not enable voting, reading lists, forum votes, or forum posting until this contract is complete
 and the app can store a real Toon Ranks session.
