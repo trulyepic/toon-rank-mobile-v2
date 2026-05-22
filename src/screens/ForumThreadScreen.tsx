@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-query";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 
-import { getForumThreadPosts, toggleForumPostHeart } from "../api/forum";
+import { getForumThreadPosts, setForumPostVote } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppText,
@@ -31,7 +31,8 @@ import { colors, radii, spacing } from "../theme/tokens";
 import type {
   ForumPost,
   ForumThreadPostsPage,
-  HeartToggleResponse,
+  ForumVote,
+  ForumVoteResponse,
 } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 
@@ -39,19 +40,29 @@ type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
 const POSTS_PAGE_SIZE = 20;
 
+type PendingVote = {
+  postId: number;
+  vote: ForumVote | null;
+};
+
 function PostCard({
   post,
   depth = 0,
   label,
-  isHearting,
-  onToggleHeart,
+  pendingVote,
+  onVote,
 }: {
   post: ForumPost;
   depth?: number;
   label: string;
-  isHearting: boolean;
-  onToggleHeart: (post: ForumPost) => void;
+  pendingVote: ForumVote | null;
+  onVote: (post: ForumPost, vote: ForumVote) => void;
 }) {
+  const viewerVote = getViewerVote(post);
+  const isVoting = pendingVote !== null;
+  const upvotes = getUpvoteCount(post);
+  const downvotes = getDownvoteCount(post);
+
   return (
     <Surface
       variant="raised"
@@ -89,29 +100,51 @@ function PostCard({
       <ForumSeriesStrip seriesRefs={post.series_refs} />
 
       <View style={styles.postFooter}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            post.viewer_has_hearted ? "Remove heart from post" : "Heart post"
-          }
-          disabled={isHearting}
-          onPress={() => onToggleHeart(post)}
-          style={({ pressed }) => [
-            styles.badge,
-            post.viewer_has_hearted ? styles.heartedBadge : null,
-            isHearting ? styles.disabledBadge : null,
-            pressed && !isHearting ? styles.pressedBadge : null,
-          ]}
-        >
-          <Ionicons
-            name={post.viewer_has_hearted ? "heart" : "heart-outline"}
-            size={13}
-            color={post.viewer_has_hearted ? colors.danger : colors.accentStrong}
-          />
-          <AppText variant="caption">
-            {formatForumCount(post.heart_count ?? 0, "heart")}
-          </AppText>
-        </Pressable>
+        <View style={styles.voteGroup}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              viewerVote === "UPVOTE" ? "Remove upvote from post" : "Upvote post"
+            }
+            disabled={isVoting}
+            onPress={() => onVote(post, "UPVOTE")}
+            style={({ pressed }) => [
+              styles.voteButton,
+              viewerVote === "UPVOTE" ? styles.activeUpvoteButton : null,
+              isVoting ? styles.disabledBadge : null,
+              pressed && !isVoting ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons
+              name={viewerVote === "UPVOTE" ? "thumbs-up" : "thumbs-up-outline"}
+              size={14}
+              color={viewerVote === "UPVOTE" ? colors.success : colors.text}
+            />
+            <AppText variant="caption">{upvotes}</AppText>
+          </Pressable>
+          <View style={styles.voteDivider} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              viewerVote === "DOWNVOTE" ? "Remove downvote from post" : "Downvote post"
+            }
+            disabled={isVoting}
+            onPress={() => onVote(post, "DOWNVOTE")}
+            style={({ pressed }) => [
+              styles.voteButton,
+              viewerVote === "DOWNVOTE" ? styles.activeDownvoteButton : null,
+              isVoting ? styles.disabledBadge : null,
+              pressed && !isVoting ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons
+              name={viewerVote === "DOWNVOTE" ? "thumbs-down" : "thumbs-down-outline"}
+              size={14}
+              color={viewerVote === "DOWNVOTE" ? colors.danger : colors.text}
+            />
+            <AppText variant="caption">{downvotes}</AppText>
+          </Pressable>
+        </View>
         {post.parent_id ? (
           <View style={styles.badge}>
             <Ionicons
@@ -134,15 +167,15 @@ function ReplyTree({
   byParent,
   depth,
   topIndex,
-  heartingPostId,
-  onToggleHeart,
+  pendingVote,
+  onVote,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
   depth: number;
   topIndex: number;
-  heartingPostId: number | null;
-  onToggleHeart: (post: ForumPost) => void;
+  pendingVote: PendingVote | null;
+  onVote: (post: ForumPost, vote: ForumVote) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = depth === 0 ? `Reply ${topIndex}` : "Nested reply";
@@ -153,8 +186,8 @@ function ReplyTree({
         post={post}
         depth={depth}
         label={label}
-        isHearting={heartingPostId === post.id}
-        onToggleHeart={onToggleHeart}
+        pendingVote={pendingVote?.postId === post.id ? pendingVote.vote : null}
+        onVote={onVote}
       />
       {children.map((child) => (
         <ReplyTree
@@ -163,8 +196,8 @@ function ReplyTree({
           byParent={byParent}
           depth={depth + 1}
           topIndex={topIndex}
-          heartingPostId={heartingPostId}
-          onToggleHeart={onToggleHeart}
+          pendingVote={pendingVote}
+          onVote={onVote}
         />
       ))}
     </View>
@@ -184,9 +217,10 @@ export function ForumThreadScreen() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
   });
-  const heartMutation = useMutation({
-    mutationFn: (postId: number) => toggleForumPostHeart(threadId, postId),
-    onSuccess: (response, postId) => {
+  const voteMutation = useMutation({
+    mutationFn: ({ postId, vote }: PendingVote) =>
+      setForumPostVote(threadId, postId, vote),
+    onSuccess: (response, variables) => {
       queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
         queryKey,
         (current) => {
@@ -197,7 +231,9 @@ export function ForumThreadScreen() {
             pages: current.pages.map((page) => ({
               ...page,
               posts: page.posts.map((post) =>
-                post.id === postId ? applyHeartResponseToPost(post, response) : post,
+                post.id === variables.postId
+                  ? applyVoteResponseToPost(post, response)
+                  : post,
               ),
             })),
           };
@@ -206,7 +242,7 @@ export function ForumThreadScreen() {
     },
     onError: (error) => {
       Alert.alert(
-        "Heart not saved",
+        "Vote not saved",
         error instanceof Error ? error.message : "Try again in a moment.",
       );
     },
@@ -230,22 +266,25 @@ export function ForumThreadScreen() {
     return acc;
   }, {});
   const topLevelReplies = replies.filter((post) => !post.parent_id);
-  const handleToggleHeart = (post: ForumPost) => {
+  const handleVote = (post: ForumPost, vote: ForumVote) => {
     if (!isSignedIn) {
-      Alert.alert("Log in to heart posts", "Use your Toon Ranks account to react.", [
+      Alert.alert("Log in to vote on posts", "Use your Toon Ranks account to react.", [
         { text: "Cancel", style: "cancel" },
         { text: "Log in", onPress: () => navigation.navigate("Login") },
       ]);
       return;
     }
 
-    heartMutation.mutate(post.id);
+    voteMutation.mutate({
+      postId: post.id,
+      vote: getViewerVote(post) === vote ? null : vote,
+    });
   };
 
   return (
     <ScreenShell
       title="Thread"
-      subtitle="Read public discussions and heart posts with your Toon Ranks account. Replies will unlock in a later forum slice."
+      subtitle="Read public discussions and vote on posts with your Toon Ranks account. Replies will unlock in a later forum slice."
     >
       {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
 
@@ -306,10 +345,12 @@ export function ForumThreadScreen() {
           <PostCard
             post={originalPost}
             label="Original"
-            isHearting={
-              heartMutation.isPending && heartMutation.variables === originalPost.id
+            pendingVote={
+              voteMutation.isPending && voteMutation.variables?.postId === originalPost.id
+                ? voteMutation.variables.vote
+                : null
             }
-            onToggleHeart={handleToggleHeart}
+            onVote={handleVote}
           />
         </View>
       ) : null}
@@ -335,10 +376,10 @@ export function ForumThreadScreen() {
                 byParent={byParent}
                 depth={0}
                 topIndex={index + 1}
-                heartingPostId={
-                  heartMutation.isPending ? (heartMutation.variables ?? null) : null
+                pendingVote={
+                  voteMutation.isPending ? (voteMutation.variables ?? null) : null
                 }
-                onToggleHeart={handleToggleHeart}
+                onVote={handleVote}
               />
             ))}
           </View>
@@ -366,15 +407,34 @@ export function ForumThreadScreen() {
   );
 }
 
-function applyHeartResponseToPost(
+function applyVoteResponseToPost(
   post: ForumPost,
-  response: HeartToggleResponse,
+  response: ForumVoteResponse,
 ): ForumPost {
   return {
     ...post,
-    heart_count: response.count,
-    viewer_has_hearted: response.hearted,
+    upvote_count: response.upvote_count,
+    downvote_count: response.downvote_count,
+    viewer_vote: response.vote,
+    heart_count: response.upvote_count,
+    viewer_has_hearted: response.vote === "UPVOTE",
   };
+}
+
+function getViewerVote(post: ForumPost): ForumVote | null {
+  if (post.viewer_vote) {
+    return post.viewer_vote;
+  }
+
+  return post.viewer_has_hearted ? "UPVOTE" : null;
+}
+
+function getUpvoteCount(post: ForumPost) {
+  return post.upvote_count ?? post.heart_count ?? 0;
+}
+
+function getDownvoteCount(post: ForumPost) {
+  return post.downvote_count ?? 0;
 }
 
 const styles = StyleSheet.create({
@@ -471,6 +531,34 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.xs,
   },
+  voteGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    overflow: "hidden",
+  },
+  voteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  activeUpvoteButton: {
+    backgroundColor: "rgba(14, 167, 106, 0.16)",
+  },
+  activeDownvoteButton: {
+    backgroundColor: "rgba(235, 106, 90, 0.14)",
+  },
+  voteDivider: {
+    width: 1,
+    alignSelf: "stretch",
+    backgroundColor: colors.borderSoft,
+  },
   badge: {
     flexDirection: "row",
     alignItems: "center",
@@ -481,10 +569,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
-  },
-  heartedBadge: {
-    backgroundColor: "rgba(235, 106, 90, 0.14)",
-    borderColor: colors.danger,
   },
   disabledBadge: {
     opacity: 0.65,
