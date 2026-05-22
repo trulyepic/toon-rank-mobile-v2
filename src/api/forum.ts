@@ -7,7 +7,8 @@ import type {
   ForumThread,
   ForumThreadPage,
   ForumThreadPostsPage,
-  HeartToggleResponse,
+  ForumVote,
+  ForumVoteResponse,
   SeriesRef,
 } from "../types/forum";
 
@@ -41,9 +42,14 @@ export async function createForumPost(threadId: number, payload: CreateForumPost
   return res.data;
 }
 
-export async function toggleForumPostHeart(threadId: number, postId: number) {
-  const res = await api.post<HeartToggleResponse>(
-    `/forum/threads/${threadId}/posts/${postId}/heart`,
+export async function setForumPostVote(
+  threadId: number,
+  postId: number,
+  vote: ForumVote | null,
+) {
+  const res = await api.post<ForumVoteResponse>(
+    `/forum/threads/${threadId}/posts/${postId}/vote`,
+    { vote },
   );
   return res.data;
 }

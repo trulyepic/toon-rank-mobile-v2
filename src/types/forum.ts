@@ -35,8 +35,11 @@ export interface ForumPost {
   updated_at: string;
   series_refs: SeriesRef[];
   parent_id?: number | null;
-  heart_count: number;
-  viewer_has_hearted: boolean;
+  upvote_count?: number;
+  downvote_count?: number;
+  viewer_vote?: ForumVote | null;
+  heart_count?: number;
+  viewer_has_hearted?: boolean;
 }
 
 export interface ForumThreadPage {
@@ -77,7 +80,10 @@ export interface CreateForumPostRequest {
   parent_id?: number | null;
 }
 
-export interface HeartToggleResponse {
-  hearted: boolean;
-  count: number;
+export type ForumVote = "UPVOTE" | "DOWNVOTE";
+
+export interface ForumVoteResponse {
+  vote: ForumVote | null;
+  upvote_count: number;
+  downvote_count: number;
 }

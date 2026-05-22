@@ -24,9 +24,9 @@ const activityItems = [
     body: "Recent replies and conversations will be easy to revisit.",
   },
   {
-    icon: "heart-outline" as const,
-    title: "Reactions",
-    body: "Liked posts and activity signals can live here once connected.",
+    icon: "thumbs-up-outline" as const,
+    title: "Votes",
+    body: "Upvoted and downvoted posts can live here once connected.",
   },
 ];
 
@@ -62,7 +62,7 @@ export function ForumActivityScreen() {
           )}
           <AppText tone="muted">
             {isSignedIn
-              ? "This screen is ready for user-specific threads, replies, and reactions once those mobile endpoints are expanded."
+              ? "This screen is ready for user-specific threads, replies, and votes once those mobile endpoints are expanded."
               : "Forum identity, avatars, and roles are shared with the website. Sign in later to make this screen personal."}
           </AppText>
         </View>
