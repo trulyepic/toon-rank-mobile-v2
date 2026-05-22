@@ -15,4 +15,10 @@ describe("web auth URLs", () => {
     expect(MOBILE_AUTH_CALLBACK_URL).toBe("toonranks://auth/callback");
     expect(WEB_AUTH_URLS.signup("abc")).toContain("state=abc");
   });
+
+  it("points password recovery to the production website flow", () => {
+    expect(WEB_AUTH_URLS.forgotPassword).toBe(
+      "https://www.toonranks.com/forgot-password",
+    );
+  });
 });

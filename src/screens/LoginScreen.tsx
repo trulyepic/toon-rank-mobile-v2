@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -10,6 +10,7 @@ import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { openInAppBrowser } from "../utils/externalLinks";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -78,9 +79,21 @@ export function LoginScreen() {
         </View>
 
         <View style={styles.field}>
-          <AppText variant="caption" tone="muted">
-            Password
-          </AppText>
+          <View style={styles.labelRow}>
+            <AppText variant="caption" tone="muted">
+              Password
+            </AppText>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Open forgot password"
+              hitSlop={10}
+              onPress={() => openInAppBrowser(WEB_AUTH_URLS.forgotPassword)}
+            >
+              <AppText variant="caption" style={styles.recoveryLink}>
+                Forgot password?
+              </AppText>
+            </Pressable>
+          </View>
           <TextInput
             value={password}
             onChangeText={setPassword}
@@ -139,6 +152,15 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: spacing.xs,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  recoveryLink: {
+    color: colors.accentStrong,
   },
   input: {
     minHeight: 50,
