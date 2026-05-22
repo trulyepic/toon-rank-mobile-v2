@@ -107,7 +107,7 @@ export function ForumScreen() {
   return (
     <ScreenShell
       title="Forum"
-      subtitle="Browse Toon Ranks discussions. Vote on posts with your account; posting and replies are next."
+      subtitle="Browse Toon Ranks discussions. Vote and reply with your account."
     >
       <Surface variant="accent" radius="hero" style={styles.hero}>
         <View style={styles.heroIcon}>
@@ -116,8 +116,8 @@ export function ForumScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Community discussions</AppText>
           <AppText tone="muted">
-            Read public threads now. Votes use the same website account; creating posts
-            and replies will unlock in the next forum slice.
+            Read public threads now. Votes and replies use the same website account;
+            creating new threads will unlock in a later forum slice.
           </AppText>
         </View>
       </Surface>
