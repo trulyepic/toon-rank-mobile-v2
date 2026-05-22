@@ -2,15 +2,23 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 
-import { getForumThreadPosts, setForumPostVote } from "../api/forum";
+import { createForumPost, getForumThreadPosts, setForumPostVote } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppText,
@@ -39,6 +47,7 @@ import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
 const POSTS_PAGE_SIZE = 20;
+const REPLY_MAX_LENGTH = 2000;
 
 type PendingVote = {
   postId: number;
@@ -51,12 +60,16 @@ function PostCard({
   label,
   pendingVote,
   onVote,
+  canReply,
+  onStartReply,
 }: {
   post: ForumPost;
   depth?: number;
   label: string;
   pendingVote: ForumVote | null;
   onVote: (post: ForumPost, vote: ForumVote) => void;
+  canReply: boolean;
+  onStartReply: (post: ForumPost) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -157,6 +170,20 @@ function PostCard({
             </AppText>
           </View>
         ) : null}
+        {canReply ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Reply to ${post.author_username || "this post"}`}
+            onPress={() => onStartReply(post)}
+            style={({ pressed }) => [
+              styles.replyAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="return-up-forward-outline" size={13} color={colors.text} />
+            <AppText variant="caption">Reply</AppText>
+          </Pressable>
+        ) : null}
       </View>
     </Surface>
   );
@@ -169,6 +196,8 @@ function ReplyTree({
   topIndex,
   pendingVote,
   onVote,
+  canReply,
+  onStartReply,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -176,6 +205,8 @@ function ReplyTree({
   topIndex: number;
   pendingVote: PendingVote | null;
   onVote: (post: ForumPost, vote: ForumVote) => void;
+  canReply: boolean;
+  onStartReply: (post: ForumPost) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = depth === 0 ? `Reply ${topIndex}` : "Nested reply";
@@ -188,6 +219,8 @@ function ReplyTree({
         label={label}
         pendingVote={pendingVote?.postId === post.id ? pendingVote.vote : null}
         onVote={onVote}
+        canReply={canReply}
+        onStartReply={onStartReply}
       />
       {children.map((child) => (
         <ReplyTree
@@ -198,6 +231,8 @@ function ReplyTree({
           topIndex={topIndex}
           pendingVote={pendingVote}
           onVote={onVote}
+          canReply={canReply}
+          onStartReply={onStartReply}
         />
       ))}
     </View>
@@ -209,6 +244,8 @@ export function ForumThreadScreen() {
   const navigation = useNavigation<ForumThreadNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn } = useAuth();
+  const [replyText, setReplyText] = useState("");
+  const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const { threadId } = route.params;
   const queryKey = ["forum", "thread", threadId] as const;
   const postsQuery = useInfiniteQuery({
@@ -247,6 +284,30 @@ export function ForumThreadScreen() {
       );
     },
   });
+  const replyMutation = useMutation({
+    mutationFn: ({
+      contentMarkdown,
+      parentId,
+    }: {
+      contentMarkdown: string;
+      parentId?: number | null;
+    }) =>
+      createForumPost(threadId, {
+        content_markdown: contentMarkdown,
+        parent_id: parentId ?? null,
+      }),
+    onSuccess: async () => {
+      setReplyText("");
+      setReplyTarget(null);
+      await queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Reply not posted",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
   const pages = postsQuery.data?.pages ?? [];
   const thread = pages[0]?.thread;
   const posts = pages
@@ -266,6 +327,15 @@ export function ForumThreadScreen() {
     return acc;
   }, {});
   const topLevelReplies = replies.filter((post) => !post.parent_id);
+  const canReplyToThread = Boolean(thread && !thread.locked);
+  const trimmedReply = replyText.trim();
+  const canSubmitReply =
+    isSignedIn &&
+    canReplyToThread &&
+    trimmedReply.length > 0 &&
+    trimmedReply.length <= REPLY_MAX_LENGTH &&
+    !replyMutation.isPending;
+
   const handleVote = (post: ForumPost, vote: ForumVote) => {
     if (!isSignedIn) {
       Alert.alert("Log in to vote on posts", "Use your Toon Ranks account to react.", [
@@ -280,11 +350,67 @@ export function ForumThreadScreen() {
       vote: getViewerVote(post) === vote ? null : vote,
     });
   };
+  const handleSubmitReply = () => {
+    if (!isSignedIn) {
+      Alert.alert(
+        "Log in to reply",
+        "Use your Toon Ranks account to join the discussion.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Log in", onPress: () => navigation.navigate("Login") },
+        ],
+      );
+      return;
+    }
+
+    if (!canReplyToThread) {
+      Alert.alert("Thread is locked", "This discussion is no longer accepting replies.");
+      return;
+    }
+
+    if (!trimmedReply) {
+      Alert.alert("Write a reply first", "Add a message before posting.");
+      return;
+    }
+
+    if (trimmedReply.length > REPLY_MAX_LENGTH) {
+      Alert.alert(
+        "Reply is too long",
+        `Keep replies under ${REPLY_MAX_LENGTH.toLocaleString()} characters.`,
+      );
+      return;
+    }
+
+    replyMutation.mutate({
+      contentMarkdown: trimmedReply,
+      parentId: replyTarget?.id ?? null,
+    });
+  };
+  const handleStartReply = (post: ForumPost) => {
+    if (!isSignedIn) {
+      Alert.alert(
+        "Log in to reply",
+        "Use your Toon Ranks account to join the discussion.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Log in", onPress: () => navigation.navigate("Login") },
+        ],
+      );
+      return;
+    }
+
+    if (!canReplyToThread) {
+      Alert.alert("Thread is locked", "This discussion is no longer accepting replies.");
+      return;
+    }
+
+    setReplyTarget(post);
+  };
 
   return (
     <ScreenShell
       title="Thread"
-      subtitle="Read public discussions and vote on posts with your Toon Ranks account. Replies will unlock in a later forum slice."
+      subtitle="Read public discussions, vote, and reply with your Toon Ranks account."
     >
       {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
 
@@ -351,6 +477,8 @@ export function ForumThreadScreen() {
                 : null
             }
             onVote={handleVote}
+            canReply={canReplyToThread}
+            onStartReply={handleStartReply}
           />
         </View>
       ) : null}
@@ -380,6 +508,8 @@ export function ForumThreadScreen() {
                   voteMutation.isPending ? (voteMutation.variables ?? null) : null
                 }
                 onVote={handleVote}
+                canReply={canReplyToThread}
+                onStartReply={handleStartReply}
               />
             ))}
           </View>
@@ -402,6 +532,110 @@ export function ForumThreadScreen() {
             </AppText>
           ) : null}
         </View>
+      ) : null}
+
+      {thread ? (
+        <Surface variant="raised" radius="xl" style={styles.replyComposer}>
+          <View style={styles.composerHeader}>
+            <View style={styles.composerTitle}>
+              <Ionicons
+                name={thread.locked ? "lock-closed-outline" : "return-up-forward-outline"}
+                size={18}
+                color={thread.locked ? colors.warningText : colors.accentStrong}
+              />
+              <AppText variant="cardTitle">
+                {thread.locked
+                  ? "Thread locked"
+                  : replyTarget
+                    ? "Reply to post"
+                    : "Reply in thread"}
+              </AppText>
+            </View>
+            <AppText
+              variant="caption"
+              tone={replyText.length > REPLY_MAX_LENGTH ? "danger" : "subtle"}
+            >
+              {replyText.length}/{REPLY_MAX_LENGTH}
+            </AppText>
+          </View>
+
+          {thread.locked ? (
+            <AppText tone="muted">
+              This discussion is locked, so new replies are disabled on mobile and web.
+            </AppText>
+          ) : isSignedIn ? (
+            <>
+              {replyTarget ? (
+                <View style={styles.replyTargetCard}>
+                  <View style={styles.replyTargetText}>
+                    <AppText variant="caption" tone="muted">
+                      Replying to
+                    </AppText>
+                    <RoleNameText variant="caption" role={replyTarget.author_role}>
+                      {`@${replyTarget.author_username || "reader"}`}
+                    </RoleNameText>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear reply target"
+                    onPress={() => setReplyTarget(null)}
+                    style={({ pressed }) => [
+                      styles.clearReplyTarget,
+                      pressed ? styles.pressedBadge : null,
+                    ]}
+                  >
+                    <Ionicons name="close" size={16} color={colors.text} />
+                  </Pressable>
+                </View>
+              ) : null}
+              <TextInput
+                autoCapitalize="sentences"
+                autoCorrect
+                multiline
+                textAlignVertical="top"
+                value={replyText}
+                onChangeText={setReplyText}
+                placeholder={
+                  replyTarget
+                    ? `Reply to ${replyTarget.author_username || "this post"}...`
+                    : "Write a reply..."
+                }
+                placeholderTextColor={colors.textSubtle}
+                style={styles.replyInput}
+              />
+              <View style={styles.composerActions}>
+                <AppText variant="caption" tone="muted" style={styles.composerHint}>
+                  Markdown is supported. Series picker and image uploads are next.
+                </AppText>
+                <AppButton
+                  label={replyMutation.isPending ? "Posting..." : "Post reply"}
+                  disabled={!canSubmitReply}
+                  onPress={handleSubmitReply}
+                  iconLeft={
+                    replyMutation.isPending ? (
+                      <ActivityIndicator size="small" color={colors.text} />
+                    ) : (
+                      <Ionicons name="send-outline" size={15} color={colors.text} />
+                    )
+                  }
+                />
+              </View>
+            </>
+          ) : (
+            <View style={styles.signInPrompt}>
+              <AppText tone="muted" style={styles.signInPromptText}>
+                Log in with your Toon Ranks account to post a reply.
+              </AppText>
+              <AppButton
+                label="Log in"
+                onPress={() => navigation.navigate("Login")}
+                iconLeft={
+                  <Ionicons name="log-in-outline" size={15} color={colors.text} />
+                }
+              />
+            </View>
+          )}
+        </Surface>
       ) : null}
     </ScreenShell>
   );
@@ -492,6 +726,76 @@ const styles = StyleSheet.create({
   stack: {
     gap: spacing.sm,
   },
+  replyComposer: {
+    gap: spacing.md,
+  },
+  composerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  composerTitle: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  replyTargetCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+  },
+  replyTargetText: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  clearReplyTarget: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  replyInput: {
+    minHeight: 132,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  composerActions: {
+    gap: spacing.sm,
+  },
+  composerHint: {
+    flexShrink: 1,
+  },
+  signInPrompt: {
+    gap: spacing.sm,
+  },
+  signInPromptText: {
+    flexShrink: 1,
+  },
   postCard: {
     gap: spacing.sm,
   },
@@ -567,6 +871,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radii.pill,
     backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  replyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
     borderColor: colors.borderSoft,
   },

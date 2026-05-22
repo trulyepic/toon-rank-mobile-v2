@@ -127,7 +127,7 @@ Purpose: move forum from read-only browsing to the same discussion model as the 
 
 - [x] Enable post hearts with `POST /forum/threads/{thread_id}/posts/{post_id}/heart`.
 - [x] Show `viewer_has_hearted` state correctly after login.
-- [ ] Add reply composer for unlocked threads.
+- [x] Add reply composer for unlocked threads.
 - [ ] Add create-thread flow from the Forum screen.
 - [ ] Add native series reference picker using `/forum/series-search`.
 - [ ] Respect locked threads and latest-updates-first threads.
