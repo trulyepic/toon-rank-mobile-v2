@@ -15,7 +15,7 @@ data:
 - comparison tools
 - account login using the existing backend identity system
 - the same saved reading lists users have on the website
-- the same forum identity, posts, replies, hearts, and media rules
+- the same forum identity, posts, replies, up/down votes, and media rules
 - the same voting/rating model
 
 The app is not a web wrapper. It should feel like a real native mobile application built with Expo
@@ -84,9 +84,9 @@ web-auth bridge shell. The current priority is no longer broad design polish.
 
 Immediate priority:
 
-1. Make mobile authentication real by coordinating backend, web frontend, and mobile callback work.
-2. Once mobile has a stored Toon Ranks session, connect account-backed actions in this order:
-   voting, reading lists, forum hearts/posts, profile/avatar/account surfaces.
+1. Finish mobile session durability with the planned refresh-token flow.
+2. Keep closing shared-account gaps in this order:
+   account recovery, native avatar management, forum create/edit/delete/media, app-store readiness.
 3. Keep public browsing reliable, but do not let small search/filter polish outrank shared-account
    parity.
 4. Preserve one shared identity and data model across website and mobile.
@@ -134,19 +134,21 @@ Expected shared data:
 - login identity
 - reading lists
 - saved items / left-off chapter fields
-- forum threads, replies, hearts, and user-generated content
+- forum threads, replies, up/down votes, and user-generated content
 - rating/voting history where supported
 
-Auth is deferred for the design-first pass, but all design decisions should leave room for account
-state.
+Auth is now connected through the website CAPTCHA handoff. Future design decisions should assume a
+signed-in state exists, while still preserving polished signed-out and expired-session states.
 
 ## Current Known Issues
 
-- Mobile login/signup screens can open the web auth flow, but the website/backend do not yet return a
-  usable mobile session to the app.
-- Auth storage and context exist, but a normal user cannot currently sign in to the native app.
-- Voting, reading-list editing, forum hearts/posts, and account identity surfaces depend on real
-  mobile auth before they should be considered complete.
+- Mobile login/signup can complete the web CAPTCHA flow and return a native session to the app.
+- Mobile uses secure storage for the current access token/user, but the longer-lived refresh-token
+  session plan is still pending.
+- Forum replies and up/down votes are connected; create-thread, edit/delete, series picker, and media
+  upload parity are still pending.
+- The website/backend now support forgot-password flows; mobile should expose that route from the
+  native login surface.
 - App-store assets, icon, splash, bundle identifiers, privacy disclosures, and EAS build config are
   not ready.
 

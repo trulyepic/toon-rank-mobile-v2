@@ -14,9 +14,11 @@ The current mobile app already has a usable public browsing shell:
 - Public Forum browsing, thread reading, markdown/media rendering, series references, and load more.
 - Native anonymous issue reporting without screenshots.
 - Auth storage, auth context, login/signup screens, and a web-auth bridge shell.
+- Mobile login/signup can complete the website CAPTCHA flow and return a native session.
+- Series voting, reading-list management, forum replies, and forum up/down votes are connected.
 
-The biggest product blocker is still real mobile authentication. Until the app can receive and store a
-real Toon Ranks session, account-backed features must stay read-only or signed-out.
+The biggest remaining product blockers are long-lived mobile sessions, account recovery entry points,
+native avatar management, forum creation/editing parity, and app-store readiness.
 
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
@@ -84,6 +86,22 @@ Purpose: keep mobile users signed in for about 30 days using a standard refresh-
 Done means mobile sessions behave like a real app: users stay logged in for roughly a month without
 making the main access JWT dangerously long-lived.
 
+## Phase 2.6: Mobile Account Recovery Entry Point
+
+Suggested branch: `mobile-auth-forgot-password-entry`
+
+Purpose: reflect the website/backend forgot-password flow in mobile without rebuilding account
+recovery natively.
+
+- [ ] Add a clear "Forgot password?" action to the native Login screen.
+- [ ] Open the production website forgot-password page in the same web-auth browser pattern.
+- [ ] Keep users in the app after closing the browser; do not pretend reset completion happens in
+      native mobile yet.
+- [ ] Add a small test for the generated forgot-password URL if the helper is shared.
+
+Done means mobile users who cannot sign in have an obvious recovery path that uses the existing
+website/backend reset flow.
+
 ## Phase 3: Voting On Series
 
 Suggested branch: `mobile-core-voting`
@@ -125,16 +143,17 @@ Suggested branch: `mobile-core-forum-actions`
 
 Purpose: move forum from read-only browsing to the same discussion model as the website.
 
-- [x] Enable post hearts with `POST /forum/threads/{thread_id}/posts/{post_id}/heart`.
-- [x] Show `viewer_has_hearted` state correctly after login.
+- [x] Replace the old heart model with up/down votes using `POST /forum/threads/{thread_id}/posts/{post_id}/vote`.
+- [x] Show `viewer_vote`, `upvote_count`, and `downvote_count` state correctly after login.
 - [x] Add reply composer for unlocked threads.
+- [x] Add reply-to-reply support using `parent_id`.
 - [ ] Add create-thread flow from the Forum screen.
 - [ ] Add native series reference picker using `/forum/series-search`.
 - [ ] Respect locked threads and latest-updates-first threads.
 - [ ] Add owner/admin edit/delete controls only if the current user's role allows them.
 - [ ] Preserve markdown/media/series-reference behavior so posts created on mobile render correctly on web, and vice versa.
 
-Done means forum hearts and posts are shared between mobile and web with the same account identity.
+Done means forum votes and posts are shared between mobile and web with the same account identity.
 
 ## Phase 6: Profile, Avatar, And Account Surfaces
 
@@ -144,7 +163,7 @@ Purpose: make the account area reflect the user's real website identity.
 
 - [ ] Add or consume a backend current-user profile endpoint if needed.
 - [x] Show username, role color, avatar URL, and avatar preset consistently.
-- [ ] Add default avatar preset selection if backend supports it.
+- [ ] Add default avatar preset selection using `PATCH /auth/me/avatar/preset`.
 - [x] Decide whether custom avatar upload/cropping belongs in mobile v1 or remains web-only at first.
 - [x] Connect Settings session status and logout to the real session.
 - [x] Update More/Profile/Forum author surfaces to use the same role/avatar conventions as the website.

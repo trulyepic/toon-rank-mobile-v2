@@ -85,8 +85,9 @@ Authenticated:
 - reading lists
 - left-off chapter tracking
 - forum identity
-- forum threads/replies/hearts
+- forum threads/replies/upvotes/downvotes
 - voting/rating
+- forgot-password entry point using the existing website flow
 - issue reporting
 
 Deferred or app-store-sensitive:
