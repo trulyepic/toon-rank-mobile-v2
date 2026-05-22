@@ -19,6 +19,7 @@ export function buildWebAuthUrl(path: string, state?: string) {
 export const WEB_AUTH_URLS = {
   login: (state?: string) => buildWebAuthUrl("/login", state),
   signup: (state?: string) => buildWebAuthUrl("/signup", state),
+  forgotPassword: `${SITE_ORIGIN}/forgot-password`,
 };
 
 export const LEGAL_URLS = {
