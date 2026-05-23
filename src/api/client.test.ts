@@ -47,4 +47,25 @@ describe("api client auth failures", () => {
     });
     expect(listener).not.toHaveBeenCalled();
   });
+
+  it("does not notify recursively when mobile refresh fails", async () => {
+    const listener = vi.fn();
+    subscribeToSessionExpired(listener);
+    setApiAuthToken("token-123");
+    api.defaults.adapter = () =>
+      Promise.reject({
+        isAxiosError: true,
+        config: {
+          url: "/auth/mobile-refresh",
+          headers: { Authorization: "Bearer token-123" },
+        },
+        response: { status: 401, data: { detail: "Invalid refresh token" } },
+      });
+
+    await expect(api.post("/auth/mobile-refresh")).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      status: 401,
+    });
+    expect(listener).not.toHaveBeenCalled();
+  });
 });

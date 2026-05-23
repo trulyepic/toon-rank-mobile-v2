@@ -11,6 +11,14 @@ export interface AuthUser {
 
 export interface AuthSession {
   access_token: string;
+  refresh_token?: string | null;
+  token_type?: string;
+  user: AuthUser;
+}
+
+export interface MobileRefreshResponse {
+  access_token: string;
+  token_type?: string;
   user: AuthUser;
 }
 

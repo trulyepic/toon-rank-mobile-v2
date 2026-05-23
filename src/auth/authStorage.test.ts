@@ -38,13 +38,31 @@ describe("auth storage", () => {
   it("stores and restores an auth session", async () => {
     await setStoredAuthSession({
       token: "token-123",
+      refreshToken: "refresh-123",
       user: { id: 1, username: "reader", role: "GENERAL" },
     });
 
     await expect(getStoredAuthSession()).resolves.toEqual({
       token: "token-123",
+      refreshToken: "refresh-123",
       user: { id: 1, username: "reader", role: "GENERAL" },
     });
+  });
+
+  it("clears stale refresh tokens when storing a short session", async () => {
+    secureStore.store.set("toonranks.refreshToken", "old-refresh");
+
+    await setStoredAuthSession({
+      token: "token-123",
+      user: { id: 1, username: "reader", role: "GENERAL" },
+    });
+
+    await expect(getStoredAuthSession()).resolves.toEqual({
+      token: "token-123",
+      refreshToken: null,
+      user: { id: 1, username: "reader", role: "GENERAL" },
+    });
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith("toonranks.refreshToken");
   });
 
   it("returns null when token or user is missing", async () => {
@@ -58,16 +76,19 @@ describe("auth storage", () => {
     await expect(getStoredAuthSession()).resolves.toBeNull();
     expect(secureStore.deleteItemAsync).toHaveBeenCalledWith("toonranks.authToken");
     expect(secureStore.deleteItemAsync).toHaveBeenCalledWith("toonranks.authUser");
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith("toonranks.refreshToken");
   });
 
   it("clears a stored session", async () => {
     await setStoredAuthSession({
       token: "token-123",
+      refreshToken: "refresh-123",
       user: { id: 1, username: "reader", role: "GENERAL" },
     });
 
     await clearStoredAuthSession();
 
     await expect(getStoredAuthSession()).resolves.toBeNull();
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith("toonranks.refreshToken");
   });
 });

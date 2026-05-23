@@ -62,7 +62,7 @@ Purpose: make app login/signup actually sign the user into the app, not just the
 - [x] Restore signed-in state on app launch.
 - [x] Add session-expired handling for `401` and auth-related `403` responses.
 - [x] Update Login/Signup screen copy so it no longer implies the flow is incomplete after it works.
-- [ ] Add long-lived refresh-token sessions in Phase 2.5 so mobile users stay signed in
+- [x] Add long-lived refresh-token sessions in Phase 2.5 so mobile users stay signed in
       longer than the short access-token lifetime.
 
 Done means a user can start login or signup in the app, complete the existing CAPTCHA-protected web
@@ -85,12 +85,12 @@ restores them on app launch. That is not the same as a long-lived refresh sessio
 mobile token exchange returns only an access token, and authenticated `401`/`403` responses clear the
 session instead of refreshing it.
 
-- [ ] Add backend refresh-token storage with hashed tokens, expiry, revocation, and last-used tracking.
-- [ ] Return a refresh token from the mobile auth-code exchange endpoint.
-- [ ] Add a backend refresh endpoint that returns a new access token for a valid mobile refresh token.
-- [ ] Store the refresh token in mobile secure storage.
-- [ ] Try a one-time refresh when an authenticated request returns `401` before clearing the session.
-- [ ] Revoke/clear the refresh token on logout.
+- [x] Add backend refresh-token storage with hashed tokens, expiry, revocation, and last-used tracking.
+- [x] Return a refresh token from the mobile auth-code exchange endpoint.
+- [x] Add a backend refresh endpoint that returns a new access token for a valid mobile refresh token.
+- [x] Store the refresh token in mobile secure storage.
+- [x] Try a one-time refresh when an authenticated request returns `401` before clearing the session.
+- [x] Revoke/clear the refresh token on logout.
 
 Done means mobile sessions behave like a real app: users stay logged in for roughly a month without
 making the main access JWT dangerously long-lived.

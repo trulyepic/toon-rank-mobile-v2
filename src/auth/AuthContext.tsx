@@ -4,10 +4,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
 
+import { refreshMobileSession, revokeMobileSession } from "../api/auth";
 import { setApiAuthToken } from "../api/client";
 import type { AuthSession, AuthUser } from "../types/account";
 import {
@@ -34,7 +36,9 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const isRefreshingRef = useRef(false);
 
   const refreshSessionFromStorage = useCallback(async () => {
     setStatus("loading");
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!storedSession) {
       setApiAuthToken(null);
       setToken(null);
+      setRefreshToken(null);
       setUser(null);
       setStatus("signed_out");
       return;
@@ -50,6 +55,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     setApiAuthToken(storedSession.token);
     setToken(storedSession.token);
+    setRefreshToken(storedSession.refreshToken ?? null);
     setUser(storedSession.user);
     setStatus("signed_in");
   }, []);
@@ -61,27 +67,70 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const setSession = useCallback(async (session: AuthSession) => {
     await setStoredAuthSession({
       token: session.access_token,
+      refreshToken: session.refresh_token ?? null,
       user: session.user,
     });
     setApiAuthToken(session.access_token);
     setToken(session.access_token);
+    setRefreshToken(session.refresh_token ?? null);
     setUser(session.user);
     setStatus("signed_in");
   }, []);
 
   const logout = useCallback(async () => {
+    const storedSession = await getStoredAuthSession();
+    const tokenToRevoke = refreshToken ?? storedSession?.refreshToken ?? null;
+
+    if (tokenToRevoke) {
+      await revokeMobileSession(tokenToRevoke).catch(() => undefined);
+    }
+
     await clearStoredAuthSession();
     setApiAuthToken(null);
     setToken(null);
+    setRefreshToken(null);
     setUser(null);
     setStatus("signed_out");
-  }, []);
+  }, [refreshToken]);
+
+  const refreshAccessToken = useCallback(async () => {
+    if (isRefreshingRef.current) return;
+
+    isRefreshingRef.current = true;
+
+    try {
+      const storedSession = await getStoredAuthSession();
+      const tokenToUse = refreshToken ?? storedSession?.refreshToken ?? null;
+
+      if (!tokenToUse) {
+        await logout();
+        return;
+      }
+
+      const refreshedSession = await refreshMobileSession(tokenToUse);
+
+      await setStoredAuthSession({
+        token: refreshedSession.access_token,
+        refreshToken: tokenToUse,
+        user: refreshedSession.user,
+      });
+      setApiAuthToken(refreshedSession.access_token);
+      setToken(refreshedSession.access_token);
+      setRefreshToken(tokenToUse);
+      setUser(refreshedSession.user);
+      setStatus("signed_in");
+    } catch {
+      await logout();
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [logout, refreshToken]);
 
   useEffect(() => {
     return subscribeToSessionExpired(() => {
-      void logout();
+      void refreshAccessToken();
     });
-  }, [logout]);
+  }, [refreshAccessToken]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
