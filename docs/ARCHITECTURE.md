@@ -13,28 +13,80 @@ Current structure:
 ```text
 src/
   api/
-    client.ts
-    series.ts
+    client.ts         - Axios client, auth token injection, error normalisation
+    auth.ts           - Auth API wrappers (login, signup, mobile-code exchange, refresh, logout)
+    forum.ts          - Forum thread/post API calls
+    issues.ts         - Issue reporting endpoint
+    readingLists.ts   - List CRUD and item management
+    series.ts         - Series/ranking API calls
+    votes.ts          - Series voting endpoints
+  auth/
+    AuthContext.tsx   - Auth provider (login, logout, signup, user state)
+    authCallback.ts   - Callback URL parsing for toonranks://auth/callback
+    authStorage.ts    - Secure storage helpers (expo-secure-store)
+    sessionEvents.ts  - Session expiry and refresh handling
+    webAuthBridge.ts  - Opens web auth session with mobile params
   components/
+    AccountRequiredCard.tsx
+    AppButton.tsx
+    AppText.tsx
+    Chip.tsx
+    ForumMarkdown.tsx       - Custom markdown renderer for forum post content
+    ForumMentionSuggestions.tsx
+    ForumSeriesStrip.tsx
+    IconButton.tsx
     PlaceholderCard.tsx
+    RoleNameText.tsx
     ScreenShell.tsx
+    SectionHeader.tsx
+    StateMessage.tsx        - EmptyState / ErrorState / LoadingState
+    Surface.tsx
+    UserAvatar.tsx
+    UserIdentity.tsx
+    index.ts
   config/
-    env.ts
+    env.ts            - EXPO_PUBLIC_API_BASE_URL
+    site.ts           - Branding constants (Toon Ranks, Nofara LLC, contact email)
   context/
-    CompareContext.tsx
+    CompareContext.tsx - Local compare state (series selections, add/remove)
   navigation/
-    RootNavigator.tsx
-    TabsNavigator.tsx
+    RootNavigator.tsx  - Root stack: tabs + series detail + auth screens + forum thread
+    TabsNavigator.tsx  - Bottom tabs: Home, Search, Lists, Forum, More
   screens/
+    CheckEmailScreen.tsx
     CompareScreen.tsx
+    ForumActivityScreen.tsx
+    ForumCreateThreadScreen.tsx
+    ForumScreen.tsx
+    ForumThreadScreen.tsx
     HomeScreen.tsx
+    LoginScreen.tsx
     MoreScreen.tsx
+    ProfileScreen.tsx
+    ReadingListDetailScreen.tsx
+    ReadingListsScreen.tsx
+    ReportIssueScreen.tsx
     SearchScreen.tsx
     SeriesDetailScreen.tsx
+    SettingsScreen.tsx
+    SignupScreen.tsx
   theme/
-    tokens.ts
+    tokens.ts         - Colors, typography, spacing, border radius, shadows
   types/
+    account.ts
+    forum.ts
+    issue.ts
+    readingList.ts
     series.ts
+  utils/
+    avatar.ts
+    externalLinks.ts
+    forumFormatting.ts
+    forumMentions.ts
+    forumValidation.ts
+    issueValidation.ts
+    seriesFormatting.ts
+    voting.ts
 ```
 
 ## Runtime Entry
@@ -43,6 +95,7 @@ src/
 
 - `SafeAreaProvider`
 - `QueryClientProvider`
+- `AuthProvider`
 - `CompareProvider`
 - `NavigationContainer`
 - `RootNavigator`
@@ -54,36 +107,22 @@ Current navigation:
 - Root native stack:
   - `MainTabs`
   - `SeriesDetail`
+  - `ForumThread`
+  - `ForumCreateThread`
+  - `Login`
+  - `Signup`
+  - `CheckEmail`
 
 - Bottom tabs:
   - `Home`
   - `Search`
-  - `Compare`
+  - `Lists`
+  - `Forum`
   - `More`
-
-Expected future navigation:
-
-- Root stack:
-  - main tabs
-  - series detail
-  - auth flow
-  - reading-list detail
-  - forum thread detail
-  - modal screens as needed
-
-- Tabs, likely:
-  - Home
-  - Search
-  - Lists
-  - Forum
-  - Account/More
-
-The final tab structure should be revisited during design. Current `Compare` may become a secondary
-screen or remain a tab depending on how central comparison feels on mobile.
 
 ## API Layer
 
-Current API base URL is in `src/config/env.ts`:
+API base URL is in `src/config/env.ts`:
 
 ```ts
 export const API_BASE_URL =
@@ -91,103 +130,60 @@ export const API_BASE_URL =
   "https://man-review-backend-production.up.railway.app";
 ```
 
-Current API files:
+The Railway deployment URL (`man-review-backend-production`) is a historical name that predates the
+GitHub repo rename. The URL itself is still correct — Railway keeps deployment URLs stable.
 
-- `src/api/client.ts`
-- `src/api/series.ts`
-- `src/api/auth.ts`
-- `src/api/readingLists.ts`
-- `src/api/forum.ts`
-- `src/api/issues.ts`
-- `src/api/votes.ts`
+All network calls go through `src/api`. Do not hardcode production URLs in screens.
 
-Current typed data files:
-
-- `src/types/account.ts`
-- `src/types/forum.ts`
-- `src/types/issue.ts`
-- `src/types/readingList.ts`
-- `src/types/series.ts`
-
-Expected future API module:
-
-- `profile.ts`, once the backend exposes a non-admin current-user profile endpoint
-
-Do not hardcode production URLs in screens. Route all network calls through `src/api`.
-
-`src/api/client.ts` owns shared request behavior:
+`src/api/client.ts` owns shared request behaviour:
 
 - base URL from `EXPO_PUBLIC_API_BASE_URL`
 - request timeout
 - auth token attachment through `setApiAuthToken`
+- session expiry handling via `sessionEvents`
 - normalized errors through `ApiError` and `normalizeApiError`
+
+A `profile.ts` API module can be added once the backend exposes a dedicated non-admin
+current-user profile endpoint beyond `/auth/me/avatar`.
+
+## Auth
+
+Auth is implemented. The detailed contract lives in `docs/MOBILE_AUTH_CONTRACT.md`.
+
+Flow summary:
+
+1. User taps login/signup in the app.
+2. `webAuthBridge` opens `https://www.toonranks.com/login?mobile=1&redirect_uri=toonranks://auth/callback&state=<random>`.
+3. User completes CAPTCHA-protected login on the website.
+4. Website calls `POST /auth/mobile-code` and redirects to `toonranks://auth/callback?code=...`.
+5. `authCallback` parses the URL, validates state.
+6. App calls `POST /auth/mobile-token` with the code.
+7. JWT access token and refresh token are stored via `authStorage` (expo-secure-store).
+8. All subsequent API calls include `Authorization: Bearer {access_token}`.
+9. On 401, `sessionEvents` tries `POST /auth/mobile-refresh` before clearing the session.
+10. Logout revokes the refresh token via `POST /auth/mobile-logout`.
 
 ## Shared Backend
 
-The mobile app should use the same backend used by the web app. Do not create mobile-only backend
-state for user data that should be shared across platforms.
+The mobile app uses the same backend as the website. Do not create mobile-only backend state
+for user data that should be shared across platforms.
 
-Important backend concepts:
+Key shared concepts:
 
-- JWT login currently exists on backend.
-- Reading lists are account-backed.
-- Forum routes are account-backed for posting/reactions.
-- Some routes are public and already suitable for Phase 1 mobile browsing.
-
-## Auth Direction
-
-Auth is not implemented yet. The detailed plan lives in `docs/AUTH_PLAN.md`.
-
-When it is added:
-
-- use the existing backend account system
-- store tokens securely using `expo-secure-store`
-- add request interceptors in the API client
-- handle signed-out, expired-token, and offline states
-- keep web/mobile identity shared
-
-Do not store access tokens in plain React state as the only persistence. Do not store tokens in
-plain AsyncStorage.
+- JWT login with short-lived access tokens + mobile refresh tokens (~30 days)
+- Reading lists are account-backed and shared with the website
+- Forum routes are account-backed for posting and reactions
+- Series voting is shared and per-category locked after the first vote
+- Avatars are stored in S3 and shared across web and mobile
 
 ## State Management
 
-Current state:
+- TanStack Query (React Query) for all server data and caching
+- `AuthContext` for the signed-in user state and token lifecycle
+- `CompareContext` for local compare selections
+- Small `useState` for per-screen UI state
 
-- React Query for server data
-- React Context for compare selections
-
-Recommended future state:
-
-- Keep React Query for API/server cache.
-- Keep small local UI state in components or simple contexts.
-- Introduce a dedicated auth context/provider when auth starts.
-- Avoid a large global store until there is real pressure for one.
-
-## Design System Direction
-
-Current tokens are in `src/theme/tokens.ts`, but many screens still hardcode colors.
-
-Near-term goal:
-
-- expand tokens
-- centralize reusable primitives
-- reduce one-off styling
-- make app UI consistent before adding deeper functionality
-
-Expected primitives:
-
-- `AppText`
-- `AppButton`
-- `IconButton`
-- `ScreenShell`
-- `Surface`
-- `SeriesPosterCard`
-- `SeriesListItem`
-- `MetricCard`
-- `Chip`
-- `EmptyState`
-- `ErrorState`
-- `LoadingState`
+Avoid a large global store unless there is real pressure for one.
 
 ## Testing And CI
 
@@ -203,26 +199,22 @@ npm run test
 npm run verify
 ```
 
-GitHub Actions runs separate jobs for:
+GitHub Actions runs separate jobs for Typecheck, Lint, Format, and Tests on PRs and pushes
+to main.
 
-- Typecheck
-- Lint
-- Format
-- Tests
-
-Do not add a heavy mobile testing stack until the design foundation stabilizes.
+Current tests are unit-level helper tests only. They do not launch iOS, Android, or Expo.
+Good test targets: formatting helpers, score/rank utilities, API response mapping, auth storage
+helpers, small pure reducers or state helpers.
 
 ## App Store Readiness Notes
 
 Not ready yet:
 
-- final bundle identifiers
-- app icon
-- splash assets
-- privacy text
-- terms/privacy mobile links
+- final bundle identifiers (currently `com.anonymous.toonranksmobile`)
+- app icon and splash assets
+- privacy and terms mobile links
 - EAS build config
 - store screenshots
 - platform sign-in requirements
 
-These are later milestones after the product shell is stable.
+These are Phase 9 milestones, after the core product is stable.

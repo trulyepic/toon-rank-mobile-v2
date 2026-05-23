@@ -18,7 +18,7 @@ not a separate product.
 - User-facing brand: Toon Ranks
 - Legal/operator entity: Nofara LLC
 - Website canonical origin: `https://www.toonranks.com`
-- Public contact email currently used by the web project: `trulyepickstudios@gmail.com`
+- Public contact email: `trulyepickstudios@gmail.com`
 
 Use `Toon Ranks` in navigation, headings, app copy, and store-facing product language. Use
 `Nofara LLC` only in legal/policy/settings surfaces.
@@ -61,11 +61,12 @@ The mobile app should change:
 
 ## Phase Philosophy
 
-The user currently wants design first. That means the near-term job is to establish a professional,
-native-feeling mobile product shell before wiring every feature.
+Work is broken into branch-sized phases documented in `docs/CORE_APP_EXPERIENCE_TODO.md`.
+Each phase should be small enough to review in a single PR and should leave the app in a working
+state. After each phase, document what changed, what to verify, and the commit/PR message.
 
-Do not block the design phase on auth or full feature parity. Do leave clear places for auth and
-account-backed content to slot in later.
+Do not block a phase on work that belongs in a later phase. Leave clear affordances for
+upcoming features rather than building placeholders that mislead users.
 
 ## In-Scope Long-Term Mobile Features
 
@@ -80,46 +81,56 @@ Public:
 
 Authenticated:
 
-- login/signup
-- Google OAuth if backend supports mobile-safe flow
-- reading lists
-- left-off chapter tracking
-- forum identity
-- forum threads/replies/upvotes/downvotes
-- voting/rating
+- login/signup (via web-auth bridge with CAPTCHA)
+- reading lists and left-off chapter tracking
+- forum identity — threads, replies, up/down votes
+- voting/rating per category
 - forgot-password entry point using the existing website flow
 - issue reporting
 
 Deferred or app-store-sensitive:
 
 - contributor/admin tools
-- forum media upload moderation UX
+- forum media upload (image/GIF picker)
 - push notifications
-- app-store review metadata
-- Apple/Google sign-in additions
+- Apple/Google sign-in additions (requires additional backend and store review steps)
 
-## Current Mobile App Snapshot
+## Current Mobile App Snapshot (as of Phase 5 / 5.5 work)
 
-The mobile app currently includes:
+The mobile app now includes a full working product foundation:
 
-- Home rankings grid
-- Search results
-- Series detail screen
-- Compare board
-- More placeholder
-- API client for public series endpoints
-- compare state context
+**Public browsing:**
 
-It does not yet include:
+- Home rankings grid with type filters and load-more
+- Search with query results
+- Series Detail with summary, metadata, voting UI, and save/list entry points
+- Compare board (local state)
+- Forum: thread list, thread detail with nested replies, pagination, locked/latest-first flags
 
-- auth
-- secure token storage
-- persisted compare/saved state
-- reading-list screens
-- forum screens
-- voting submission
-- mobile app CI/tests
-- app-store assets
+**Auth and sessions:**
+
+- Login/signup via web-auth bridge (website CAPTCHA → mobile code → JWT)
+- Refresh-token session durability (~30 days)
+- Forgot-password entry point (opens website reset flow)
+- Session expiry handling on 401/403
+
+**Account-backed features:**
+
+- Series voting (1-10 per category, locked after vote)
+- Reading lists (view, detail, add, remove, edit left-off chapter, create list)
+- Forum reply composer with reply-to-reply (parent_id) support
+- Forum up/down votes
+- Create thread with series reference picker
+- Native issue reporting (anonymous or authenticated, no screenshots yet)
+
+**Remaining work (in priority order):**
+
+- Forum owner/admin edit and delete post controls
+- Forum markdown rendering parity (bold, italic, lists, blockquotes, inline code)
+- Avatar preset selection; native avatar upload/crop (Phase 6 / 6.5)
+- Issue reporting screenshots and contextual entry points (Phase 7)
+- Search and browse completeness (Phase 8)
+- App-store readiness — bundle IDs, icons, splash, EAS build (Phase 9)
 
 ## Product North Star
 

@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -18,7 +18,14 @@ import {
   View,
 } from "react-native";
 
-import { createForumPost, getForumThreadPosts, setForumPostVote } from "../api/forum";
+import {
+  createForumPost,
+  deleteForumPost,
+  deleteForumPostMine,
+  editForumPost,
+  getForumThreadPosts,
+  setForumPostVote,
+} from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppText,
@@ -42,9 +49,11 @@ import type {
   ForumThreadPostsPage,
   ForumVote,
   ForumVoteResponse,
+  SeriesRef,
 } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 import {
+  type ActiveMention,
   extractForumSeriesIds,
   getActiveForumMention,
   insertForumMention,
@@ -68,6 +77,16 @@ function PostCard({
   onVote,
   canReply,
   onStartReply,
+  isOwner,
+  isAdmin,
+  isEditing,
+  editText,
+  onEditStart,
+  onEditChange,
+  onEditSave,
+  onEditCancel,
+  isSavingEdit,
+  onDelete,
 }: {
   post: ForumPost;
   depth?: number;
@@ -76,11 +95,23 @@ function PostCard({
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
   onStartReply: (post: ForumPost) => void;
+  isOwner: boolean;
+  isAdmin: boolean;
+  isEditing: boolean;
+  editText: string;
+  onEditStart: (post: ForumPost) => void;
+  onEditChange: (text: string) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+  isSavingEdit: boolean;
+  onDelete: (post: ForumPost) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
   const upvotes = getUpvoteCount(post);
   const downvotes = getDownvoteCount(post);
+  const canEdit = isOwner || isAdmin;
+  const canDelete = isOwner || isAdmin;
 
   return (
     <Surface
@@ -114,9 +145,45 @@ function PostCard({
         </View>
       </View>
 
-      <ForumMarkdown markdown={post.content_markdown} />
-
-      <ForumSeriesStrip seriesRefs={post.series_refs} />
+      {isEditing ? (
+        <View style={styles.editBlock}>
+          <TextInput
+            autoCapitalize="sentences"
+            autoCorrect
+            multiline
+            textAlignVertical="top"
+            value={editText}
+            onChangeText={onEditChange}
+            placeholderTextColor={colors.textSubtle}
+            style={styles.replyInput}
+          />
+          <View style={styles.editActions}>
+            <AppButton
+              label={isSavingEdit ? "Saving..." : "Save"}
+              disabled={isSavingEdit || editText.trim().length === 0}
+              onPress={onEditSave}
+              iconLeft={
+                isSavingEdit ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : (
+                  <Ionicons name="checkmark-outline" size={15} color={colors.text} />
+                )
+              }
+            />
+            <AppButton
+              label="Cancel"
+              disabled={isSavingEdit}
+              onPress={onEditCancel}
+              iconLeft={<Ionicons name="close-outline" size={15} color={colors.text} />}
+            />
+          </View>
+        </View>
+      ) : (
+        <>
+          <ForumMarkdown markdown={post.content_markdown} />
+          <ForumSeriesStrip seriesRefs={post.series_refs} />
+        </>
+      )}
 
       <View style={styles.postFooter}>
         <View style={styles.voteGroup}>
@@ -164,19 +231,7 @@ function PostCard({
             <AppText variant="caption">{downvotes}</AppText>
           </Pressable>
         </View>
-        {post.parent_id ? (
-          <View style={styles.badge}>
-            <Ionicons
-              name="return-up-forward-outline"
-              size={13}
-              color={colors.textMuted}
-            />
-            <AppText variant="caption" tone="muted">
-              Reply
-            </AppText>
-          </View>
-        ) : null}
-        {canReply ? (
+        {canReply && !isEditing ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Reply to ${post.author_username || "this post"}`}
@@ -190,6 +245,111 @@ function PostCard({
             <AppText variant="caption">Reply</AppText>
           </Pressable>
         ) : null}
+        {canEdit && !isEditing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit post"
+            onPress={() => onEditStart(post)}
+            style={({ pressed }) => [
+              styles.replyAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="pencil-outline" size={13} color={colors.text} />
+            <AppText variant="caption">Edit</AppText>
+          </Pressable>
+        ) : null}
+        {canDelete && !isEditing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Delete post"
+            onPress={() => onDelete(post)}
+            style={({ pressed }) => [
+              styles.deleteAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="trash-outline" size={13} color={colors.danger} />
+            <AppText variant="caption" tone="danger">
+              Delete
+            </AppText>
+          </Pressable>
+        ) : null}
+      </View>
+    </Surface>
+  );
+}
+
+function InlineComposer({
+  replyToPost,
+  replyText,
+  onReplyChange,
+  onSubmit,
+  onCancel,
+  isPending,
+  activeMention,
+  onMentionSelect,
+}: {
+  replyToPost: ForumPost;
+  replyText: string;
+  onReplyChange: (text: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+  activeMention: ActiveMention | null;
+  onMentionSelect: (series: SeriesRef) => void;
+}) {
+  const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
+  const canSubmit = replyText.trim().length > 0 && !isOverLimit && !isPending;
+
+  return (
+    <Surface variant="raised" radius="xl" style={styles.inlineComposer}>
+      <View style={styles.composerHeader}>
+        <Ionicons
+          name="return-up-forward-outline"
+          size={15}
+          color={colors.accentStrong}
+        />
+        <View style={{ flex: 1 }}>
+          <RoleNameText variant="caption" role={replyToPost.author_role}>
+            {`Replying to @${replyToPost.author_username || "reader"}`}
+          </RoleNameText>
+        </View>
+        <AppText variant="caption" tone={isOverLimit ? "danger" : "subtle"}>
+          {replyText.length}/{REPLY_MAX_LENGTH}
+        </AppText>
+      </View>
+      <TextInput
+        autoCapitalize="sentences"
+        autoCorrect
+        multiline
+        textAlignVertical="top"
+        value={replyText}
+        onChangeText={onReplyChange}
+        placeholder={`Reply to ${replyToPost.author_username || "this post"}...`}
+        placeholderTextColor={colors.textSubtle}
+        style={styles.replyInput}
+      />
+      <ForumMentionSuggestions mention={activeMention} onSelect={onMentionSelect} />
+      <View style={styles.inlineComposerActions}>
+        <AppButton
+          label={isPending ? "Posting..." : "Post reply"}
+          disabled={!canSubmit}
+          onPress={onSubmit}
+          iconLeft={
+            isPending ? (
+              <ActivityIndicator size="small" color={colors.text} />
+            ) : (
+              <Ionicons name="send-outline" size={15} color={colors.text} />
+            )
+          }
+        />
+        <AppButton
+          label="Cancel"
+          disabled={isPending}
+          onPress={onCancel}
+          iconLeft={<Ionicons name="close-outline" size={15} color={colors.text} />}
+        />
       </View>
     </Surface>
   );
@@ -204,6 +364,18 @@ function ReplyTree({
   onVote,
   canReply,
   onStartReply,
+  editingPostId,
+  editText,
+  onEditStart,
+  onEditChange,
+  onEditSave,
+  onEditCancel,
+  isSavingEdit,
+  onDelete,
+  currentUsername,
+  isAdmin,
+  renderInlineComposer,
+  parentPost,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -213,9 +385,26 @@ function ReplyTree({
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
   onStartReply: (post: ForumPost) => void;
+  editingPostId: number | null;
+  editText: string;
+  onEditStart: (post: ForumPost) => void;
+  onEditChange: (text: string) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+  isSavingEdit: boolean;
+  onDelete: (post: ForumPost) => void;
+  currentUsername: string | null;
+  isAdmin: boolean;
+  renderInlineComposer: (post: ForumPost) => ReactNode;
+  parentPost?: ForumPost;
 }) {
   const children = byParent[post.id] || [];
-  const label = depth === 0 ? `Reply ${topIndex}` : "Nested reply";
+  const label = parentPost
+    ? depth === 0
+      ? "Reply to original post"
+      : `Reply to @${parentPost.author_username || "reader"}`
+    : `Reply ${topIndex}`;
+  const isOwner = Boolean(currentUsername && post.author_username === currentUsername);
 
   return (
     <View style={styles.replyBranch}>
@@ -227,7 +416,18 @@ function ReplyTree({
         onVote={onVote}
         canReply={canReply}
         onStartReply={onStartReply}
+        isOwner={isOwner}
+        isAdmin={isAdmin}
+        isEditing={editingPostId === post.id}
+        editText={editText}
+        onEditStart={onEditStart}
+        onEditChange={onEditChange}
+        onEditSave={onEditSave}
+        onEditCancel={onEditCancel}
+        isSavingEdit={isSavingEdit}
+        onDelete={onDelete}
       />
+      {renderInlineComposer(post)}
       {children.map((child) => (
         <ReplyTree
           key={child.id}
@@ -239,6 +439,18 @@ function ReplyTree({
           onVote={onVote}
           canReply={canReply}
           onStartReply={onStartReply}
+          editingPostId={editingPostId}
+          editText={editText}
+          onEditStart={onEditStart}
+          onEditChange={onEditChange}
+          onEditSave={onEditSave}
+          onEditCancel={onEditCancel}
+          isSavingEdit={isSavingEdit}
+          onDelete={onDelete}
+          currentUsername={currentUsername}
+          isAdmin={isAdmin}
+          renderInlineComposer={renderInlineComposer}
+          parentPost={post}
         />
       ))}
     </View>
@@ -249,9 +461,12 @@ export function ForumThreadScreen() {
   const route = useRoute<ForumThreadRoute>();
   const navigation = useNavigation<ForumThreadNavigation>();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [replyText, setReplyText] = useState("");
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const { threadId } = route.params;
   const queryKey = ["forum", "thread", threadId] as const;
   const activeMention = getActiveForumMention(replyText);
@@ -344,6 +559,65 @@ export function ForumThreadScreen() {
       );
     },
   });
+  const editMutation = useMutation({
+    mutationFn: ({ postId, markdown }: { postId: number; markdown: string }) =>
+      editForumPost(threadId, postId, { content_markdown: markdown }),
+    onSuccess: (updatedPost) => {
+      setEditingPostId(null);
+      setEditText("");
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((post) =>
+                post.id === updatedPost.id ? updatedPost : post,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Edit not saved",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: ({ postId, asAdmin }: { postId: number; asAdmin: boolean }) =>
+      asAdmin ? deleteForumPost(threadId, postId) : deleteForumPostMine(threadId, postId),
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              posts: page.posts.filter((post) => post.id !== variables.postId),
+              total_top_level: page.posts.some(
+                (p) => p.id === variables.postId && !p.parent_id,
+              )
+                ? page.total_top_level - 1
+                : page.total_top_level,
+            })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Delete failed",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
   const pages = postsQuery.data?.pages ?? [];
   const thread = pages[0]?.thread;
   const posts = pages
@@ -362,7 +636,9 @@ export function ForumThreadScreen() {
     }
     return acc;
   }, {});
-  const topLevelReplies = replies.filter((post) => !post.parent_id);
+  const topLevelReplies = replies.filter(
+    (post) => !post.parent_id || post.parent_id === originalPost?.id,
+  );
   const canReplyToThread = Boolean(thread && !thread.locked);
   const trimmedReply = replyText.trim();
   const canSubmitReply =
@@ -442,6 +718,59 @@ export function ForumThreadScreen() {
 
     setReplyTarget(post);
   };
+  const handleEditStart = (post: ForumPost) => {
+    setEditingPostId(post.id);
+    setEditText(post.content_markdown);
+  };
+  const handleEditSave = () => {
+    if (!editingPostId) return;
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    editMutation.mutate({ postId: editingPostId, markdown: trimmed });
+  };
+  const handleEditCancel = () => {
+    setEditingPostId(null);
+    setEditText("");
+  };
+  const handleDelete = (post: ForumPost) => {
+    const isOwnerOfPost = Boolean(
+      user?.username && user.username === post.author_username,
+    );
+    Alert.alert("Delete post?", "This action cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          deleteMutation.mutate({ postId: post.id, asAdmin: isAdmin && !isOwnerOfPost }),
+      },
+    ]);
+  };
+  const handleMentionSelect = (series: SeriesRef) => {
+    setReplyText((current) =>
+      activeMention
+        ? insertForumMention(current, activeMention, series).slice(0, REPLY_MAX_LENGTH)
+        : current,
+    );
+  };
+  const renderInlineComposer = (post: ForumPost): ReactNode => {
+    if (replyTarget?.id !== post.id) return null;
+    return (
+      <InlineComposer
+        replyToPost={post}
+        replyText={replyText}
+        onReplyChange={setReplyText}
+        onSubmit={handleSubmitReply}
+        onCancel={() => {
+          setReplyTarget(null);
+          setReplyText("");
+        }}
+        isPending={replyMutation.isPending}
+        activeMention={activeMention}
+        onMentionSelect={handleMentionSelect}
+      />
+    );
+  };
 
   return (
     <ScreenShell
@@ -515,7 +844,20 @@ export function ForumThreadScreen() {
             onVote={handleVote}
             canReply={canReplyToThread}
             onStartReply={handleStartReply}
+            isOwner={Boolean(
+              user?.username && user.username === originalPost.author_username,
+            )}
+            isAdmin={isAdmin}
+            isEditing={editingPostId === originalPost.id}
+            editText={editText}
+            onEditStart={handleEditStart}
+            onEditChange={setEditText}
+            onEditSave={handleEditSave}
+            onEditCancel={handleEditCancel}
+            isSavingEdit={editMutation.isPending}
+            onDelete={handleDelete}
           />
+          {renderInlineComposer(originalPost)}
         </View>
       ) : null}
 
@@ -546,6 +888,18 @@ export function ForumThreadScreen() {
                 onVote={handleVote}
                 canReply={canReplyToThread}
                 onStartReply={handleStartReply}
+                editingPostId={editingPostId}
+                editText={editText}
+                onEditStart={handleEditStart}
+                onEditChange={setEditText}
+                onEditSave={handleEditSave}
+                onEditCancel={handleEditCancel}
+                isSavingEdit={editMutation.isPending}
+                onDelete={handleDelete}
+                currentUsername={user?.username ?? null}
+                isAdmin={isAdmin}
+                renderInlineComposer={renderInlineComposer}
+                parentPost={originalPost}
               />
             ))}
           </View>
@@ -570,7 +924,7 @@ export function ForumThreadScreen() {
         </View>
       ) : null}
 
-      {thread ? (
+      {thread && !replyTarget ? (
         <Surface variant="raised" radius="xl" style={styles.replyComposer}>
           <View style={styles.composerHeader}>
             <View style={styles.composerTitle}>
@@ -580,11 +934,7 @@ export function ForumThreadScreen() {
                 color={thread.locked ? colors.warningText : colors.accentStrong}
               />
               <AppText variant="cardTitle">
-                {thread.locked
-                  ? "Thread locked"
-                  : replyTarget
-                    ? "Reply to post"
-                    : "Reply in thread"}
+                {thread.locked ? "Thread locked" : "Reply in thread"}
               </AppText>
             </View>
             <AppText
@@ -601,29 +951,6 @@ export function ForumThreadScreen() {
             </AppText>
           ) : isSignedIn ? (
             <>
-              {replyTarget ? (
-                <View style={styles.replyTargetCard}>
-                  <View style={styles.replyTargetText}>
-                    <AppText variant="caption" tone="muted">
-                      Replying to
-                    </AppText>
-                    <RoleNameText variant="caption" role={replyTarget.author_role}>
-                      {`@${replyTarget.author_username || "reader"}`}
-                    </RoleNameText>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear reply target"
-                    onPress={() => setReplyTarget(null)}
-                    style={({ pressed }) => [
-                      styles.clearReplyTarget,
-                      pressed ? styles.pressedBadge : null,
-                    ]}
-                  >
-                    <Ionicons name="close" size={16} color={colors.text} />
-                  </Pressable>
-                </View>
-              ) : null}
               <TextInput
                 autoCapitalize="sentences"
                 autoCorrect
@@ -631,26 +958,13 @@ export function ForumThreadScreen() {
                 textAlignVertical="top"
                 value={replyText}
                 onChangeText={setReplyText}
-                placeholder={
-                  replyTarget
-                    ? `Reply to ${replyTarget.author_username || "this post"}...`
-                    : "Write a reply..."
-                }
+                placeholder="Write a reply..."
                 placeholderTextColor={colors.textSubtle}
                 style={styles.replyInput}
               />
               <ForumMentionSuggestions
                 mention={activeMention}
-                onSelect={(series) => {
-                  setReplyText((current) =>
-                    activeMention
-                      ? insertForumMention(current, activeMention, series).slice(
-                          0,
-                          REPLY_MAX_LENGTH,
-                        )
-                      : current,
-                  );
-                }}
+                onSelect={handleMentionSelect}
               />
               <View style={styles.composerActions}>
                 <AppText variant="caption" tone="muted" style={styles.composerHint}>
@@ -941,5 +1255,30 @@ const styles = StyleSheet.create({
   pressedBadge: {
     opacity: 0.82,
     transform: [{ scale: 0.98 }],
+  },
+  deleteAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  editBlock: {
+    gap: spacing.sm,
+  },
+  editActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  inlineComposer: {
+    gap: spacing.md,
+  },
+  inlineComposerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
   },
 });

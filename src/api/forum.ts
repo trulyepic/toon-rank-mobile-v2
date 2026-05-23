@@ -2,6 +2,7 @@ import { api } from "./client";
 import type {
   CreateForumPostRequest,
   CreateForumThreadRequest,
+  EditForumPostRequest,
   ForumThreadDetail,
   ForumPost,
   ForumThread,
@@ -52,6 +53,26 @@ export async function setForumPostVote(
     { vote },
   );
   return res.data;
+}
+
+export async function editForumPost(
+  threadId: number,
+  postId: number,
+  payload: EditForumPostRequest,
+) {
+  const res = await api.patch<ForumPost>(
+    `/forum/threads/${threadId}/posts/${postId}`,
+    payload,
+  );
+  return res.data;
+}
+
+export async function deleteForumPost(threadId: number, postId: number) {
+  await api.delete(`/forum/threads/${threadId}/posts/${postId}`);
+}
+
+export async function deleteForumPostMine(threadId: number, postId: number) {
+  await api.delete(`/forum/threads/${threadId}/posts/${postId}/mine`);
 }
 
 export async function searchForumSeries(query: string) {

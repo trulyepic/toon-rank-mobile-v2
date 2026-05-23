@@ -87,3 +87,8 @@ export interface ForumVoteResponse {
   upvote_count: number;
   downvote_count: number;
 }
+
+export interface EditForumPostRequest {
+  content_markdown: string;
+  series_ids?: number[];
+}
