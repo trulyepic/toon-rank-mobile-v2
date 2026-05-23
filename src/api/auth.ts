@@ -63,3 +63,19 @@ export async function setAvatarPreset(preset: string) {
   });
   return res.data;
 }
+
+export async function uploadAvatar(uri: string, mimeType: string) {
+  const formData = new FormData();
+  const ext = mimeType.split("/")[1] ?? "jpg";
+
+  formData.append("file", {
+    uri,
+    type: mimeType,
+    name: `avatar.${ext}`,
+  } as unknown as Blob);
+
+  const res = await api.post<UserAvatarOut>("/auth/me/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}

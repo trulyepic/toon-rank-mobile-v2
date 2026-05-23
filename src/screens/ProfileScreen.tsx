@@ -2,7 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation } from "@tanstack/react-query";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
 
 import {
   AccountRequiredCard,
@@ -14,7 +15,7 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { setAvatarPreset } from "../api/auth";
+import { setAvatarPreset, uploadAvatar } from "../api/auth";
 import type { AvatarPreset } from "../types/account";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -28,6 +29,29 @@ const PRESET_LABELS: Record<AvatarPreset, string> = {
   amber: "Amber",
 };
 
+async function pickAvatarImage() {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    Alert.alert(
+      "Photo access required",
+      "Allow Toon Ranks to access your photo library in Settings to set a profile photo.",
+    );
+    return null;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: "images",
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (result.canceled || !result.assets.length) return null;
+
+  return result.assets[0];
+}
+
 export function ProfileScreen() {
   const { isSignedIn, user, updateUser } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -36,6 +60,22 @@ export function ProfileScreen() {
   const presetMutation = useMutation({
     mutationFn: (preset: string) => setAvatarPreset(preset),
     onSuccess: (data) => {
+      void updateUser({
+        avatar_url: data.avatar_url,
+        avatar_preset: data.avatar_preset as AvatarPreset,
+      });
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      const asset = await pickAvatarImage();
+      if (!asset) return null;
+      const mimeType = asset.mimeType ?? "image/jpeg";
+      return uploadAvatar(asset.uri, mimeType);
+    },
+    onSuccess: (data) => {
+      if (!data) return;
       void updateUser({
         avatar_url: data.avatar_url,
         avatar_preset: data.avatar_preset as AvatarPreset,
@@ -70,87 +110,107 @@ export function ProfileScreen() {
       </Surface>
 
       {isSignedIn ? (
-        <View style={styles.section}>
-          <SectionHeader title="Avatar preset" />
-          {user?.avatar_url ? (
-            <AppText tone="muted" style={styles.presetNote}>
-              Selecting a preset will replace your uploaded photo.
-            </AppText>
-          ) : null}
-          <Surface variant="raised" radius="xl" style={styles.presetRow}>
-            {PRESETS.map((preset) => {
-              const pc = avatarPresetColors[preset];
-              const isActive = currentPreset === preset;
-              const isLoading =
-                presetMutation.isPending && presetMutation.variables === preset;
+        <>
+          <View style={styles.section}>
+            <SectionHeader title="Avatar preset" />
+            {user?.avatar_url ? (
+              <AppText tone="muted" style={styles.presetNote}>
+                Selecting a preset will replace your uploaded photo.
+              </AppText>
+            ) : null}
+            <Surface variant="raised" radius="xl" style={styles.presetRow}>
+              {PRESETS.map((preset) => {
+                const pc = avatarPresetColors[preset];
+                const isActive = currentPreset === preset && !user?.avatar_url;
+                const isLoading =
+                  presetMutation.isPending && presetMutation.variables === preset;
 
-              return (
-                <Pressable
-                  key={preset}
-                  onPress={() => {
-                    if (!isActive && !presetMutation.isPending) {
-                      presetMutation.mutate(preset);
-                    }
-                  }}
-                  disabled={isActive || presetMutation.isPending}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${PRESET_LABELS[preset]} avatar preset${isActive ? ", selected" : ""}`}
-                  accessibilityState={{ selected: isActive }}
-                  style={({ pressed }) => [
-                    styles.swatchWrap,
-                    pressed && !isActive ? styles.pressed : null,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.swatch,
-                      {
-                        backgroundColor: pc.background,
-                        borderColor: pc.border,
-                      },
-                      isActive && styles.swatchActive,
+                return (
+                  <Pressable
+                    key={preset}
+                    onPress={() => {
+                      if (!isActive && !presetMutation.isPending) {
+                        presetMutation.mutate(preset);
+                      }
+                    }}
+                    disabled={isActive || presetMutation.isPending}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${PRESET_LABELS[preset]} avatar preset${isActive ? ", selected" : ""}`}
+                    accessibilityState={{ selected: isActive }}
+                    style={({ pressed }) => [
+                      styles.swatchWrap,
+                      pressed && !isActive ? styles.pressed : null,
                     ]}
                   >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : isActive ? (
-                      <Ionicons name="checkmark" size={22} color="#fff" />
-                    ) : null}
-                  </View>
-                  <AppText
-                    variant="caption"
-                    tone={isActive ? "accent" : "muted"}
-                    align="center"
-                  >
-                    {PRESET_LABELS[preset]}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </Surface>
-          {presetMutation.isError ? (
-            <AppText tone="danger" style={styles.presetNote}>
-              Could not update preset. Please try again.
-            </AppText>
-          ) : null}
-        </View>
-      ) : null}
+                    <View
+                      style={[
+                        styles.swatch,
+                        {
+                          backgroundColor: pc.background,
+                          borderColor: pc.border,
+                        },
+                        isActive && styles.swatchActive,
+                      ]}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : isActive ? (
+                        <Ionicons name="checkmark" size={22} color="#fff" />
+                      ) : null}
+                    </View>
+                    <AppText
+                      variant="caption"
+                      tone={isActive ? "accent" : "muted"}
+                      align="center"
+                    >
+                      {PRESET_LABELS[preset]}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </Surface>
+            {presetMutation.isError ? (
+              <AppText tone="danger" style={styles.presetNote}>
+                Could not update preset. Please try again.
+              </AppText>
+            ) : null}
+          </View>
 
-      <View style={styles.section}>
-        <SectionHeader title="Custom photo" />
-        <Surface variant="default" radius="xl" style={styles.notice}>
-          <View style={styles.noticeIcon}>
-            <Ionicons name="image-outline" size={20} color={colors.accentStrong} />
+          <View style={styles.section}>
+            <SectionHeader title="Custom photo" />
+            <Surface variant="raised" radius="xl" style={styles.uploadCard}>
+              <View style={styles.uploadIcon}>
+                <Ionicons name="image-outline" size={22} color={colors.accentStrong} />
+              </View>
+              <View style={styles.uploadText}>
+                <AppText variant="cardTitle">Upload a photo</AppText>
+                <AppText tone="muted">
+                  Choose a square photo from your library. It will be cropped and stored
+                  as your Toon Ranks avatar.
+                </AppText>
+              </View>
+              <AppButton
+                label={uploadMutation.isPending ? "Uploading…" : "Choose photo"}
+                variant="secondary"
+                disabled={uploadMutation.isPending}
+                onPress={() => uploadMutation.mutate()}
+                iconLeft={
+                  uploadMutation.isPending ? (
+                    <ActivityIndicator size="small" color={colors.text} />
+                  ) : (
+                    <Ionicons name="cloud-upload-outline" size={15} color={colors.text} />
+                  )
+                }
+              />
+              {uploadMutation.isError ? (
+                <AppText tone="danger">
+                  Upload failed. Check your connection and try again.
+                </AppText>
+              ) : null}
+            </Surface>
           </View>
-          <View style={styles.noticeText}>
-            <AppText variant="cardTitle">Upload coming in a future update</AppText>
-            <AppText tone="muted">
-              Native image picking, cropping, and upload will be added in the next avatar
-              phase. You can manage your photo from the website in the meantime.
-            </AppText>
-          </View>
-        </Surface>
-      </View>
+        </>
+      ) : null}
 
       <View style={styles.section}>
         <SectionHeader title="Account shortcuts" />
@@ -209,11 +269,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.8,
   },
-  notice: {
-    flexDirection: "row",
+  uploadCard: {
     gap: spacing.md,
   },
-  noticeIcon: {
+  uploadIcon: {
     width: 42,
     height: 42,
     alignItems: "center",
@@ -223,8 +282,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent,
   },
-  noticeText: {
-    flex: 1,
+  uploadText: {
     gap: spacing.xs,
   },
   actions: {

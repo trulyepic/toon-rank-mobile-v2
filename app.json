@@ -39,6 +39,15 @@
     "experiments": {
       "typedRoutes": false
     },
-    "plugins": ["expo-secure-store", "expo-web-browser"]
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Toon Ranks needs access to your photo library to set your profile avatar."
+        }
+      ]
+    ]
   }
 }

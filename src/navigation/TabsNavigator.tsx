@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { CompareScreen } from "../screens/CompareScreen";
+import { ForumScreen } from "../screens/ForumScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { MoreScreen } from "../screens/MoreScreen";
 import { colors } from "../theme/tokens";
@@ -10,6 +11,7 @@ import { SearchScreen } from "../screens/SearchScreen";
 export type TabParamList = {
   Home: undefined;
   Search: undefined;
+  Forum: undefined;
   Compare: undefined;
   More: undefined;
 };
@@ -24,6 +26,8 @@ function getTabIconName(
       return "home-outline";
     case "Search":
       return "search-outline";
+    case "Forum":
+      return "chatbubbles-outline";
     case "Compare":
       return "git-compare-outline";
     case "More":
@@ -49,6 +53,7 @@ export function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen name="Forum" component={ForumScreen} />
       <Tab.Screen name="Compare" component={CompareScreen} />
       <Tab.Screen name="More" component={MoreScreen} />
     </Tab.Navigator>
