@@ -25,6 +25,7 @@ import {
   AppButton,
   EmptyState,
   ErrorState,
+  ForumMentionSuggestions,
   ForumMarkdown,
   ForumSeriesStrip,
   LoadingState,
@@ -43,6 +44,11 @@ import type {
   ForumVoteResponse,
 } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
+import {
+  extractForumSeriesIds,
+  getActiveForumMention,
+  insertForumMention,
+} from "../utils/forumMentions";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -248,6 +254,7 @@ export function ForumThreadScreen() {
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const { threadId } = route.params;
   const queryKey = ["forum", "thread", threadId] as const;
+  const activeMention = getActiveForumMention(replyText);
   const postsQuery = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) => getForumThreadPosts(threadId, pageParam, POSTS_PAGE_SIZE),
@@ -295,11 +302,40 @@ export function ForumThreadScreen() {
       createForumPost(threadId, {
         content_markdown: contentMarkdown,
         parent_id: parentId ?? null,
+        series_ids: extractForumSeriesIds(contentMarkdown),
       }),
-    onSuccess: async () => {
+    onSuccess: async (createdPost) => {
       setReplyText("");
       setReplyTarget(null);
-      await queryClient.invalidateQueries({ queryKey });
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+
+          return {
+            ...current,
+            pages: current.pages.map((page, pageIndex) => {
+              if (pageIndex !== 0) return page;
+              if (page.posts.some((post) => post.id === createdPost.id)) return page;
+
+              return {
+                ...page,
+                thread: {
+                  ...page.thread,
+                  post_count: page.thread.post_count + 1,
+                  last_post_at: createdPost.created_at,
+                },
+                posts: [...page.posts, createdPost],
+                total_top_level: createdPost.parent_id
+                  ? page.total_top_level
+                  : page.total_top_level + 1,
+              };
+            }),
+          };
+        },
+      );
+      void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
+      void queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       Alert.alert(
@@ -603,9 +639,23 @@ export function ForumThreadScreen() {
                 placeholderTextColor={colors.textSubtle}
                 style={styles.replyInput}
               />
+              <ForumMentionSuggestions
+                mention={activeMention}
+                onSelect={(series) => {
+                  setReplyText((current) =>
+                    activeMention
+                      ? insertForumMention(current, activeMention, series).slice(
+                          0,
+                          REPLY_MAX_LENGTH,
+                        )
+                      : current,
+                  );
+                }}
+              />
               <View style={styles.composerActions}>
                 <AppText variant="caption" tone="muted" style={styles.composerHint}>
-                  Markdown is supported. Series picker and image uploads are next.
+                  Markdown is supported. Type @ to reference a series. Image uploads are
+                  next.
                 </AppText>
                 <AppButton
                   label={replyMutation.isPending ? "Posting..." : "Post reply"}

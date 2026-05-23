@@ -5,6 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { getForumThreads } from "../api/forum";
+import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
   AppText,
@@ -92,6 +93,8 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
 }
 
 export function ForumScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isSignedIn } = useAuth();
   const threadsQuery = useInfiniteQuery({
     queryKey: ["forum", "threads"],
     queryFn: ({ pageParam }) => getForumThreads(pageParam, 20),
@@ -108,6 +111,25 @@ export function ForumScreen() {
     <ScreenShell
       title="Forum"
       subtitle="Browse Toon Ranks discussions. Vote and reply with your account."
+      rightSlot={
+        <AppButton
+          label="New"
+          size="sm"
+          selected={isSignedIn}
+          iconLeft={
+            <Ionicons
+              name={isSignedIn ? "add" : "log-in-outline"}
+              size={15}
+              color={colors.text}
+            />
+          }
+          onPress={() =>
+            isSignedIn
+              ? navigation.navigate("ForumCreateThread")
+              : navigation.navigate("Login")
+          }
+        />
+      }
     >
       <Surface variant="accent" radius="hero" style={styles.hero}>
         <View style={styles.heroIcon}>
@@ -116,8 +138,8 @@ export function ForumScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Community discussions</AppText>
           <AppText tone="muted">
-            Read public threads now. Votes and replies use the same website account;
-            creating new threads will unlock in a later forum slice.
+            Read public threads now. Sign in to create threads, reply, and vote with the
+            same identity you use on the website.
           </AppText>
         </View>
       </Surface>
