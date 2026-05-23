@@ -8,6 +8,7 @@ import type {
   ResendVerificationRequest,
   SignupRequest,
   SignupResponse,
+  UserAvatarOut,
 } from "../types/account";
 
 export async function login(payload: LoginRequest) {
@@ -53,5 +54,12 @@ export async function verifyEmail(token: string) {
 
 export async function resendVerification(payload: ResendVerificationRequest) {
   const res = await api.post<MessageResponse>("/auth/resend-verification", payload);
+  return res.data;
+}
+
+export async function setAvatarPreset(preset: string) {
+  const res = await api.patch<UserAvatarOut>("/auth/me/avatar/preset", {
+    avatar_preset: preset,
+  });
   return res.data;
 }

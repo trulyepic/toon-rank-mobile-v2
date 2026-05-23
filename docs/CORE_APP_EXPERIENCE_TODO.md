@@ -186,9 +186,9 @@ Suggested branch: `mobile-core-profile-account`
 
 Purpose: make the account area reflect the user's real website identity.
 
-- [ ] Add or consume a backend current-user profile endpoint if needed.
+- [x] Add or consume a backend current-user profile endpoint if needed.
 - [x] Show username, role color, avatar URL, and avatar preset consistently.
-- [ ] Add default avatar preset selection using `PATCH /auth/me/avatar/preset`.
+- [x] Add default avatar preset selection using `PATCH /auth/me/avatar/preset`.
 - [x] Decide whether custom avatar upload/cropping belongs in mobile v1 or remains web-only at first.
 - [x] Connect Settings session status and logout to the real session.
 - [x] Update More/Profile/Forum author surfaces to use the same role/avatar conventions as the website.

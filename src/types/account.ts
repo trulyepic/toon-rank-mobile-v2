@@ -50,3 +50,10 @@ export interface ResendVerificationRequest {
 export interface MessageResponse {
   message: string;
 }
+
+export interface UserAvatarOut {
+  id: number;
+  username: string;
+  avatar_url: string | null;
+  avatar_preset: AvatarPreset | string;
+}
