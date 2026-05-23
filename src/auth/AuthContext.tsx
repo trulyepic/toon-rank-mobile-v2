@@ -29,6 +29,7 @@ type AuthContextValue = {
   setSession: (session: AuthSession) => Promise<void>;
   logout: () => Promise<void>;
   refreshSessionFromStorage: () => Promise<void>;
+  updateUser: (partial: Partial<AuthUser>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -93,6 +94,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setStatus("signed_out");
   }, [refreshToken]);
 
+  const updateUser = useCallback(async (partial: Partial<AuthUser>) => {
+    const storedSession = await getStoredAuthSession();
+    if (!storedSession) return;
+    const updated = { ...storedSession.user, ...partial };
+    await setStoredAuthSession({ ...storedSession, user: updated });
+    setUser(updated);
+  }, []);
+
   const refreshAccessToken = useCallback(async () => {
     if (isRefreshingRef.current) return;
 
@@ -141,8 +150,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSession,
       logout,
       refreshSessionFromStorage,
+      updateUser,
     }),
-    [logout, refreshSessionFromStorage, setSession, status, token, user],
+    [logout, refreshSessionFromStorage, setSession, updateUser, status, token, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
