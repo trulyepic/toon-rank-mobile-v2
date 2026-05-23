@@ -1,5 +1,11 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors, spacing } from "../theme/tokens";
@@ -14,16 +20,25 @@ type Props = PropsWithChildren<{
 export function ScreenShell({ title, subtitle, rightSlot, children }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <AppText variant="screenTitle">{title}</AppText>
-            {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboard}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <AppText variant="screenTitle">{title}</AppText>
+              {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
+            </View>
+            {rightSlot ? <View>{rightSlot}</View> : null}
           </View>
-          {rightSlot ? <View>{rightSlot}</View> : null}
-        </View>
-        {children}
-      </ScrollView>
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -32,6 +47,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboard: {
+    flex: 1,
   },
   content: {
     padding: spacing.md,
