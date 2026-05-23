@@ -15,10 +15,12 @@ The current mobile app already has a usable public browsing shell:
 - Native anonymous issue reporting without screenshots.
 - Auth storage, auth context, login/signup screens, and a web-auth bridge shell.
 - Mobile login/signup can complete the website CAPTCHA flow and return a native session.
+- Mobile restores the saved access token/user from secure storage on app launch.
+- Mobile login includes a forgot-password entry point that opens the production website reset flow.
 - Series voting, reading-list management, forum replies, and forum up/down votes are connected.
 
-The biggest remaining product blockers are long-lived mobile sessions, account recovery entry points,
-native avatar management, forum creation/editing parity, and app-store readiness.
+The biggest remaining product blockers are long-lived mobile sessions, native avatar management,
+forum creation/editing parity, and app-store readiness.
 
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
@@ -60,6 +62,8 @@ Purpose: make app login/signup actually sign the user into the app, not just the
 - [x] Restore signed-in state on app launch.
 - [x] Add session-expired handling for `401` and auth-related `403` responses.
 - [x] Update Login/Signup screen copy so it no longer implies the flow is incomplete after it works.
+- [ ] Add long-lived refresh-token sessions in Phase 2.5 so mobile users stay signed in
+      longer than the short access-token lifetime.
 
 Done means a user can start login or signup in the app, complete the existing CAPTCHA-protected web
 step if needed, return to the app, and see signed-in state without manually going back from the
@@ -75,6 +79,11 @@ Suggested branch group:
 - `mobile-refresh-token-session`
 
 Purpose: keep mobile users signed in for about 30 days using a standard refresh-token flow.
+
+Current state: mobile already stores the access token and user snapshot in `expo-secure-store` and
+restores them on app launch. That is not the same as a long-lived refresh session. The current backend
+mobile token exchange returns only an access token, and authenticated `401`/`403` responses clear the
+session instead of refreshing it.
 
 - [ ] Add backend refresh-token storage with hashed tokens, expiry, revocation, and last-used tracking.
 - [ ] Return a refresh token from the mobile auth-code exchange endpoint.
@@ -93,11 +102,11 @@ Suggested branch: `mobile-auth-forgot-password-entry`
 Purpose: reflect the website/backend forgot-password flow in mobile without rebuilding account
 recovery natively.
 
-- [ ] Add a clear "Forgot password?" action to the native Login screen.
-- [ ] Open the production website forgot-password page in the same web-auth browser pattern.
-- [ ] Keep users in the app after closing the browser; do not pretend reset completion happens in
+- [x] Add a clear "Forgot password?" action to the native Login screen.
+- [x] Open the production website forgot-password page in the same web-auth browser pattern.
+- [x] Keep users in the app after closing the browser; do not pretend reset completion happens in
       native mobile yet.
-- [ ] Add a small test for the generated forgot-password URL if the helper is shared.
+- [x] Add a small test for the generated forgot-password URL if the helper is shared.
 
 Done means mobile users who cannot sign in have an obvious recovery path that uses the existing
 website/backend reset flow.
