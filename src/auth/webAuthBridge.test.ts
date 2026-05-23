@@ -27,6 +27,7 @@ describe("openWebAuthBridge", () => {
     });
     vi.mocked(exchangeMobileAuthCode).mockResolvedValue({
       access_token: "jwt",
+      refresh_token: "refresh-jwt",
       user: {
         id: 1,
         username: "reader",
@@ -41,6 +42,7 @@ describe("openWebAuthBridge", () => {
       status: "success",
       session: {
         access_token: "jwt",
+        refresh_token: "refresh-jwt",
         user: {
           id: 1,
           username: "reader",

@@ -92,10 +92,14 @@ api.interceptors.response.use(
     if (isAxiosError(error)) {
       const status = error.response?.status;
       const authorization = error.config?.headers?.Authorization;
+      const requestUrl = error.config?.url ?? "";
+      const isAuthRecoveryRoute =
+        requestUrl.includes("/auth/mobile-refresh") ||
+        requestUrl.includes("/auth/mobile-logout");
       const hadAuthHeader =
         typeof authorization === "string" && authorization.startsWith("Bearer ");
 
-      if (hadAuthHeader && (status === 401 || status === 403)) {
+      if (hadAuthHeader && !isAuthRecoveryRoute && (status === 401 || status === 403)) {
         notifySessionExpired();
       }
     }

@@ -4,6 +4,7 @@ import type {
   GoogleOAuthRequest,
   LoginRequest,
   MessageResponse,
+  MobileRefreshResponse,
   ResendVerificationRequest,
   SignupRequest,
   SignupResponse,
@@ -26,6 +27,20 @@ export async function loginWithGoogle(payload: GoogleOAuthRequest) {
 
 export async function exchangeMobileAuthCode(code: string) {
   const res = await api.post<AuthSession>("/auth/mobile-token", { code });
+  return res.data;
+}
+
+export async function refreshMobileSession(refreshToken: string) {
+  const res = await api.post<MobileRefreshResponse>("/auth/mobile-refresh", {
+    refresh_token: refreshToken,
+  });
+  return res.data;
+}
+
+export async function revokeMobileSession(refreshToken?: string | null) {
+  const res = await api.post<MessageResponse>("/auth/mobile-logout", {
+    refresh_token: refreshToken ?? null,
+  });
   return res.data;
 }
 
