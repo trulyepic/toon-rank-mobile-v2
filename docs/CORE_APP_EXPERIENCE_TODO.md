@@ -159,8 +159,8 @@ Purpose: move forum from read-only browsing to the same discussion model as the 
 - [x] Add create-thread flow from the Forum screen.
 - [x] Add native series reference picker using `/forum/series-search`.
 - [x] Respect locked threads and latest-updates-first threads.
-- [ ] Add owner/admin edit/delete controls only if the current user's role allows them.
-- [ ] Preserve markdown/media/series-reference behavior so posts created on mobile render correctly on web, and vice versa.
+- [x] Add owner/admin edit/delete controls only if the current user's role allows them.
+- [x] Preserve markdown/media/series-reference behavior so posts created on mobile render correctly on web, and vice versa.
 
 Done means forum votes and posts are shared between mobile and web with the same account identity.
 
@@ -170,11 +170,11 @@ Suggested branch: `mobile-forum-markdown-parity`
 
 Purpose: make mobile forum posts render the same practical content patterns as the website forum.
 
-- [ ] Review the website forum renderer and collect real post examples that currently fail on mobile.
-- [ ] Render common markdown consistently: bold, italic, links, blockquotes, lists, line breaks, and inline code.
-- [ ] Render supported forum HTML patterns safely, especially spoiler/details blocks.
-- [ ] Render images, GIF links, and attached media in a native-friendly way.
-- [ ] Keep series references tappable and routed to the mobile Series Detail screen.
+- [x] Review the website forum renderer and collect real post examples that currently fail on mobile.
+- [x] Render common markdown consistently: bold, italic, links, blockquotes, lists, line breaks, and inline code.
+- [x] Render supported forum HTML patterns safely, especially spoiler/details blocks.
+- [x] Render images, GIF links, and attached media in a native-friendly way.
+- [x] Keep series references tappable and routed to the mobile Series Detail screen.
 - [ ] Add regression tests for real forum post examples so markdown rendering does not quietly break again.
 - [ ] Confirm posts created on the website render correctly on mobile, and mobile-created posts render correctly on the website.
 

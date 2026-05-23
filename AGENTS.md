@@ -23,20 +23,24 @@ and React Native.
 
 ## Current State
 
-The mobile project is early WIP but already has a meaningful foundation:
+The mobile project has a complete feature foundation across all core product areas:
 
-- Expo app scaffold
-- TypeScript
-- React Navigation stack and bottom tabs
-- TanStack Query
-- Axios API client
-- shared theme tokens
-- Home, Search, Series Detail, Compare, and More screens
-- local compare state
-- public API calls pointed at the existing Railway backend
-
-As of the last review, `npm run verify` passes. The project is tracked in git and uses small
-phase-sized branches.
+- Expo app scaffold with TypeScript, React Navigation stack and bottom tabs
+- TanStack Query for server-state caching
+- Axios API client with auth header injection and normalized errors
+- Shared theme tokens and reusable UI primitives (AppText, AppButton, Chip, Surface, etc.)
+- Home screen: ranked series grid with type filters and load-more
+- Search screen: query-driven results with native card layout
+- Series Detail screen: summary, metadata, voting UI, save/list actions
+- Compare screen: side-by-side comparison with horizontal swipe
+- Reading Lists screens: view lists, list detail, add/remove items, left-off chapter tracking
+- Forum screens: thread list, thread detail, nested reply tree, reply composer, vote controls,
+  create-thread flow with series reference picker, locked/latest-first thread flags
+- Auth: web-auth bridge (CAPTCHA on website → mobile code handoff → JWT), secure token
+  storage via expo-secure-store, refresh-token session durability (30-day), forgot-password
+  entry point, session expiry handling on 401/403
+- Voting: 1-10 per category, locked after voting, signed-out guard
+- Issue reporting: native form, anonymous and authenticated
 
 ## Related Projects
 
@@ -49,17 +53,17 @@ Sibling directories in the same workspace:
 - `F:\ma-review-project\toon-ranks-mobile`
   Native mobile app WIP.
 
-Do not assume the mobile app has its own backend. The intended architecture is shared backend, shared
-user data, native mobile frontend.
+Do not assume the mobile app has its own backend. The intended architecture is shared backend,
+shared user data, native mobile frontend.
 
 ## Current Stack
 
-- Expo
-- React Native
-- TypeScript
-- React Navigation
+- Expo 54 / React Native 0.81
+- React Navigation (native stack + bottom tabs)
 - TanStack Query
 - Axios
+- expo-secure-store (token storage)
+- expo-web-browser (web auth bridge)
 - Expo vector icons
 
 Primary commands:
@@ -78,19 +82,15 @@ npm run web
 
 ## Implementation Priorities
 
-The first design-first restart has already produced the native shell, shared UI primitives, public
-browsing screens, public forum browsing, native issue reporting, auth storage scaffolding, and a
-web-auth bridge shell. The current priority is no longer broad design polish.
+The design-first phase and core account-backed features (auth, voting, reading lists, forum
+posting, forum votes) are complete. Current priorities in order:
 
-Immediate priority:
-
-1. Finish mobile session durability with the planned refresh-token flow.
-2. Keep closing shared-account gaps in this order:
-   account recovery, native avatar management, forum create/edit/delete/media, app-store readiness.
-3. Keep public browsing reliable, but do not let small search/filter polish outrank shared-account
-   parity.
-4. Preserve one shared identity and data model across website and mobile.
-5. Move to app-store readiness only after the core account-backed product loop works.
+1. Forum owner/admin edit and delete controls (Phase 5 completion).
+2. Forum markdown rendering parity with the website (Phase 5.5).
+3. Avatar preset selection and native avatar upload (Phase 6 / 6.5).
+4. Issue reporting with screenshots and contextual entry points (Phase 7).
+5. Search and browse completeness (Phase 8).
+6. App-store readiness — bundle IDs, icons, splash, EAS build (Phase 9).
 
 ## Product Identity
 
@@ -100,14 +100,14 @@ Operating entity: `Nofara LLC`
 
 Canonical website: `https://www.toonranks.com`
 
-Backend currently used by mobile:
+Backend used by mobile (Railway deployment URL — unchanged by repo rename):
 
 ```text
 https://man-review-backend-production.up.railway.app
 ```
 
-The app should keep `Toon Ranks` as the user-facing product name. Mention `Nofara LLC` only in legal,
-trust, app settings, or policy surfaces when those are added.
+The app should keep `Toon Ranks` as the user-facing product name. Mention `Nofara LLC` only in
+legal, trust, app settings, or policy surfaces.
 
 ## Design Direction
 
@@ -119,55 +119,48 @@ The mobile app should be native, focused, and content-forward:
 - use the Toon Ranks blue as a real brand accent
 - reduce the current heavy brown palette over time
 - avoid web-page copy inside the app
-- avoid explanatory "future phase" text in user-facing screens once design polish begins
 - build app states: loading, empty, error, offline, and signed-out
 
 Do not copy the website layout 1:1. Preserve the product model, not the web layout.
 
 ## Data And Account Assumptions
 
-The mobile app should eventually use the same backend accounts as the website. A user should be able
-to create or use an existing Toon Ranks account, then see the same saved data on web and mobile.
+The mobile app shares the same backend accounts as the website. A user can create or use an
+existing Toon Ranks account, then see the same saved data on web and mobile.
 
-Expected shared data:
+Shared data:
 
-- login identity
-- reading lists
-- saved items / left-off chapter fields
+- login identity (JWT via web-auth bridge, refresh token for 30-day sessions)
+- reading lists and left-off chapter fields
 - forum threads, replies, up/down votes, and user-generated content
-- rating/voting history where supported
-
-Auth is now connected through the website CAPTCHA handoff. Future design decisions should assume a
-signed-in state exists, while still preserving polished signed-out and expired-session states.
+- rating/voting history
 
 ## Current Known Issues
 
-- Mobile login/signup can complete the web CAPTCHA flow and return a native session to the app.
-- Mobile uses secure storage for the current access token/user, but the longer-lived refresh-token
-  session plan is still pending.
-- Forum replies and up/down votes are connected; create-thread, edit/delete, series picker, and media
-  upload parity are still pending.
-- The website/backend now support forgot-password flows; mobile should expose that route from the
-  native login surface.
-- App-store assets, icon, splash, bundle identifiers, privacy disclosures, and EAS build config are
-  not ready.
+- Forum markdown rendering diverges from the web on bold, italic, lists, blockquotes, and
+  inline code. Phase 5.5 addresses this.
+- Owner/admin edit and delete controls are not yet surfaced in mobile forum posts. Phase 5
+  addresses this.
+- Native avatar upload/cropping is deferred to Phase 6.5.
+- App-store assets (icon, splash, bundle IDs, EAS config) are not ready.
+- `com.anonymous.toonranksmobile` is the placeholder Android package name and must be replaced
+  before store submission.
 
 ## Safe Working Rules
 
-- Keep changes small and branch-sized once git exists.
+- Keep changes small and branch-sized.
 - Prefer TypeScript-safe, reusable components over large one-off screen rewrites.
 - Run `npm run verify` before handing work back when dependencies are available.
 - Do not wire production-destructive behavior.
 - Do not introduce mobile-only data stores for data that must be shared with the website.
 - Do not fork product logic unless the backend contract requires it.
-- When adding auth later, use secure native storage. Do not store tokens in plain AsyncStorage.
+- Use secure native storage for tokens. Do not store tokens in plain AsyncStorage.
 - Keep user-visible text polished and app-like.
 
 ## Active Work Slice
 
-The active roadmap is now `docs/CORE_APP_EXPERIENCE_TODO.md`. Start there before choosing work.
-`docs/DESIGN_FIRST_TODO.md` is useful historical context, but it is no longer the primary source of
-truth for next steps.
+The active roadmap is `docs/CORE_APP_EXPERIENCE_TODO.md`. Start there before choosing work.
+`docs/DESIGN_FIRST_TODO.md` is historical context only.
 
-For the next real authentication work, use `docs/MOBILE_AUTH_CONTRACT.md` as the source of truth
-before editing backend, web frontend, or mobile auth code.
+For any auth changes, use `docs/MOBILE_AUTH_CONTRACT.md` as the source of truth before editing
+backend, web frontend, or mobile auth code.

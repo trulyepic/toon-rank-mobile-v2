@@ -2,7 +2,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
+import {
+  Image,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -11,6 +19,8 @@ import { AppText } from "./AppText";
 type Props = {
   markdown: string;
 };
+
+// ─── Outer token types (images, links, series refs, spoilers) ───────────────
 
 type Segment =
   | { kind: "text"; value: string }
@@ -37,7 +47,7 @@ function parseMarkdown(markdown: string): Segment[] {
     if (match[1] !== undefined && match[2] !== undefined) {
       segments.push({
         kind: "spoiler",
-        summary: cleanText(match[1]) || "Spoiler",
+        summary: cleanPlainText(match[1]) || "Spoiler",
         body: match[2].trim(),
       });
     } else if (match[3]) {
@@ -74,7 +84,8 @@ function parseMarkdown(markdown: string): Segment[] {
   return segments;
 }
 
-function cleanText(value: string) {
+// Strips all markdown for plain text contexts (spoiler summary)
+function cleanPlainText(value: string) {
   return value
     .replace(/```([\s\S]*?)```/g, "$1")
     .replace(/<\/?(?:b|strong|i|em|u|span)\b[^>]*>/gi, "")
@@ -83,6 +94,180 @@ function cleanText(value: string) {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+
+// ─── Inline token renderer ───────────────────────────────────────────────────
+
+type InlineToken =
+  | { k: "t"; v: string }
+  | { k: "b"; v: string }
+  | { k: "i"; v: string }
+  | { k: "c"; v: string };
+
+const inlinePattern = /\*\*([\s\S]*?)\*\*|`([^`\n]+)`|\*([\s\S]*?)\*/g;
+
+function parseInline(src: string): InlineToken[] {
+  const out: InlineToken[] = [];
+  let pos = 0;
+
+  for (const m of src.matchAll(inlinePattern)) {
+    const at = m.index!;
+    if (at > pos) out.push({ k: "t", v: src.slice(pos, at) });
+    if (m[1] !== undefined) out.push({ k: "b", v: m[1] });
+    else if (m[2] !== undefined) out.push({ k: "c", v: m[2] });
+    else if (m[3] !== undefined) out.push({ k: "i", v: m[3] });
+    pos = at + m[0].length;
+  }
+
+  if (pos < src.length) out.push({ k: "t", v: src.slice(pos) });
+  return out;
+}
+
+function InlineText({ text, extra }: { text: string; extra?: object }) {
+  const tokens = parseInline(text);
+
+  return (
+    <Text style={[styles.mdBody, extra]}>
+      {tokens.map((token, i) => {
+        if (token.k === "b")
+          return (
+            <Text key={i} style={styles.mdBold}>
+              {token.v}
+            </Text>
+          );
+        if (token.k === "i")
+          return (
+            <Text key={i} style={styles.mdItalic}>
+              {token.v}
+            </Text>
+          );
+        if (token.k === "c")
+          return (
+            <Text key={i} style={styles.mdInlineCode}>
+              {token.v}
+            </Text>
+          );
+        return token.v;
+      })}
+    </Text>
+  );
+}
+
+// ─── Block-level renderer ────────────────────────────────────────────────────
+
+type MdBlock =
+  | { type: "para"; text: string }
+  | { type: "heading"; level: number; text: string }
+  | { type: "quote"; lines: string[] }
+  | { type: "list"; ordered: boolean; items: string[] }
+  | { type: "code"; text: string };
+
+function parseMdBlocks(src: string): MdBlock[] {
+  const blocks: MdBlock[] = [];
+  const parts = src.split(/(```[\w]*\n?[\s\S]*?```)/g);
+
+  for (const part of parts) {
+    if (part.startsWith("```")) {
+      const inner = part
+        .replace(/^```[\w]*\n?/, "")
+        .replace(/```$/, "")
+        .trim();
+      if (inner) blocks.push({ type: "code", text: inner });
+      continue;
+    }
+
+    for (const chunk of part.split(/\n\n+/)) {
+      const trimmed = chunk.trim();
+      if (!trimmed) continue;
+
+      const lines = trimmed.split("\n");
+
+      if (lines.length === 1) {
+        const hm = lines[0].match(/^(#{1,6})\s+(.*)/);
+        if (hm) {
+          blocks.push({ type: "heading", level: hm[1].length, text: hm[2] });
+          continue;
+        }
+      }
+
+      if (lines.every((l) => /^>\s*/.test(l))) {
+        blocks.push({ type: "quote", lines: lines.map((l) => l.replace(/^>\s*/, "")) });
+        continue;
+      }
+
+      if (lines.every((l) => /^[-*+]\s+/.test(l) || /^\d+\.\s+/.test(l))) {
+        const ordered = /^\d+\./.test(lines[0]);
+        blocks.push({
+          type: "list",
+          ordered,
+          items: lines.map((l) => l.replace(/^(?:[-*+]|\d+\.)\s+/, "")),
+        });
+        continue;
+      }
+
+      blocks.push({ type: "para", text: trimmed });
+    }
+  }
+
+  return blocks;
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const blocks = parseMdBlocks(text);
+  if (!blocks.length) return null;
+
+  return (
+    <View style={styles.mdRoot}>
+      {blocks.map((block, bi) => {
+        if (block.type === "code") {
+          return (
+            <View key={bi} style={styles.mdCodeBlock}>
+              <Text style={styles.mdCodeText}>{block.text}</Text>
+            </View>
+          );
+        }
+
+        if (block.type === "heading") {
+          const hs =
+            block.level === 1
+              ? styles.mdH1
+              : block.level === 2
+                ? styles.mdH2
+                : styles.mdH3;
+          return <InlineText key={bi} text={block.text} extra={hs} />;
+        }
+
+        if (block.type === "quote") {
+          return (
+            <View key={bi} style={styles.mdBlockquote}>
+              {block.lines.map((line, li) => (
+                <InlineText key={li} text={line || " "} extra={styles.mdQuoteText} />
+              ))}
+            </View>
+          );
+        }
+
+        if (block.type === "list") {
+          return (
+            <View key={bi} style={styles.mdList}>
+              {block.items.map((item, ii) => (
+                <View key={ii} style={styles.mdListRow}>
+                  <Text style={[styles.mdBody, styles.mdListBullet]}>
+                    {block.ordered ? `${ii + 1}.` : "•"}
+                  </Text>
+                  <InlineText text={item} />
+                </View>
+              ))}
+            </View>
+          );
+        }
+
+        return <InlineText key={bi} text={block.text} />;
+      })}
+    </View>
+  );
+}
+
+// ─── Spoiler ─────────────────────────────────────────────────────────────────
 
 function SpoilerBlock({ summary, body }: { summary: string; body: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,6 +297,8 @@ function SpoilerBlock({ summary, body }: { summary: string; body: string }) {
     </View>
   );
 }
+
+// ─── Main export ─────────────────────────────────────────────────────────────
 
 export function ForumMarkdown({ markdown }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -179,19 +366,13 @@ export function ForumMarkdown({ markdown }: Props) {
           );
         }
 
-        const text = cleanText(segment.value);
-
-        if (!text) return null;
-
-        return (
-          <AppText key={`${text}-${index}`} tone="muted">
-            {text}
-          </AppText>
-        );
+        return <MarkdownText key={`text-${index}`} text={segment.value} />;
       })}
     </View>
   );
 }
+
+const MONOSPACE = Platform.OS === "ios" ? "Menlo" : "monospace";
 
 const styles = StyleSheet.create({
   root: {
@@ -242,5 +423,81 @@ const styles = StyleSheet.create({
   },
   spoilerBody: {
     paddingTop: spacing.xs,
+  },
+  // Markdown text block styles
+  mdRoot: {
+    gap: spacing.sm,
+  },
+  mdBody: {
+    fontSize: 15,
+    lineHeight: 23,
+    fontWeight: "400",
+    color: colors.textMuted,
+  },
+  mdBold: {
+    fontWeight: "700",
+    color: colors.text,
+  },
+  mdItalic: {
+    fontStyle: "italic",
+  },
+  mdInlineCode: {
+    fontFamily: MONOSPACE,
+    fontSize: 13,
+    backgroundColor: colors.backgroundSoft,
+    color: colors.accentStrong,
+  },
+  mdCodeBlock: {
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+  },
+  mdCodeText: {
+    fontFamily: MONOSPACE,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.textMuted,
+  },
+  mdBlockquote: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accentBorder,
+    paddingLeft: spacing.sm,
+    gap: 4,
+  },
+  mdQuoteText: {
+    color: colors.textSubtle,
+    fontStyle: "italic",
+  },
+  mdList: {
+    gap: 4,
+  },
+  mdListRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    alignItems: "flex-start",
+  },
+  mdListBullet: {
+    color: colors.textMuted,
+    minWidth: 16,
+  },
+  mdH1: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  mdH2: {
+    fontSize: 19,
+    lineHeight: 25,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  mdH3: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "700",
+    color: colors.text,
   },
 });
