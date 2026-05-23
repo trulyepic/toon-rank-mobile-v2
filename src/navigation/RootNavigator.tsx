@@ -7,7 +7,6 @@ import { SignupScreen } from "../screens/SignupScreen";
 import { SeriesDetailScreen } from "../screens/SeriesDetailScreen";
 import { ForumActivityScreen } from "../screens/ForumActivityScreen";
 import { ForumCreateThreadScreen } from "../screens/ForumCreateThreadScreen";
-import { ForumScreen } from "../screens/ForumScreen";
 import { ForumThreadScreen } from "../screens/ForumThreadScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ReadingListsScreen } from "../screens/ReadingListsScreen";
@@ -23,7 +22,6 @@ export type RootStackParamList = {
   CheckEmail: undefined;
   ReadingLists: undefined;
   ReadingListDetail: { listId: number; listName: string };
-  Forum: undefined;
   ForumCreateThread: undefined;
   ForumThread: { threadId: number };
   ForumActivity: undefined;
@@ -44,7 +42,6 @@ export function RootNavigator() {
       <Stack.Screen name="CheckEmail" component={CheckEmailScreen} />
       <Stack.Screen name="ReadingLists" component={ReadingListsScreen} />
       <Stack.Screen name="ReadingListDetail" component={ReadingListDetailScreen} />
-      <Stack.Screen name="Forum" component={ForumScreen} />
       <Stack.Screen name="ForumCreateThread" component={ForumCreateThreadScreen} />
       <Stack.Screen name="ForumThread" component={ForumThreadScreen} />
       <Stack.Screen name="ForumActivity" component={ForumActivityScreen} />

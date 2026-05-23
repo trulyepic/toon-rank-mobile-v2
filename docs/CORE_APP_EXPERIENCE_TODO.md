@@ -202,12 +202,12 @@ Suggested branch: `mobile-native-avatar-upload`
 Purpose: let users manage their Toon Ranks avatar directly in the native app while still storing the
 final image through the existing website/backend avatar pipeline and S3 storage.
 
-- [ ] Choose a native image picker/cropper package that works cleanly with Expo and store builds.
-- [ ] Request photo-library permissions with clear Android/iOS copy.
-- [ ] Crop selected images to the same square avatar standard used by the website.
-- [ ] Upload the cropped image through the existing backend/S3 avatar endpoint.
-- [ ] Allow users to choose one of the default avatar presets from mobile.
-- [ ] Refresh the stored mobile `AuthUser` after avatar or preset changes.
+- [x] Choose a native image picker/cropper package that works cleanly with Expo and store builds.
+- [x] Request photo-library permissions with clear Android/iOS copy.
+- [x] Crop selected images to the same square avatar standard used by the website.
+- [x] Upload the cropped image through the existing backend/S3 avatar endpoint.
+- [x] Allow users to choose one of the default avatar presets from mobile.
+- [x] Refresh the stored mobile `AuthUser` after avatar or preset changes.
 - [ ] Confirm updated avatars appear on Profile, More, forum posts, and website account surfaces.
 
 Done means a mobile user can upload, crop, save, and see their avatar without needing the website.
