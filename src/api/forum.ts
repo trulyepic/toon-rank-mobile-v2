@@ -5,6 +5,7 @@ import type {
   EditForumPostRequest,
   ForumThreadDetail,
   ForumPost,
+  ForumPostPage,
   ForumThread,
   ForumThreadPage,
   ForumThreadPostsPage,
@@ -73,6 +74,27 @@ export async function deleteForumPost(threadId: number, postId: number) {
 
 export async function deleteForumPostMine(threadId: number, postId: number) {
   await api.delete(`/forum/threads/${threadId}/posts/${postId}/mine`);
+}
+
+export async function getMyForumThreads(page = 1, pageSize = 10) {
+  const res = await api.get<ForumThreadPage>("/forum/me/threads", {
+    params: { page, page_size: pageSize },
+  });
+  return res.data;
+}
+
+export async function getMyForumPosts(page = 1, pageSize = 10) {
+  const res = await api.get<ForumPostPage>("/forum/me/posts", {
+    params: { page, page_size: pageSize },
+  });
+  return res.data;
+}
+
+export async function getMyForumVotes(page = 1, pageSize = 10) {
+  const res = await api.get<ForumPostPage>("/forum/me/votes", {
+    params: { page, page_size: pageSize },
+  });
+  return res.data;
 }
 
 export async function searchForumSeries(query: string) {
