@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -87,6 +88,7 @@ function PostCard({
   onEditCancel,
   isSavingEdit,
   onDelete,
+  onRegisterRef,
 }: {
   post: ForumPost;
   depth?: number;
@@ -105,6 +107,7 @@ function PostCard({
   onEditCancel: () => void;
   isSavingEdit: boolean;
   onDelete: (post: ForumPost) => void;
+  onRegisterRef?: (ref: View | null) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -115,6 +118,7 @@ function PostCard({
 
   return (
     <Surface
+      ref={(r) => onRegisterRef?.(r)}
       variant="raised"
       radius="xl"
       style={[
@@ -376,6 +380,7 @@ function ReplyTree({
   isAdmin,
   renderInlineComposer,
   parentPost,
+  registerPostRef,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -397,6 +402,7 @@ function ReplyTree({
   isAdmin: boolean;
   renderInlineComposer: (post: ForumPost) => ReactNode;
   parentPost?: ForumPost;
+  registerPostRef?: (id: number, ref: View | null) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = parentPost
@@ -426,6 +432,7 @@ function ReplyTree({
         onEditCancel={onEditCancel}
         isSavingEdit={isSavingEdit}
         onDelete={onDelete}
+        onRegisterRef={(r) => registerPostRef?.(post.id, r)}
       />
       {renderInlineComposer(post)}
       {children.map((child) => (
@@ -451,6 +458,7 @@ function ReplyTree({
           isAdmin={isAdmin}
           renderInlineComposer={renderInlineComposer}
           parentPost={post}
+          registerPostRef={registerPostRef}
         />
       ))}
     </View>
@@ -467,7 +475,10 @@ export function ForumThreadScreen() {
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
-  const { threadId } = route.params;
+  const { threadId, postId } = route.params;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const postRefs = useRef<Map<number, View>>(new Map());
+  const hasScrolledToPost = useRef(false);
   const queryKey = ["forum", "thread", threadId] as const;
   const activeMention = getActiveForumMention(replyText);
   const postsQuery = useInfiniteQuery({
@@ -648,6 +659,34 @@ export function ForumThreadScreen() {
     trimmedReply.length <= REPLY_MAX_LENGTH &&
     !replyMutation.isPending;
 
+  const registerPostRef = (id: number, ref: View | null) => {
+    if (ref) {
+      postRefs.current.set(id, ref);
+    } else {
+      postRefs.current.delete(id);
+    }
+  };
+
+  useEffect(() => {
+    if (!postId || hasScrolledToPost.current || posts.length === 0) return;
+    const postView = postRefs.current.get(postId);
+    if (!postView || !scrollViewRef.current) return;
+    hasScrolledToPost.current = true;
+    const scrollView = scrollViewRef.current;
+    const timer = setTimeout(() => {
+      postView.measureLayout(
+        scrollView as unknown as View,
+        (_x, y) => {
+          scrollView.scrollTo({ y: Math.max(0, y - spacing.md), animated: true });
+        },
+        () => {
+          /* ignore measurement failures */
+        },
+      );
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [posts, postId]);
+
   const handleVote = (post: ForumPost, vote: ForumVote) => {
     if (!isSignedIn) {
       Alert.alert("Log in to vote on posts", "Use your Toon Ranks account to react.", [
@@ -776,6 +815,7 @@ export function ForumThreadScreen() {
     <ScreenShell
       title="Thread"
       subtitle="Read public discussions, vote, and reply with your Toon Ranks account."
+      scrollRef={scrollViewRef}
     >
       {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
 
@@ -879,6 +919,7 @@ export function ForumThreadScreen() {
             onEditCancel={handleEditCancel}
             isSavingEdit={editMutation.isPending}
             onDelete={handleDelete}
+            onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
           />
           {renderInlineComposer(originalPost)}
         </View>
@@ -923,6 +964,7 @@ export function ForumThreadScreen() {
                 isAdmin={isAdmin}
                 renderInlineComposer={renderInlineComposer}
                 parentPost={originalPost}
+                registerPostRef={registerPostRef}
               />
             ))}
           </View>

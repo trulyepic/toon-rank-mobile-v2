@@ -25,7 +25,7 @@ export type RootStackParamList = {
   ReadingLists: undefined;
   ReadingListDetail: { listId: number; listName: string };
   ForumCreateThread: undefined;
-  ForumThread: { threadId: number };
+  ForumThread: { threadId: number; postId?: number };
   ForumActivity: undefined;
   Profile: undefined;
   ReportIssue: { pageUrl?: string; title?: string; issueType?: string } | undefined;
