@@ -27,4 +27,4 @@ export const LEGAL_URLS = {
   privacy: `${SITE_ORIGIN}/privacy`,
 };
 
-export const SUPPORT_EMAIL = "trulyepickstudios@gmail.com";
+export const SUPPORT_EMAIL = "support@toonranks.com";

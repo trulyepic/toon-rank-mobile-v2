@@ -250,12 +250,12 @@ Suggested branch group:
 
 Purpose: prepare the app for actual store submission after the core product works.
 
-- [ ] Finalize Android package and iOS bundle identifiers.
-- [ ] Add production app icon and splash assets.
-- [ ] Configure EAS build or final build workflow.
-- [ ] Confirm Terms, Privacy, support email, and data safety disclosures.
+- [x] Finalize Android package and iOS bundle identifiers.
+- [x] Add production app icon and splash assets.
+- [x] Configure EAS build or final build workflow.
+- [x] Confirm Terms, Privacy, support email, and data safety disclosures.
 - [ ] Add store screenshots after the UI is stable.
-- [ ] Decide whether legal pages open in native screens or in-app browser.
+- [x] Decide whether legal pages open in native screens or in-app browser.
 - [ ] Verify release builds against production backend.
 
 Done means the app can be built and reviewed as a real app-store candidate.

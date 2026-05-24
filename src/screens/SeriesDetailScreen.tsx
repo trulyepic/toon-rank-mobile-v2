@@ -395,6 +395,7 @@ export function SeriesDetailScreen() {
                 <AppButton
                   label="Discuss"
                   size="sm"
+                  onPress={() => navigation.navigate("MainTabs", { screen: "Forum" })}
                   iconLeft={
                     <Ionicons name="chatbubble-outline" size={14} color={colors.text} />
                   }

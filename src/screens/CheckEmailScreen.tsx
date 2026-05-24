@@ -19,13 +19,13 @@ export function CheckEmailScreen() {
           <Ionicons name="mail-unread-outline" size={28} color={colors.text} />
         </View>
         <AppText variant="sectionTitle" align="center">
-          Verification comes next
+          Check your inbox
         </AppText>
         <AppText tone="muted" align="center">
-          After signup is connected, Toon Ranks will send a verification email before
-          unlocking account features.
+          Toon Ranks sent a verification link to your email address. Open it to activate
+          your account, then come back and log in.
         </AppText>
-        <AppButton label="Back to login" onPress={() => navigation.navigate("Login")} />
+        <AppButton label="Go to login" onPress={() => navigation.navigate("Login")} />
       </Surface>
     </ScreenShell>
   );

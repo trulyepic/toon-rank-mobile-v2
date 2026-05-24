@@ -1,6 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { NavigatorScreenParams } from "@react-navigation/native";
 
 import { MainTabs } from "./TabsNavigator";
+import type { TabParamList } from "./TabsNavigator";
 import { CheckEmailScreen } from "../screens/CheckEmailScreen";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
@@ -15,7 +17,7 @@ import { ReportIssueScreen } from "../screens/ReportIssueScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<TabParamList> | undefined;
   SeriesDetail: { seriesId: number };
   Login: undefined;
   Signup: undefined;

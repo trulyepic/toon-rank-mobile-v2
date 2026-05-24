@@ -16,17 +16,17 @@ const activityItems = [
   {
     icon: "chatbubble-ellipses-outline" as const,
     title: "Threads",
-    body: "Your started discussions will be grouped here.",
+    body: "Discussions you have started across the community.",
   },
   {
     icon: "return-up-forward-outline" as const,
     title: "Replies",
-    body: "Recent replies and conversations will be easy to revisit.",
+    body: "Your recent replies and conversations in one place.",
   },
   {
     icon: "thumbs-up-outline" as const,
     title: "Votes",
-    body: "Upvoted and downvoted posts can live here once connected.",
+    body: "Posts you have upvoted or downvoted.",
   },
 ];
 
@@ -62,8 +62,8 @@ export function ForumActivityScreen() {
           )}
           <AppText tone="muted">
             {isSignedIn
-              ? "This screen is ready for user-specific threads, replies, and votes once those mobile endpoints are expanded."
-              : "Forum identity, avatars, and roles are shared with the website. Sign in later to make this screen personal."}
+              ? "Your threads, replies, and votes across the community will appear here."
+              : "Forum identity, avatars, and roles are shared with the website. Sign in to make this screen personal."}
           </AppText>
         </View>
       </Surface>
