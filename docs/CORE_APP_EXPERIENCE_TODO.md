@@ -270,14 +270,15 @@ Purpose: surface the user's own forum history and series rating history in the n
 
 Three new backend endpoints were added and shipped:
 
-| Endpoint | Returns |
-|---|---|
-| `GET /forum/me/threads` | Paginated list of threads the signed-in user created |
-| `GET /forum/me/posts` | Paginated list of posts/replies the user wrote (each has `thread_id` for deep-linking) |
-| `GET /forum/me/votes` | Paginated list of forum posts the user upvoted or downvoted |
-| `GET /series-details/me/votes` | Paginated list of series the user has rated, with per-category scores |
+| Endpoint                       | Returns                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| `GET /forum/me/threads`        | Paginated list of threads the signed-in user created                                   |
+| `GET /forum/me/posts`          | Paginated list of posts/replies the user wrote (each has `thread_id` for deep-linking) |
+| `GET /forum/me/votes`          | Paginated list of forum posts the user upvoted or downvoted                            |
+| `GET /series-details/me/votes` | Paginated list of series the user has rated, with per-category scores                  |
 
 The web account page (`/account`) shows:
+
 - A "Forum activity" card with three tabs (Threads / Replies / Votes), all fetched in parallel on mount so counts are always visible.
 - A "Series ratings" card below it showing cover, title, type, status, and color-coded score pills per category.
 
@@ -293,6 +294,7 @@ Reply and vote rows on the web link to `/forum/{thread_id}` using `thread_id` no
 ### Work items
 
 **10a — API layer**
+
 - [ ] Add `getMyForumThreads(page, pageSize)` → `GET /forum/me/threads` to `src/api/forum.ts`
 - [ ] Add `getMyForumPosts(page, pageSize)` → `GET /forum/me/posts` to `src/api/forum.ts`
 - [ ] Add `getMyForumVotes(page, pageSize)` → `GET /forum/me/votes` to `src/api/forum.ts`
@@ -300,6 +302,7 @@ Reply and vote rows on the web link to `/forum/{thread_id}` using `thread_id` no
 - [ ] Add `MySeriesVote` and `CategoryVote` types matching the backend response shapes
 
 **10b — ForumActivityScreen**
+
 - [ ] Replace the static placeholder cards with three real tabs (Threads / Replies / Votes)
 - [ ] Fetch all three in parallel on mount so tab counts are always visible without switching tabs
 - [ ] Threads tab: show title linked to `ForumThread` screen, post count, last updated date
@@ -310,6 +313,7 @@ Reply and vote rows on the web link to `/forum/{thread_id}` using `thread_id` no
 - [ ] Empty, loading, and error states for each tab
 
 **10c — Series ratings section on ProfileScreen**
+
 - [ ] Add a "Series ratings" section below the avatar area on `ProfileScreen`
 - [ ] Each row shows: cover thumbnail, title (tappable → `SeriesDetail`), type, status, and the user's per-category score badges
 - [ ] Score color convention: green ≥ 8, amber 6–7, red ≤ 5 (matches web)
