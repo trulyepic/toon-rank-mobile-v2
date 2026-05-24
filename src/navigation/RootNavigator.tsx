@@ -26,7 +26,7 @@ export type RootStackParamList = {
   ForumThread: { threadId: number };
   ForumActivity: undefined;
   Profile: undefined;
-  ReportIssue: { pageUrl?: string; title?: string } | undefined;
+  ReportIssue: { pageUrl?: string; title?: string; issueType?: string } | undefined;
   Settings: undefined;
 };
 

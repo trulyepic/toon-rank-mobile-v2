@@ -218,11 +218,11 @@ Suggested branch: `mobile-core-issue-reporting`
 
 Purpose: finish the native issue-report path.
 
-- [ ] Add contextual entry points from Series Detail and Forum Thread.
-- [ ] Add screenshot/image attachment after native image permissions are chosen.
-- [ ] Send screenshots through the existing `/issues/report` multipart endpoint.
-- [ ] Show upload progress or a clear submitting state for large screenshots.
-- [ ] Keep anonymous reporting available.
+- [x] Add contextual entry points from Series Detail and Forum Thread.
+- [x] Add screenshot/image attachment after native image permissions are chosen.
+- [x] Send screenshots through the existing `/issues/report` multipart endpoint.
+- [x] Show upload progress or a clear submitting state for large screenshots.
+- [x] Keep anonymous reporting available.
 
 Done means mobile issue reports are practical enough for real users and land in the same backend issue
 queue as website reports.
