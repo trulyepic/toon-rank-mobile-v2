@@ -20,6 +20,7 @@ import type { AvatarPreset } from "../types/account";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { avatarPresetColors, normalizeAvatarPreset } from "../utils/avatar";
+import { SeriesRatingsSection } from "./SeriesRatingsSection";
 
 const PRESETS: AvatarPreset[] = ["blue", "emerald", "amber"];
 
@@ -210,6 +211,13 @@ export function ProfileScreen() {
             </Surface>
           </View>
         </>
+      ) : null}
+
+      {isSignedIn ? (
+        <View style={styles.section}>
+          <SectionHeader title="Series ratings" />
+          <SeriesRatingsSection />
+        </View>
       ) : null}
 
       <View style={styles.section}>

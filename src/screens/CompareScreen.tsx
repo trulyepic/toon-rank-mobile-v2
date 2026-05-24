@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import { getSeriesDetail } from "../api/series";
 import {
   AppButton,
   AppText,
+  CoverImage,
   EmptyState,
   ErrorState,
   IconButton,
@@ -201,18 +201,11 @@ export function CompareScreen() {
                             pressed ? styles.dimmed : null,
                           ]}
                         >
-                          {summary.cover_url ? (
-                            <Image
-                              source={{ uri: summary.cover_url }}
-                              style={styles.headerCover}
-                            />
-                          ) : (
-                            <View style={[styles.headerCover, styles.posterFallback]}>
-                              <Text style={styles.posterFallbackText}>
-                                {summary.title}
-                              </Text>
-                            </View>
-                          )}
+                          <CoverImage
+                            uri={summary.cover_url}
+                            style={styles.headerCover}
+                            fallbackIconSize={24}
+                          />
                         </Pressable>
 
                         <View style={styles.scoreRow}>

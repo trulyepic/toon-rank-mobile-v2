@@ -1,13 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Alert,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -27,6 +19,7 @@ import { getSeriesSummary } from "../api/series";
 import {
   AppButton,
   AppText,
+  CoverImage,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -63,13 +56,7 @@ function SavedTitleCard({
   return (
     <Surface variant="raised" radius="xl" style={styles.itemCard}>
       <Pressable onPress={onOpen} style={styles.itemMain}>
-        {summary?.cover_url ? (
-          <Image source={{ uri: summary.cover_url }} style={styles.cover} />
-        ) : (
-          <View style={[styles.cover, styles.coverFallback]}>
-            <Ionicons name="image-outline" size={22} color={colors.accentStrong} />
-          </View>
-        )}
+        <CoverImage uri={summary?.cover_url} style={styles.cover} fallbackIconSize={22} />
 
         <View style={styles.itemText}>
           <AppText variant="cardTitle" numberOfLines={2}>

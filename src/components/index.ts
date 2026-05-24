@@ -1,5 +1,6 @@
 export { AccountRequiredCard } from "./AccountRequiredCard";
 export { AppButton } from "./AppButton";
+export { CoverImage } from "./CoverImage";
 export { AppText } from "./AppText";
 export { Chip, ChipButton } from "./Chip";
 export { EmptyState, ErrorState, LoadingState } from "./StateMessage";

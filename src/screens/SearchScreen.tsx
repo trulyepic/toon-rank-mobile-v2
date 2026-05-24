@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   FlatList,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import { searchSeries } from "../api/series";
 import {
   AppButton,
   AppText,
+  CoverImage,
   EmptyState,
   LoadingState,
   ScreenShell,
@@ -66,15 +66,11 @@ function SearchResultCard({
         ]}
       >
         <View style={styles.resultImageWrap}>
-          {item.cover_url ? (
-            <Image source={{ uri: item.cover_url }} style={styles.resultImage} />
-          ) : (
-            <View style={[styles.resultImage, styles.resultImageFallback]}>
-              <Text numberOfLines={3} style={styles.resultImageFallbackText}>
-                {item.title}
-              </Text>
-            </View>
-          )}
+          <CoverImage
+            uri={item.cover_url}
+            style={styles.resultImage}
+            fallbackIconSize={20}
+          />
           {item.rank ? (
             <View style={styles.rankBadge}>
               <Text style={styles.rankBadgeText}>#{item.rank}</Text>
