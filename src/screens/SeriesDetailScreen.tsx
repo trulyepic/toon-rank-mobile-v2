@@ -486,6 +486,21 @@ export function SeriesDetailScreen() {
         </>
       ) : null}
 
+      <View style={styles.reportRow}>
+        <AppButton
+          label="Report an issue with this title"
+          variant="ghost"
+          onPress={() =>
+            navigation.navigate("ReportIssue", {
+              pageUrl: `toonranks://series/${seriesId}`,
+              title: `Issue with: ${title}`,
+              issueType: "CONTENT",
+            })
+          }
+          iconLeft={<Ionicons name="bug-outline" size={15} color={colors.textMuted} />}
+        />
+      </View>
+
       <Modal transparent visible={savePickerVisible} animationType="fade">
         <View style={styles.modalBackdrop}>
           <Surface radius="xl" style={styles.saveModal}>
@@ -715,6 +730,10 @@ const styles = StyleSheet.create({
   scoreButtonTextSelected: {
     fontWeight: "900",
     color: colors.background,
+  },
+  reportRow: {
+    alignItems: "center",
+    paddingTop: spacing.xs,
   },
   modalBackdrop: {
     flex: 1,

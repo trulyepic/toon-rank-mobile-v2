@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as ImagePicker from "expo-image-picker";
 import { useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 
@@ -13,6 +22,11 @@ import { getReportIssueValidationError } from "../utils/issueValidation";
 
 type ReportIssueRoute = RouteProp<RootStackParamList, "ReportIssue">;
 
+type ImageAsset = {
+  uri: string;
+  mimeType: string;
+};
+
 const issueTypes: { label: string; value: IssueType; icon: string }[] = [
   { label: "Bug", value: "BUG", icon: "bug-outline" },
   { label: "Content", value: "CONTENT", icon: "document-text-outline" },
@@ -20,12 +34,37 @@ const issueTypes: { label: string; value: IssueType; icon: string }[] = [
   { label: "Other", value: "OTHER", icon: "help-circle-outline" },
 ];
 
+async function pickScreenshot(): Promise<ImageAsset | null> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    Alert.alert(
+      "Photo access required",
+      "Allow Toon Ranks to access your photo library in Settings to attach a screenshot.",
+    );
+    return null;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: "images",
+    allowsEditing: false,
+    quality: 0.9,
+  });
+
+  if (result.canceled || !result.assets.length) return null;
+
+  const asset = result.assets[0];
+  return { uri: asset.uri, mimeType: asset.mimeType ?? "image/jpeg" };
+}
+
 export function ReportIssueScreen() {
   const route = useRoute<ReportIssueRoute>();
-  const [type, setType] = useState<IssueType>("BUG");
+  const initialType = (route.params?.issueType as IssueType | undefined) ?? "BUG";
+  const [type, setType] = useState<IssueType>(initialType);
   const [title, setTitle] = useState(route.params?.title ?? "");
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
+  const [imageAsset, setImageAsset] = useState<ImageAsset | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedIssue, setSubmittedIssue] = useState<Issue | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,12 +93,20 @@ export function ReportIssueScreen() {
         description: description.trim(),
         email: email.trim() || undefined,
         page_url: pageUrl,
+        screenshot: imageAsset
+          ? {
+              uri: imageAsset.uri,
+              name: `screenshot.${imageAsset.mimeType.split("/")[1] ?? "jpg"}`,
+              type: imageAsset.mimeType,
+            }
+          : undefined,
       });
 
       setSubmittedIssue(issue);
       setTitle("");
       setDescription("");
       setEmail("");
+      setImageAsset(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit the report.");
     } finally {
@@ -180,15 +227,62 @@ export function ReportIssueScreen() {
           />
         </View>
 
-        <Surface radius="lg" style={styles.note}>
-          <Ionicons name="image-outline" size={20} color={colors.textMuted} />
-          <AppText tone="muted" style={styles.noteText}>
-            Screenshot upload will be added after native image permissions are chosen.
+        <View style={styles.field}>
+          <AppText variant="caption" tone="muted">
+            Screenshot optional
           </AppText>
-        </Surface>
+          {imageAsset ? (
+            <View style={styles.attachmentRow}>
+              <Image
+                source={{ uri: imageAsset.uri }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+                accessibilityLabel="Attached screenshot"
+              />
+              <View style={styles.attachmentMeta}>
+                <AppText variant="caption">Screenshot attached</AppText>
+                <AppText tone="muted" variant="caption">
+                  Tap remove to clear.
+                </AppText>
+              </View>
+              <Pressable
+                onPress={() => setImageAsset(null)}
+                style={({ pressed }) => [
+                  styles.removeBtn,
+                  pressed ? styles.pressed : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Remove screenshot"
+              >
+                <Ionicons name="close-circle" size={22} color={colors.danger} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={async () => {
+                const asset = await pickScreenshot();
+                if (asset) setImageAsset(asset);
+              }}
+              style={({ pressed }) => [styles.attachBtn, pressed ? styles.pressed : null]}
+              accessibilityRole="button"
+              accessibilityLabel="Attach a screenshot"
+            >
+              <Ionicons name="image-outline" size={20} color={colors.accentStrong} />
+              <AppText variant="caption" tone="accent">
+                Attach a screenshot
+              </AppText>
+            </Pressable>
+          )}
+        </View>
 
         <AppButton
-          label={isSubmitting ? "Submitting..." : "Submit report"}
+          label={
+            isSubmitting
+              ? imageAsset
+                ? "Uploading & submitting…"
+                : "Submitting…"
+              : "Submit report"
+          }
           disabled={!canSubmit}
           onPress={handleSubmit}
           iconLeft={
@@ -272,15 +366,40 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 140,
   },
-  note: {
+  attachBtn: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.backgroundSoft,
-    borderColor: colors.borderSoft,
+    minHeight: 50,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderStyle: "dashed",
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  noteText: {
+  attachmentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    padding: spacing.sm,
+  },
+  thumbnail: {
+    width: 52,
+    height: 52,
+    borderRadius: radii.md,
+    backgroundColor: colors.backgroundSoft,
+  },
+  attachmentMeta: {
     flex: 1,
-    minWidth: 0,
+    gap: 2,
+  },
+  removeBtn: {
+    padding: spacing.xs,
   },
 });

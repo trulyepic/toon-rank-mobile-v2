@@ -830,6 +830,29 @@ export function ForumThreadScreen() {
 
       {thread ? <ForumSeriesStrip seriesRefs={thread.series_refs} /> : null}
 
+      {thread ? (
+        <Pressable
+          onPress={() =>
+            navigation.navigate("ReportIssue", {
+              pageUrl: `toonranks://forum/thread/${threadId}`,
+              title: `Issue with thread: ${thread.title}`,
+              issueType: "CONTENT",
+            })
+          }
+          style={({ pressed }) => [
+            styles.reportLink,
+            pressed ? styles.pressedLight : null,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Report an issue with this thread"
+        >
+          <Ionicons name="flag-outline" size={13} color={colors.textSubtle} />
+          <AppText variant="caption" tone="subtle">
+            Report this thread
+          </AppText>
+        </Pressable>
+      ) : null}
+
       {originalPost ? (
         <View style={styles.section}>
           <SectionHeader title="Original post" />
@@ -1280,5 +1303,16 @@ const styles = StyleSheet.create({
   inlineComposerActions: {
     flexDirection: "row",
     gap: spacing.sm,
+  },
+  reportLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-end",
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  pressedLight: {
+    opacity: 0.6,
   },
 });
