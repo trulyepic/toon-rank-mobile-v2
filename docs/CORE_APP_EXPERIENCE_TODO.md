@@ -260,6 +260,69 @@ Purpose: prepare the app for actual store submission after the core product work
 
 Done means the app can be built and reviewed as a real app-store candidate.
 
+## Phase 10: Forum Activity And Series Ratings On Account
+
+Suggested branch: `mobile-forum-activity` (forum activity screen), then `mobile-series-ratings` (profile screen ratings section).
+
+Purpose: surface the user's own forum history and series rating history in the native app, matching the account page features added to the production website in May 2026.
+
+### Background — what was built on the web
+
+Three new backend endpoints were added and shipped:
+
+| Endpoint                       | Returns                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| `GET /forum/me/threads`        | Paginated list of threads the signed-in user created                                   |
+| `GET /forum/me/posts`          | Paginated list of posts/replies the user wrote (each has `thread_id` for deep-linking) |
+| `GET /forum/me/votes`          | Paginated list of forum posts the user upvoted or downvoted                            |
+| `GET /series-details/me/votes` | Paginated list of series the user has rated, with per-category scores                  |
+
+The web account page (`/account`) shows:
+
+- A "Forum activity" card with three tabs (Threads / Replies / Votes), all fetched in parallel on mount so counts are always visible.
+- A "Series ratings" card below it showing cover, title, type, status, and color-coded score pills per category.
+
+Reply and vote rows on the web link to `/forum/{thread_id}` using `thread_id` now included in `ForumPostOut`.
+
+### What the mobile app currently has
+
+- `ForumActivityScreen.tsx` is a complete stub. It renders three static info cards with no API calls and no real data.
+- `ProfileScreen.tsx` has the avatar picker and reading list / forum activity shortcuts but no series ratings section.
+- `src/api/forum.ts` has no `getMyForumThreads`, `getMyForumPosts`, or `getMyForumVotes` functions.
+- `src/api/` has no `getMySeriesVotes` function.
+
+### Work items
+
+**10a — API layer**
+
+- [ ] Add `getMyForumThreads(page, pageSize)` → `GET /forum/me/threads` to `src/api/forum.ts`
+- [ ] Add `getMyForumPosts(page, pageSize)` → `GET /forum/me/posts` to `src/api/forum.ts`
+- [ ] Add `getMyForumVotes(page, pageSize)` → `GET /forum/me/votes` to `src/api/forum.ts`
+- [ ] Add `getMySeriesVotes(page, pageSize)` → `GET /series-details/me/votes` to `src/api/series.ts`
+- [ ] Add `MySeriesVote` and `CategoryVote` types matching the backend response shapes
+
+**10b — ForumActivityScreen**
+
+- [ ] Replace the static placeholder cards with three real tabs (Threads / Replies / Votes)
+- [ ] Fetch all three in parallel on mount so tab counts are always visible without switching tabs
+- [ ] Threads tab: show title linked to `ForumThread` screen, post count, last updated date
+- [ ] Replies tab: show truncated content, date, and a "View thread" row action that navigates to `ForumThread` using `thread_id`
+- [ ] Votes tab: show truncated content, up/down badge, date, and a "View thread" row action
+- [ ] Each tab has its own pagination (load more or Prev/Next)
+- [ ] Signed-out guard: show a sign-in prompt instead of the lists
+- [ ] Empty, loading, and error states for each tab
+
+**10c — Series ratings section on ProfileScreen**
+
+- [ ] Add a "Series ratings" section below the avatar area on `ProfileScreen`
+- [ ] Each row shows: cover thumbnail, title (tappable → `SeriesDetail`), type, status, and the user's per-category score badges
+- [ ] Score color convention: green ≥ 8, amber 6–7, red ≤ 5 (matches web)
+- [ ] Pagination (load more preferred on mobile)
+- [ ] Signed-out guard: hide the section or show a sign-in prompt
+- [ ] Empty, loading, and error states
+
+Done means a signed-in mobile user can browse their own forum threads, replies, and votes — and see all the series they've rated — without needing the website, and the data matches exactly what the website shows because it hits the same backend endpoints.
+
 ## Working Rules For Future Phases
 
 - Do not claim login, voting, lists, or forum posting work until the app has a real stored session.

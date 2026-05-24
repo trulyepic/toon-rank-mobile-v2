@@ -82,15 +82,13 @@ npm run web
 
 ## Implementation Priorities
 
-The design-first phase and core account-backed features (auth, voting, reading lists, forum
-posting, forum votes) are complete. Current priorities in order:
+Phases 1–9 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete. The active priority is Phase 10.
 
-1. Forum owner/admin edit and delete controls (Phase 5 completion).
-2. Forum markdown rendering parity with the website (Phase 5.5).
-3. Avatar preset selection and native avatar upload (Phase 6 / 6.5).
-4. Issue reporting with screenshots and contextual entry points (Phase 7).
-5. Search and browse completeness (Phase 8).
-6. App-store readiness — bundle IDs, icons, splash, EAS build (Phase 9).
+1. **Forum activity screen (Phase 10b)** — wire `ForumActivityScreen` to the three `/forum/me/*` endpoints (threads, posts, votes) replacing the current static placeholder.
+2. **Series ratings on profile (Phase 10c)** — add a "Series ratings" section to `ProfileScreen` using `GET /series-details/me/votes`.
+3. **API layer additions (Phase 10a)** — `getMyForumThreads`, `getMyForumPosts`, `getMyForumVotes`, `getMySeriesVotes` are not yet in the API layer and must be added before 10b/10c.
+
+See `docs/CORE_APP_EXPERIENCE_TODO.md` Phase 10 for the full checklist.
 
 ## Product Identity
 
@@ -137,14 +135,13 @@ Shared data:
 
 ## Current Known Issues
 
-- Forum markdown rendering diverges from the web on bold, italic, lists, blockquotes, and
-  inline code. Phase 5.5 addresses this.
-- Owner/admin edit and delete controls are not yet surfaced in mobile forum posts. Phase 5
-  addresses this.
-- Native avatar upload/cropping is deferred to Phase 6.5.
-- App-store assets (icon, splash, bundle IDs, EAS config) are not ready.
-- `com.anonymous.toonranksmobile` is the placeholder Android package name and must be replaced
-  before store submission.
+- `ForumActivityScreen` is a complete stub — no live data, no API calls. Phase 10b addresses this.
+- `ProfileScreen` has no series ratings section. Phase 10b/10c addresses this.
+- The API layer (`src/api/`) is missing `getMyForumThreads`, `getMyForumPosts`, `getMyForumVotes`, and `getMySeriesVotes`. Phase 10a addresses this.
+- App-store assets (icon, splash) still need to be dropped into `assets/`. EAS build config exists but store submission has not been attempted.
+- `com.anonymous.toonranksmobile` is the placeholder Android package name and must be replaced before store submission.
+- Forum image uploads are not yet built (noted in `ForumCreateThreadScreen` and `ForumThreadScreen` UI copy).
+- Regression tests for markdown rendering are not yet written (Phase 5.5 left item).
 
 ## Safe Working Rules
 
