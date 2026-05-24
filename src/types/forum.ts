@@ -26,6 +26,7 @@ export interface ForumThread {
 
 export interface ForumPost {
   id: number;
+  thread_id?: number;
   author_username?: string | null;
   author_role?: string | null;
   author_avatar_url?: string | null;
@@ -40,6 +41,16 @@ export interface ForumPost {
   viewer_vote?: ForumVote | null;
   heart_count?: number;
   viewer_has_hearted?: boolean;
+}
+
+export interface ForumPostPage {
+  items: ForumPost[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  has_prev: boolean;
+  has_next: boolean;
 }
 
 export interface ForumThreadPage {
