@@ -7,6 +7,7 @@ export { ForumMarkdown } from "./ForumMarkdown";
 export { ForumMentionSuggestions } from "./ForumMentionSuggestions";
 export { ForumSeriesStrip } from "./ForumSeriesStrip";
 export { IconButton } from "./IconButton";
+export { ImageLightbox } from "./ImageLightbox";
 export { PlaceholderCard } from "./PlaceholderCard";
 export { ScreenShell } from "./ScreenShell";
 export { SectionHeader } from "./SectionHeader";

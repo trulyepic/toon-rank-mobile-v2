@@ -21,6 +21,7 @@ import {
   AppButton,
   AppText,
   Chip,
+  ImageLightbox,
   LoadingState,
   ScreenShell,
   SectionHeader,
@@ -180,6 +181,7 @@ export function SeriesDetailScreen() {
   const seriesId = route.params.seriesId;
   const [savePickerVisible, setSavePickerVisible] = useState(false);
   const [leftOffChapter, setLeftOffChapter] = useState("");
+  const [coverLightboxVisible, setCoverLightboxVisible] = useState(false);
   const summaryQuery = useQuery({
     queryKey: ["series-summary", seriesId],
     queryFn: () => getSeriesSummary(seriesId),
@@ -322,7 +324,17 @@ export function SeriesDetailScreen() {
         <>
           <View style={styles.heroShell}>
             {heroImage ? (
-              <Image source={{ uri: heroImage }} style={styles.heroImage} />
+              <Pressable
+                onPress={() => setCoverLightboxVisible(true)}
+                style={({ pressed }) => (pressed ? { opacity: 0.88 } : null)}
+                accessibilityRole="imagebutton"
+                accessibilityLabel="View full cover image"
+              >
+                <Image source={{ uri: heroImage }} style={styles.heroImage} />
+                <View style={styles.heroExpandBadge} pointerEvents="none">
+                  <Ionicons name="expand-outline" size={14} color="#fff" />
+                </View>
+              </Pressable>
             ) : (
               <View style={[styles.heroImage, styles.heroFallback]}>
                 <Ionicons name="image-outline" size={28} color={colors.accentStrong} />
@@ -501,6 +513,12 @@ export function SeriesDetailScreen() {
         />
       </View>
 
+      <ImageLightbox
+        uri={heroImage}
+        visible={coverLightboxVisible}
+        onClose={() => setCoverLightboxVisible(false)}
+      />
+
       <Modal transparent visible={savePickerVisible} animationType="fade">
         <View style={styles.modalBackdrop}>
           <Surface radius="xl" style={styles.saveModal}>
@@ -590,6 +608,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.sm,
     padding: spacing.sm,
+  },
+  heroExpandBadge: {
+    position: "absolute",
+    bottom: spacing.sm,
+    right: spacing.sm,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   retryCard: {
     gap: spacing.md,

@@ -61,8 +61,10 @@ function HomeCard({
   return (
     <View style={styles.posterCard}>
       <Pressable
-        style={({ pressed }) => [pressed ? styles.posterCardPressed : null]}
         onPress={onPress}
+        style={({ pressed }) => (pressed ? styles.posterCardPressed : null)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open details for ${item.title}`}
       >
         <View style={styles.posterWrap}>
           {item.cover_url ? (
@@ -72,13 +74,11 @@ function HomeCard({
               <Text style={styles.posterFallbackText}>{item.title}</Text>
             </View>
           )}
-
           {item.rank ? (
             <View style={styles.rankBadge}>
               <Text style={styles.rankBadgeText}>#{item.rank}</Text>
             </View>
           ) : null}
-
           <View style={styles.scoreBadge}>
             <Text style={[styles.scoreBadgeText, { color: getScoreTone(Number(score)) }]}>
               {score}
@@ -291,10 +291,6 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceRaised,
   },
-  posterCardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.992 }],
-  },
   posterWrap: {
     position: "relative",
     overflow: "hidden",
@@ -353,6 +349,10 @@ const styles = StyleSheet.create({
   compareButton: {
     marginTop: spacing.xs,
     alignSelf: "flex-start",
+  },
+  posterCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.992 }],
   },
   posterMeta: {
     gap: spacing.xs,
