@@ -1,12 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { searchForumSeries } from "../api/forum";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { SeriesRef } from "../types/forum";
 import type { ActiveMention } from "../utils/forumMentions";
 import { AppText } from "./AppText";
+import { CoverImage } from "./CoverImage";
 
 type Props = {
   mention: ActiveMention | null;
@@ -53,17 +54,7 @@ export function ForumMentionSuggestions({ mention, onSelect }: Props) {
           onPress={() => onSelect(series)}
           style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
         >
-          {series.cover_url ? (
-            <Image
-              source={{ uri: series.cover_url }}
-              accessibilityLabel={`${series.title || "Title"} cover`}
-              style={styles.cover}
-            />
-          ) : (
-            <View style={[styles.cover, styles.coverFallback]}>
-              <Ionicons name="book-outline" size={17} color={colors.textMuted} />
-            </View>
-          )}
+          <CoverImage uri={series.cover_url} style={styles.cover} fallbackIconSize={17} />
           <View style={styles.text}>
             <AppText variant="caption" numberOfLines={1}>
               {series.title || "Untitled"}

@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { SeriesDetailData } from "../types/series";
+import type { MySeriesVotesPage, SeriesDetailData } from "../types/series";
 
 export type VoteCategory =
   | "Story"
@@ -23,5 +23,12 @@ export async function voteSeriesDetail(seriesId: number, payload: VoteSeriesRequ
     formData,
     { headers: { "Content-Type": "multipart/form-data" } },
   );
+  return res.data;
+}
+
+export async function getMySeriesVotes(page = 1, pageSize = 10) {
+  const res = await api.get<MySeriesVotesPage>("/series-details/me/votes", {
+    params: { page, page_size: pageSize },
+  });
   return res.data;
 }

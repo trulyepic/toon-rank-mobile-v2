@@ -1,12 +1,4 @@
-import {
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
@@ -17,6 +9,7 @@ import { fetchRankings } from "../api/series";
 import {
   AppButton,
   AppText,
+  CoverImage,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -67,13 +60,11 @@ function HomeCard({
         accessibilityLabel={`Open details for ${item.title}`}
       >
         <View style={styles.posterWrap}>
-          {item.cover_url ? (
-            <Image source={{ uri: item.cover_url }} style={styles.posterImage} />
-          ) : (
-            <View style={[styles.posterImage, styles.posterFallback]}>
-              <Text style={styles.posterFallbackText}>{item.title}</Text>
-            </View>
-          )}
+          <CoverImage
+            uri={item.cover_url}
+            style={styles.posterImage}
+            fallbackIconSize={20}
+          />
           {item.rank ? (
             <View style={styles.rankBadge}>
               <Text style={styles.rankBadgeText}>#{item.rank}</Text>

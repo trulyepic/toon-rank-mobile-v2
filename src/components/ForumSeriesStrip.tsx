@@ -1,12 +1,12 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { SeriesRef } from "../types/forum";
 import { AppText } from "./AppText";
+import { CoverImage } from "./CoverImage";
 
 type Props = {
   seriesRefs: SeriesRef[];
@@ -32,17 +32,11 @@ export function ForumSeriesStrip({ seriesRefs }: Props) {
             accessibilityLabel={`Open ${series.title || "related title"}`}
             accessibilityHint="Opens the title detail screen"
           >
-            {series.cover_url ? (
-              <Image
-                source={{ uri: series.cover_url }}
-                accessibilityLabel={`${series.title || "Related title"} cover`}
-                style={styles.cover}
-              />
-            ) : (
-              <View style={[styles.cover, styles.coverFallback]}>
-                <Ionicons name="book-outline" size={20} color={colors.textMuted} />
-              </View>
-            )}
+            <CoverImage
+              uri={series.cover_url}
+              style={styles.cover}
+              fallbackIconSize={20}
+            />
             <View style={styles.itemText}>
               <AppText variant="caption" numberOfLines={1}>
                 {series.title || "Untitled"}

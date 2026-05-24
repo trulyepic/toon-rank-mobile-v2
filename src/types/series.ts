@@ -1,5 +1,29 @@
 export type SeriesType = "MANGA" | "MANHWA" | "MANHUA";
 
+export interface CategoryVote {
+  category: string;
+  score: number;
+}
+
+export interface MySeriesVote {
+  series_id: number;
+  title?: string | null;
+  cover_url?: string | null;
+  type?: string | null;
+  status?: string | null;
+  votes: CategoryVote[];
+}
+
+export interface MySeriesVotesPage {
+  items: MySeriesVote[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  has_prev: boolean;
+  has_next: boolean;
+}
+
 export interface RankedSeries {
   id: number;
   title: string;

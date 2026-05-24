@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Alert,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
@@ -21,6 +13,7 @@ import {
   AppButton,
   AppText,
   Chip,
+  CoverImage,
   ImageLightbox,
   LoadingState,
   ScreenShell,
@@ -330,7 +323,11 @@ export function SeriesDetailScreen() {
                 accessibilityRole="imagebutton"
                 accessibilityLabel="View full cover image"
               >
-                <Image source={{ uri: heroImage }} style={styles.heroImage} />
+                <CoverImage
+                  uri={heroImage}
+                  style={styles.heroImage}
+                  fallbackIconSize={28}
+                />
                 <View style={styles.heroExpandBadge} pointerEvents="none">
                   <Ionicons name="expand-outline" size={14} color="#fff" />
                 </View>
