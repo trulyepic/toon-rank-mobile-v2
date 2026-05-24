@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactNode } from "react";
+import type { PropsWithChildren, ReactNode, RefObject } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,9 +15,10 @@ type Props = PropsWithChildren<{
   title: string;
   subtitle?: string;
   rightSlot?: ReactNode;
+  scrollRef?: RefObject<ScrollView | null>;
 }>;
 
-export function ScreenShell({ title, subtitle, rightSlot, children }: Props) {
+export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }: Props) {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -25,6 +26,7 @@ export function ScreenShell({ title, subtitle, rightSlot, children }: Props) {
         style={styles.keyboard}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.content}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"

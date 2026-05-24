@@ -109,7 +109,9 @@ function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boo
         </AppText>
         {threadId ? (
           <Pressable
-            onPress={() => navigation.navigate("ForumThread", { threadId })}
+            onPress={() =>
+              navigation.navigate("ForumThread", { threadId, postId: post.id })
+            }
             hitSlop={8}
           >
             <AppText style={styles.viewThreadLink}>View thread →</AppText>

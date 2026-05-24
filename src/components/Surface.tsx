@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import { forwardRef, type PropsWithChildren } from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
 
 import { colors, radii, shadows, spacing } from "../theme/tokens";
@@ -16,17 +16,21 @@ type Props = PropsWithChildren<
   }
 >;
 
-export function Surface({
-  variant = "default",
-  radius = "lg",
-  padding = "md",
-  shadow = false,
-  style,
-  children,
-  ...props
-}: Props) {
+export const Surface = forwardRef<View, Props>(function Surface(
+  {
+    variant = "default",
+    radius = "lg",
+    padding = "md",
+    shadow = false,
+    style,
+    children,
+    ...props
+  }: Props,
+  ref,
+) {
   return (
     <View
+      ref={ref}
       {...props}
       style={[
         styles.base,
@@ -40,7 +44,7 @@ export function Surface({
       {children}
     </View>
   );
-}
+});
 
 const radiusStyles = StyleSheet.create({
   md: { borderRadius: radii.md },
