@@ -80,7 +80,7 @@ export function ReadingListsScreen() {
               <AppText variant="sectionTitle">Your library</AppText>
               <AppText tone="muted">
                 {listsQuery.data
-                  ? `${listsQuery.data.length} lists and ${totalItems} saved titles are ready to browse once list details are expanded.`
+                  ? `${listsQuery.data.length} ${listsQuery.data.length === 1 ? "list" : "lists"} · ${totalItems} saved ${totalItems === 1 ? "title" : "titles"}`
                   : "Loading the same saved list data used on the web."}
               </AppText>
             </View>

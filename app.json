@@ -4,23 +4,29 @@
     "slug": "toon-ranks-mobile",
     "scheme": "toonranks",
     "newArchEnabled": false,
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#17110f"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.toonranks.mobile",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#17110f"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.toonranksmobile",
+      "package": "com.toonranks.mobile",
+      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
