@@ -42,6 +42,7 @@
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",
+      "expo-screen-orientation",
       [
         "expo-image-picker",
         {

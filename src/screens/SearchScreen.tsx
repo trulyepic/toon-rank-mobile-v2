@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -28,6 +29,9 @@ import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 
 const MIN_SEARCH_LENGTH = 2;
+
+const typeFilters = ["All", "Manga", "Manhwa", "Manhua"] as const;
+type TypeFilter = (typeof typeFilters)[number];
 
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
@@ -125,6 +129,7 @@ export function SearchScreen() {
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [activeType, setActiveType] = useState<TypeFilter>("All");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -140,8 +145,14 @@ export function SearchScreen() {
     queryFn: () => searchSeries(debouncedQuery),
     enabled: hasSearchQuery,
   });
-  const results = data ?? [];
-  const showSearchingOverlay = isFetching && !isLoading && results.length > 0;
+  const allResults = data ?? [];
+  const results =
+    activeType === "All"
+      ? allResults
+      : allResults.filter(
+          (item) => item.type?.toUpperCase() === activeType.toUpperCase(),
+        );
+  const showSearchingOverlay = isFetching && !isLoading && allResults.length > 0;
 
   return (
     <ScreenShell
@@ -169,6 +180,38 @@ export function SearchScreen() {
           returnKeyType="search"
         />
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.typeRail}
+      >
+        {typeFilters.map((filter) => {
+          const selected = activeType === filter;
+          return (
+            <Pressable
+              key={filter}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              onPress={() => setActiveType(filter)}
+              style={({ pressed }) => [
+                styles.segmentButton,
+                selected ? styles.segmentButtonActive : null,
+                pressed ? styles.segmentButtonPressed : null,
+              ]}
+            >
+              {selected ? <View style={styles.typeDot} /> : null}
+              <AppText
+                variant="caption"
+                tone={selected ? "primary" : "muted"}
+                style={styles.typeButtonText}
+              >
+                {filter}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {isLoading ? <LoadingState message="Searching..." /> : null}
 
@@ -216,7 +259,9 @@ export function SearchScreen() {
           {results.length > 0 ? (
             <View style={styles.resultSummary}>
               <AppText variant="caption" tone="muted">
-                {`${results.length.toLocaleString()} result${results.length === 1 ? "" : "s"} for "${debouncedQuery}"`}
+                {activeType === "All"
+                  ? `${results.length.toLocaleString()} result${results.length === 1 ? "" : "s"} for "${debouncedQuery}"`
+                  : `${results.length.toLocaleString()} ${activeType} result${results.length === 1 ? "" : "s"} for "${debouncedQuery}"`}
               </AppText>
               {showSearchingOverlay ? (
                 <View style={styles.refreshPill}>
@@ -247,7 +292,11 @@ export function SearchScreen() {
             ListEmptyComponent={
               <EmptyState
                 title="No matches yet"
-                message={`We couldn't find anything for "${debouncedQuery}". Try a broader title, genre, or creator search.`}
+                message={
+                  activeType === "All"
+                    ? `We couldn't find anything for "${debouncedQuery}". Try a broader title, genre, or creator search.`
+                    : `No ${activeType} results for "${debouncedQuery}". Try a different type filter or broaden your search.`
+                }
               />
             }
           />
@@ -258,6 +307,40 @@ export function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
+  typeRail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  segmentButton: {
+    minHeight: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.borderSoft,
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+  },
+  segmentButtonActive: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
+  },
+  segmentButtonPressed: {
+    opacity: 0.88,
+  },
+  typeButtonText: {
+    fontWeight: "800",
+  },
+  typeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accentStrong,
+  },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",

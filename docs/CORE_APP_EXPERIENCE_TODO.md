@@ -233,10 +233,10 @@ Suggested branch: `mobile-core-search-browse`
 
 Purpose: clean up remaining public browsing gaps after account-backed flows are underway.
 
-- [ ] Review whether `/series/search` needs pagination or a result limit contract.
-- [ ] Add mobile search pagination/load-more only if the backend exposes or needs it.
-- [ ] Add richer filter/sort controls only if they match the native app experience.
-- [ ] Confirm Home, Search, Detail, Compare, and Forum navigation remain reliable after auth changes.
+- [x] Review whether `/series/search` needs pagination or a result limit contract.
+- [x] Add mobile search pagination/load-more only if the backend exposes or needs it.
+- [x] Add richer filter/sort controls only if they match the native app experience.
+- [x] Confirm Home, Search, Detail, Compare, and Forum navigation remain reliable after auth changes.
 
 Done means public discovery feels complete, but this should not outrank real auth and account actions.
 
