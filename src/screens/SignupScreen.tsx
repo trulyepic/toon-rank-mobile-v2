@@ -31,6 +31,7 @@ export function SignupScreen() {
         username: username.trim(),
         password,
         captcha_token: captchaToken,
+        signup_platform: "mobile",
       }),
     onMutate: () => setErrorMessage(null),
     onSuccess: () => {

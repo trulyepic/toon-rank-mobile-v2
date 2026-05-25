@@ -35,6 +35,7 @@ export interface LoginRequest {
 
 export interface SignupRequest extends LoginRequest {
   email: string;
+  signup_platform?: "web" | "mobile";
 }
 
 export interface GoogleOAuthRequest {
