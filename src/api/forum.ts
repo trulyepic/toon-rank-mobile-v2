@@ -11,7 +11,10 @@ import type {
   ForumThreadPostsPage,
   ForumVote,
   ForumVoteResponse,
+  LockForumThreadRequest,
   SeriesRef,
+  UpdateForumThreadRequest,
+  UpdateForumThreadSettingsRequest,
 } from "../types/forum";
 
 export async function getForumThreads(page = 1, pageSize = 20) {
@@ -74,6 +77,36 @@ export async function deleteForumPost(threadId: number, postId: number) {
 
 export async function deleteForumPostMine(threadId: number, postId: number) {
   await api.delete(`/forum/threads/${threadId}/posts/${postId}/mine`);
+}
+
+export async function updateForumThread(
+  threadId: number,
+  payload: UpdateForumThreadRequest,
+) {
+  const res = await api.patch<ForumThread>(`/forum/threads/${threadId}`, payload);
+  return res.data;
+}
+
+export async function deleteForumThread(threadId: number) {
+  await api.delete(`/forum/threads/${threadId}`);
+}
+
+export async function lockForumThread(threadId: number, locked: boolean) {
+  const res = await api.patch<ForumThread>(`/forum/threads/${threadId}/lock`, {
+    locked,
+  } satisfies LockForumThreadRequest);
+  return res.data;
+}
+
+export async function updateForumThreadSettings(
+  threadId: number,
+  settings: UpdateForumThreadSettingsRequest,
+) {
+  const res = await api.patch<ForumThread>(
+    `/forum/threads/${threadId}/settings`,
+    settings,
+  );
+  return res.data;
 }
 
 export async function getMyForumThreads(page = 1, pageSize = 10) {
