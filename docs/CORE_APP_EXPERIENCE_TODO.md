@@ -436,18 +436,17 @@ A secondary UX gap was also found: `ForumCreateThreadScreen` has a 2000-characte
 
 **13a — Thread search**
 
-- [ ] Add a search `TextInput` at the top of `ForumScreen`, styled consistently with `SearchScreen`
-- [ ] Debounce the input (300 ms) before updating the `queryKey` to avoid firing a request on every keystroke
-- [ ] Pass the trimmed query as a `q` param to `getForumThreads` (the backend already supports `?q=` filtering)
-- [ ] When the search field is empty, fall back to the standard unfiltered list
-- [ ] Add a clear (×) button that resets the input and restores the unfiltered list
-- [ ] Preserve load-more behavior in search results
-- [ ] Show an appropriate empty state when a search returns no threads
+- [x] Add a search `TextInput` at the top of `ForumScreen`, styled consistently with `SearchScreen`
+- [x] Debounce the input (300 ms) before updating the `queryKey` to avoid firing a request on every keystroke
+- [x] Pass the trimmed query as a `q` param to `getForumThreads` (the backend already supports `?q=` filtering)
+- [x] When the search field is empty, fall back to the standard unfiltered list
+- [x] Add a clear (×) button that resets the input and restores the unfiltered list
+- [x] Preserve load-more behavior in search results
+- [x] Show an appropriate empty state when a search returns no threads
 
 **13b — Create thread character counter**
 
-- [ ] Add a visible character counter (`{current}/{max}`) to the first-post body `TextInput` in `ForumCreateThreadScreen`, matching the style used in `ForumThreadScreen`'s inline reply composer
-- [ ] Turn the counter text to `danger` tone when the limit is exceeded
+- [x] Body character counter (`{current}/{max}`) added to `ForumCreateThreadScreen` below the "First post" label, matching the title counter style — body is hard-capped at `MAX_BODY_LENGTH` via `.slice()` so the counter cannot show an over-limit value
 
 Done means users can find threads by keyword from mobile and have clear feedback when composing a new thread.
 
@@ -497,6 +496,142 @@ The web reading list page lets users toggle a list between private and public, c
 - [ ] Verify the link opens correctly from a browser and from the native share sheet output
 
 Done means mobile users can share their lists publicly, share the link externally, and anyone who receives the link can open it directly in the app and browse the shared list.
+
+---
+
+## Phase 15: Native Login And Signup
+
+Suggested branch group:
+
+- `backend-native-auth-endpoints`
+- `mobile-native-login`
+
+Purpose: replace the in-app web-browser login flow with a fully native username/password form and
+native Google Sign-In, so users never leave the app to authenticate.
+
+### Background — why the current approach exists and its limits
+
+The current mobile auth flow opens an in-app browser (via `expo-web-browser`) pointing at the
+production Toon Ranks login page. The website handles hCaptcha verification, then redirects to
+`toonranks://auth/callback?code=…` with a short-lived mobile auth code. The app exchanges that code
+for a JWT/refresh-token pair.
+
+This approach was pragmatic because:
+
+- It reused the existing CAPTCHA-protected website login/signup without any backend changes.
+- Google OAuth redirect flows require a browser by design.
+- It avoided building a duplicate credential form before the core session contract was solid.
+
+The limits are now significant:
+
+- First-party username/password login via an in-app browser is unusual and can feel broken or
+  untrustworthy to users, especially on iOS where the browser chrome is very visible.
+- App Store reviewers have flagged non-OAuth browser flows in native apps; Apple expects
+  username/password to be handled natively.
+- The transition from app → browser → app introduces a visible context switch and a failure mode
+  if the browser redirect does not fire.
+
+### Design decision
+
+Two auth paths must be supported natively:
+
+| Path                         | Approach                                                                |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| Username + password          | Native form → new backend endpoint → JWT/refresh token                  |
+| Google Sign-In               | Native Google SDK → ID token → new backend endpoint → JWT/refresh token |
+| hCaptcha (username/password) | Native hCaptcha SDK (no browser needed)                                 |
+
+Signup uses the same paths. The existing web-auth bridge is kept as a fallback for edge cases
+(e.g. password reset, email verification) but should not appear during the normal login/signup flow.
+
+### Phase 15a — Backend: native credential endpoints
+
+Suggested branch: `backend-native-auth-endpoints`
+
+- [ ] Add `POST /auth/native/login` — accepts `{ username, password, captcha_token }`, verifies
+      hCaptcha server-side, validates credentials, returns the same `{ access_token, refresh_token,
+user }` shape as the existing mobile auth-code exchange endpoint.
+- [ ] Add `POST /auth/native/signup` — accepts `{ username, email, password, captcha_token }`,
+      verifies hCaptcha, creates the account, returns `{ access_token, refresh_token, user }`.
+- [ ] Add `POST /auth/native/google` — accepts `{ id_token }` (Google Sign-In ID token from the
+      native SDK), verifies with Google, creates or links account, returns
+      `{ access_token, refresh_token, user }`.
+- [ ] Rate-limit all three endpoints with the same brute-force protections used on the web login.
+- [ ] Add tests for valid credentials, wrong password, unknown user, expired captcha, duplicate
+      signup email/username, and Google token validation failure.
+- [ ] Document the three endpoint contracts in `docs/MOBILE_AUTH_CONTRACT.md` (add a
+      "native credential endpoints" section alongside the existing mobile auth-code section).
+
+### Phase 15b — Mobile: hCaptcha SDK integration
+
+Suggested branch: `mobile-native-login`
+
+- [ ] Install `@hcaptcha/react-native-hcaptcha` (or the most-maintained community equivalent for
+      Expo managed workflow).
+- [ ] Wrap the SDK in a shared `useHCaptcha()` hook that triggers the challenge, awaits the token,
+      and returns `{ token, error }`.
+- [ ] Keep the sitekey in an environment variable (`EXPO_PUBLIC_HCAPTCHA_SITE_KEY`) so it is not
+      hard-coded in the bundle.
+- [ ] Handle captcha dismissal (user closes challenge) as a cancellation, not an error.
+
+### Phase 15c — Mobile: native login screen
+
+Suggested branch: `mobile-native-login`
+
+- [ ] Replace the current "Continue to login" browser-launch button in `LoginScreen` with:
+  - Email/username `TextInput`
+  - Password `TextInput` with show/hide toggle
+  - "Log in" primary `AppButton`
+- [ ] On submit: trigger hCaptcha challenge via `useHCaptcha()`, then call `POST /auth/native/login`
+      with `{ username, password, captcha_token }`.
+- [ ] On success: store `access_token`, `refresh_token`, and `user` via `AuthProvider` (same path
+      as the existing auth-code exchange).
+- [ ] Show inline field validation: empty fields, password too short, captcha failure.
+- [ ] Show a loading state on the "Log in" button while the request is in flight.
+- [ ] Keep "Forgot password?" as a web-bridge link (existing Phase 2.6 behaviour).
+- [ ] Keep the "Sign up" link navigating to the native signup screen (Phase 15d).
+
+### Phase 15d — Mobile: native signup screen
+
+Suggested branch: `mobile-native-login`
+
+- [ ] Update `SignupScreen` (currently mirrors the login browser bridge) with:
+  - Username `TextInput`
+  - Email `TextInput`
+  - Password `TextInput` with show/hide toggle
+  - "Create account" primary `AppButton`
+- [ ] On submit: trigger hCaptcha challenge, then call `POST /auth/native/signup`.
+- [ ] On success: store session and navigate to the home tab (same as login success).
+- [ ] Show server-returned validation errors inline (username taken, email already registered, etc.).
+
+### Phase 15e — Mobile: native Google Sign-In
+
+Suggested branch: `mobile-native-login`
+
+- [ ] Install `@react-native-google-signin/google-signin` (Expo config plugin available; works in
+      managed workflow with EAS build).
+- [ ] Add the plugin to `app.json` with the correct iOS `iosClientId` and Android client ID.
+- [ ] Add a "Continue with Google" button to both `LoginScreen` and `SignupScreen`.
+- [ ] On press: call `GoogleSignin.signIn()`, extract the `idToken` from the result, then call
+      `POST /auth/native/google` with `{ id_token }`.
+- [ ] Handle Google sign-in cancellation (user dismisses the picker) as a no-op.
+- [ ] No hCaptcha is required for the Google path — the Google ID token is sufficient proof of
+      identity.
+
+### Phase 15f — Cleanup
+
+- [ ] Remove or hide the `openWebAuthBridge` login/signup path from the normal UI flow (keep it
+      available for password reset and email verification only).
+- [ ] Update `LoginScreen` and `SignupScreen` copy to remove references to "continuing to the
+      website".
+- [ ] Smoke-test both native flows (username/password and Google) against the production backend on
+      Android and iOS emulators before submitting to stores.
+- [ ] Update `docs/MOBILE_SESSION_STRATEGY.md` to reflect the new native-credential flow alongside
+      the existing auth-code exchange.
+
+Done means a user can create an account or sign in entirely within the native app without seeing a
+browser, the session is indistinguishable from a web session (same JWT/refresh pattern), and the
+experience meets App Store reviewer expectations for first-party credential flows.
 
 ---
 
