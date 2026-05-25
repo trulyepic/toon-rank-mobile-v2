@@ -268,7 +268,7 @@ Purpose: surface the user's own forum history and series rating history in the n
 
 ### Background — what was built on the web
 
-Three new backend endpoints were added and shipped:
+Four backend endpoints were added and shipped:
 
 | Endpoint                       | Returns                                                                                |
 | ------------------------------ | -------------------------------------------------------------------------------------- |
@@ -281,47 +281,235 @@ The web account page (`/account`) shows:
 
 - A "Forum activity" card with three tabs (Threads / Replies / Votes), all fetched in parallel on mount so counts are always visible.
 - A "Series ratings" card below it showing cover, title, type, status, and color-coded score pills per category.
-
-Reply and vote rows on the web link to `/forum/{thread_id}` using `thread_id` now included in `ForumPostOut`.
-
-### What the mobile app currently has
-
-- `ForumActivityScreen.tsx` is a complete stub. It renders three static info cards with no API calls and no real data.
-- `ProfileScreen.tsx` has the avatar picker and reading list / forum activity shortcuts but no series ratings section.
-- `src/api/forum.ts` has no `getMyForumThreads`, `getMyForumPosts`, or `getMyForumVotes` functions.
-- `src/api/` has no `getMySeriesVotes` function.
+- "View thread →" links from reply and vote rows navigate directly to the specific post via URL hash (`#post-{id}`).
 
 ### Work items
 
 **10a — API layer**
 
-- [ ] Add `getMyForumThreads(page, pageSize)` → `GET /forum/me/threads` to `src/api/forum.ts`
-- [ ] Add `getMyForumPosts(page, pageSize)` → `GET /forum/me/posts` to `src/api/forum.ts`
-- [ ] Add `getMyForumVotes(page, pageSize)` → `GET /forum/me/votes` to `src/api/forum.ts`
-- [ ] Add `getMySeriesVotes(page, pageSize)` → `GET /series-details/me/votes` to `src/api/series.ts`
-- [ ] Add `MySeriesVote` and `CategoryVote` types matching the backend response shapes
+- [x] Add `getMyForumThreads(page, pageSize)` → `GET /forum/me/threads` to `src/api/forum.ts`
+- [x] Add `getMyForumPosts(page, pageSize)` → `GET /forum/me/posts` to `src/api/forum.ts`
+- [x] Add `getMyForumVotes(page, pageSize)` → `GET /forum/me/votes` to `src/api/forum.ts`
+- [x] Add `getMySeriesVotes(page, pageSize)` → `GET /series-details/me/votes` to `src/api/votes.ts`
+- [x] Add `MySeriesVote`, `CategoryVote`, and `MySeriesVotesPage` types to `src/types/series.ts`
+- [x] Add `ForumPostPage` type to `src/types/forum.ts` and `thread_id` field to `ForumPost`
 
 **10b — ForumActivityScreen**
 
-- [ ] Replace the static placeholder cards with three real tabs (Threads / Replies / Votes)
-- [ ] Fetch all three in parallel on mount so tab counts are always visible without switching tabs
-- [ ] Threads tab: show title linked to `ForumThread` screen, post count, last updated date
-- [ ] Replies tab: show truncated content, date, and a "View thread" row action that navigates to `ForumThread` using `thread_id`
-- [ ] Votes tab: show truncated content, up/down badge, date, and a "View thread" row action
-- [ ] Each tab has its own pagination (load more or Prev/Next)
-- [ ] Signed-out guard: show a sign-in prompt instead of the lists
-- [ ] Empty, loading, and error states for each tab
+- [x] Replace the static placeholder cards with three real tabs (Threads / Replies / Votes)
+- [x] Fetch all three in parallel on mount so tab counts are always visible without switching tabs
+- [x] Threads tab: show title linked to `ForumThread` screen, post count, last updated date, locked badge
+- [x] Replies tab: show truncated plain-text content, date, and a "View thread →" row action that navigates to `ForumThread` with `postId` for scroll-to-post
+- [x] Votes tab: show truncated content, up/down badge, date, and a "View thread →" row action with `postId`
+- [x] Each tab uses `useInfiniteQuery` with a "Load more" button
+- [x] Signed-out guard: show `AccountRequiredCard` instead of the lists
+- [x] Empty, loading, and error states for each tab
+
+**10b.1 — Scroll to specific post in ForumThreadScreen**
+
+- [x] Add `postId?: number` to `ForumThread` nav params in `RootNavigator.tsx`
+- [x] Add `scrollRef` prop to `ScreenShell` so `ForumThreadScreen` can hold a `ScrollView` ref
+- [x] Add `forwardRef` to `Surface` component so `PostCard` can register its View ref
+- [x] Register a ref for every `PostCard` (original post + all replies at any depth) into a `Map<number, View>`
+- [x] After posts load, use `measureLayout` to scroll to the target post with a 200 ms settle delay
 
 **10c — Series ratings section on ProfileScreen**
 
-- [ ] Add a "Series ratings" section below the avatar area on `ProfileScreen`
-- [ ] Each row shows: cover thumbnail, title (tappable → `SeriesDetail`), type, status, and the user's per-category score badges
-- [ ] Score color convention: green ≥ 8, amber 6–7, red ≤ 5 (matches web)
-- [ ] Pagination (load more preferred on mobile)
-- [ ] Signed-out guard: hide the section or show a sign-in prompt
-- [ ] Empty, loading, and error states
+- [x] Add `SeriesRatingsSection` component at `src/screens/SeriesRatingsSection.tsx`
+- [x] Each card shows: cover thumbnail (`CoverImage`), title (tappable → `SeriesDetail`), type badge, status, and per-category score pills
+- [x] Score color convention: green ≥ 8, amber 6–7, red ≤ 5 (matches web)
+- [x] `useInfiniteQuery` with "Load more" button
+- [x] Empty, loading, and error states
+- [x] Section only shown when `isSignedIn`
 
-Done means a signed-in mobile user can browse their own forum threads, replies, and votes — and see all the series they've rated — without needing the website, and the data matches exactly what the website shows because it hits the same backend endpoints.
+**10d — Cover image caching (applied globally)**
+
+- [x] Install `expo-image` and create shared `CoverImage` component with `cachePolicy="memory-disk"` and `transition={150}` fade-in
+- [x] Replace all bare React Native `Image` usages for cover art across `HomeScreen`, `SearchScreen`, `SeriesDetailScreen`, `ReadingListDetailScreen`, `CompareScreen`, `ForumSeriesStrip`, `ForumMentionSuggestions`, and `SeriesRatingsSection`
+
+Done means a signed-in mobile user can browse their own forum threads, replies, votes, and series ratings without needing the website, and navigating to a specific post scrolls the thread to that post automatically.
+
+---
+
+## Phase 11: Account Management Completeness
+
+Suggested branch: `mobile-account-management`
+
+Purpose: close the small but user-visible gaps in account self-service that already have backend support but no mobile UI.
+
+### Background
+
+Three gaps were found in the May 2026 audit:
+
+1. **Avatar reset is missing.** Users who uploaded a photo cannot remove it from mobile. The backend `DELETE /auth/me/avatar` endpoint exists but is not in `src/api/auth.ts` and there is no reset button on `ProfileScreen`.
+2. **Reading list delete has no UI.** `deleteReadingList` exists in `src/api/readingLists.ts` and the backend supports it, but no button is wired up anywhere in `ReadingListsScreen`.
+3. **"Already in list" is not surfaced.** When a series is already saved to one or more reading lists, the save picker on `SeriesDetailScreen` shows no indication. Tapping a list that already contains the series produces a backend error caught by `Alert.alert`. A proactive check prevents the confusion.
+
+### Work items
+
+**11a — Avatar reset**
+
+- [ ] Add `resetMyAvatar()` → `DELETE /auth/me/avatar` to `src/api/auth.ts`
+- [ ] Add a "Remove photo" / "Reset to preset" button in `ProfileScreen` that appears only when `user.avatar_url` is set (i.e. a custom photo is active)
+- [ ] Call `resetMyAvatar()`, then call `updateUser` with `avatar_url: null` and retain the current preset so the avatar reverts to the preset swatch
+- [ ] Show an error state if the reset call fails
+
+**11b — Reading list delete**
+
+- [ ] Add a delete action to `ReadingListsScreen` for each list row (swipe-to-delete or a trash icon with a confirmation `Alert`)
+- [ ] Call the existing `deleteReadingList(listId)` from `src/api/readingLists.ts`
+- [ ] Remove the list from local query cache optimistically or invalidate after success
+- [ ] Show an error alert if deletion fails
+
+**11c — "Already in list" indicator on Series Detail save picker**
+
+- [ ] When the save picker modal opens in `SeriesDetailScreen`, check which lists already contain the series (the existing `useQueries` for series summaries does not cover this; fetch list items or use the list data already loaded)
+- [ ] Mark already-saved lists visually (e.g. a checkmark or "Saved" label) and disable the tap action for them
+- [ ] If the backend responds with a duplicate-save error anyway, surface a clearer message than the generic alert
+
+Done means users can fully manage their account from mobile: upload, preview, and remove their avatar, delete lists they no longer want, and clearly see which lists already have a given series.
+
+---
+
+## Phase 12: Forum Thread Management
+
+Suggested branch: `mobile-forum-thread-management`
+
+Purpose: give authors and admins the ability to edit and delete threads from mobile, matching the management controls available on the web.
+
+### Background
+
+The web forum lets thread authors edit the thread title and first post and delete their own threads. Admins can additionally lock/unlock threads and toggle the `latest_first` display order. None of these management actions are available on mobile. The following API functions are missing from `src/api/forum.ts`:
+
+- `updateForumThread` → `PATCH /forum/threads/:id`
+- `deleteForumThread` → `DELETE /forum/threads/:id`
+- `lockForumThread` → `PATCH /forum/threads/:id/lock`
+- `updateForumThreadSettings` → `PATCH /forum/threads/:id/settings`
+
+### Work items
+
+**12a — API layer**
+
+- [ ] Add `updateForumThread(threadId, payload)` → `PATCH /forum/threads/:id` to `src/api/forum.ts` (payload: `{ title, first_post_markdown, series_ids }`)
+- [ ] Add `deleteForumThread(threadId)` → `DELETE /forum/threads/:id` to `src/api/forum.ts`
+- [ ] Add `lockForumThread(threadId, locked)` → `PATCH /forum/threads/:id/lock` to `src/api/forum.ts`
+- [ ] Add `updateForumThreadSettings(threadId, settings)` → `PATCH /forum/threads/:id/settings` to `src/api/forum.ts` (payload: `{ latest_first }`)
+
+**12b — Edit thread UI**
+
+- [ ] In `ForumThreadScreen`, add an edit action to the hero card that appears when the signed-in user is the thread author or an admin
+- [ ] Tapping edit opens an inline or modal editor pre-filled with the current title and first post markdown (reuse the existing `TextInput` + series picker pattern from `ForumCreateThreadScreen`)
+- [ ] On save, call `updateForumThread` and update the query cache so title and first post update without a full refetch
+- [ ] Show saving/error states
+
+**12c — Delete thread UI**
+
+- [ ] In `ForumThreadScreen`, add a delete action that appears for the thread author and admins
+- [ ] Show a destructive confirmation `Alert` before calling `deleteForumThread`
+- [ ] On success, navigate back to `ForumScreen` and invalidate the thread list query
+
+**12d — Admin lock and display controls**
+
+- [ ] In `ForumThreadScreen`, show a lock/unlock toggle for users with `role === "ADMIN"`
+- [ ] Call `lockForumThread` and reflect the new locked state in the hero card and reply composer immediately
+- [ ] Show a `latest_first` toggle for admins that calls `updateForumThreadSettings` and refreshes the post order
+
+Done means thread authors and admins have the same management capability on mobile as on the web, and threads managed from mobile correctly reflect on the website.
+
+---
+
+## Phase 13: Forum Thread Search
+
+Suggested branch: `mobile-forum-thread-search`
+
+Purpose: make the forum list browseable when there are many threads, matching the search bar available on the web forum page.
+
+### Background
+
+`ForumScreen` currently shows all threads in reverse-chronological order with load-more pagination. The web forum has a search input that filters threads by keyword using the same backend endpoint. With many threads, users have no way to find a specific discussion from mobile without scrolling through everything.
+
+A secondary UX gap was also found: `ForumCreateThreadScreen` has a 2000-character limit on the first post body enforced at submit time, but no character counter is shown during typing.
+
+### Work items
+
+**13a — Thread search**
+
+- [ ] Add a search `TextInput` at the top of `ForumScreen`, styled consistently with `SearchScreen`
+- [ ] Debounce the input (300 ms) before updating the `queryKey` to avoid firing a request on every keystroke
+- [ ] Pass the trimmed query as a `q` param to `getForumThreads` (the backend already supports `?q=` filtering)
+- [ ] When the search field is empty, fall back to the standard unfiltered list
+- [ ] Add a clear (×) button that resets the input and restores the unfiltered list
+- [ ] Preserve load-more behavior in search results
+- [ ] Show an appropriate empty state when a search returns no threads
+
+**13b — Create thread character counter**
+
+- [ ] Add a visible character counter (`{current}/{max}`) to the first-post body `TextInput` in `ForumCreateThreadScreen`, matching the style used in `ForumThreadScreen`'s inline reply composer
+- [ ] Turn the counter text to `danger` tone when the limit is exceeded
+
+Done means users can find threads by keyword from mobile and have clear feedback when composing a new thread.
+
+---
+
+## Phase 14: Reading List Sharing
+
+Suggested branch: `mobile-reading-list-sharing`
+
+Purpose: let users share their reading lists publicly from mobile and allow anyone with a share link to view a shared list.
+
+### Background
+
+The web reading list page lets users toggle a list between private and public, copy the public share URL, and view other users' shared lists at `/lists/:token`. On mobile:
+
+- `shareReadingList` and `unshareReadingList` API functions do not exist in `src/api/readingLists.ts`.
+- There is no share toggle or share URL copy action in `ReadingListsScreen`.
+- `getPublicReadingList` exists in `src/api/readingLists.ts` and `PublicReadingListPage` type is defined, but there is no screen that renders it.
+- Deep link handling for `toonranks://lists/:token` is not configured.
+
+### Work items
+
+**14a — API layer**
+
+- [ ] Add `shareReadingList(listId)` → `POST /reading-lists/:id/share` to `src/api/readingLists.ts`, returning `{ share_token, share_url }`
+- [ ] Add `unshareReadingList(listId)` → `DELETE /reading-lists/:id/share` to `src/api/readingLists.ts`
+
+**14b — Share toggle UI**
+
+- [ ] In `ReadingListsScreen`, add a share toggle per list row (icon or pill) that reflects the list's current `is_public` state
+- [ ] Tapping the toggle on a private list calls `shareReadingList`, shows a loading state, then presents the returned `share_url` in a native share sheet (`Share.share`) or copies it to the clipboard
+- [ ] Tapping the toggle on a public list calls `unshareReadingList` and reverts the `is_public` indicator
+- [ ] Handle errors with an alert
+
+**14c — Public reading list viewer screen**
+
+- [ ] Add `PublicReadingList: { token: string }` to `RootStackParamList` in `RootNavigator.tsx`
+- [ ] Create `src/screens/PublicReadingListScreen.tsx` that calls `getPublicReadingList(token)` and renders the list items in the same style as `ReadingListDetailScreen`, but read-only (no edit/remove actions)
+- [ ] Each item should be tappable and navigate to `SeriesDetail`
+- [ ] Show the list owner's username and list name in the screen header
+- [ ] Handle not-found and private-list error states clearly
+
+**14d — Deep link handling**
+
+- [ ] Register the `toonranks://lists/:token` deep link scheme in `app.json` under `expo.scheme`
+- [ ] Add a linking config entry in the navigation setup so `toonranks://lists/:token` routes to `PublicReadingList` with the correct `token` param
+- [ ] Verify the link opens correctly from a browser and from the native share sheet output
+
+Done means mobile users can share their lists publicly, share the link externally, and anyone who receives the link can open it directly in the app and browse the shared list.
+
+---
+
+## Working Rules For Future Phases
+
+- Do not claim login, voting, lists, or forum posting work until the app has a real stored session.
+- Keep using the production backend contracts unless a backend change is explicitly part of the phase.
+- Keep phases branch-sized, but avoid tiny branches that only rename copy or move one small style.
+- After each phase, provide:
+  - what changed
+  - what to verify in the emulator
+  - commands run
+  - commit message
+  - short PR description
+- Run `npm run format`, `npm run lint`, `npx tsc --noEmit`, `npm run test -- --run`, and `git diff --check` before handing back mobile work.
 
 ## Working Rules For Future Phases
 
