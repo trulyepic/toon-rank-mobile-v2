@@ -705,6 +705,287 @@ continues through the normal website flow.
 
 ---
 
+## Phase 17: App Store Build Configuration (Hard Blockers)
+
+Suggested branch: `mobile-store-build-config`
+
+Purpose: resolve every configuration gap that would cause an App Store or Play Store rejection
+before a single reviewer sees the app. These are all code and config changes — no external accounts
+or assets required yet.
+
+### Background
+
+Four hard blockers were identified in the May 2026 store-readiness audit:
+
+1. **No real asset files.** `app.json` references `assets/icon.png`, `assets/splash.png`, and
+   `assets/adaptive-icon.png`. The folder only contains `ASSET_SPEC.md`. A production EAS build
+   will fail without the real files. Asset creation is design work handled separately; the spec is
+   documented in `assets/ASSET_SPEC.md`.
+2. **Missing iOS encryption declaration.** Apple requires every app to declare whether it uses
+   non-exempt encryption. The app uses only standard HTTPS — the correct declaration is
+   `ITSAppUsesNonExemptEncryption: false` in `app.json`. Without it Apple holds the submission for
+   French export compliance paperwork that does not apply.
+3. **`supportsTablet: true` without iPad testing.** Apple requires iPad screenshots and tests the
+   app on iPad when this flag is set. If the layout has not been verified on tablet, this flag must
+   be set to `false` for v1 to avoid a rejection on tablet-specific layout issues.
+4. **Notifications placeholder in Settings.** The Settings screen shows a "Notifications" row
+   describing future reminders. It does nothing. App Store reviewers sometimes request a demo of
+   features shown in the UI. For v1 this row should be removed or clearly marked "Coming soon" so
+   reviewers cannot hold the submission.
+
+### Work items
+
+**17a — iOS encryption declaration**
+
+- [ ] Add `"ITSAppUsesNonExemptEncryption": false` to `ios.infoPlist` in `app.json`
+- [ ] Confirm no custom encryption libraries are used anywhere in the dependency tree
+
+**17b — Tablet support decision**
+
+- [ ] Test the full app on an iPad simulator (all tabs, all modals, all forms)
+- [ ] If layout is acceptable: leave `supportsTablet: true` and add iPad screenshots to Phase 18
+- [ ] If layout needs work: set `supportsTablet: false` in `app.json` for v1; add a tablet
+      optimisation phase before v2
+
+**17c — Notifications placeholder**
+
+- [ ] Remove the "Notifications" settings row from `SettingsScreen.tsx` for v1, or replace the
+      body copy with "Coming in a future update" and disable any tappable behavior so reviewers
+      cannot interact with a non-functional feature
+
+**17d — EAS account and project link**
+
+- [ ] Create a free Expo account at expo.dev if one does not already exist
+- [ ] Run `npm install -g eas-cli` to install the EAS CLI globally
+- [ ] Run `eas login` to authenticate
+- [ ] Run `eas build:configure` inside the mobile project to link the project to the Expo account
+      and generate the project ID in `app.json`
+- [ ] Confirm `eas build --platform android --profile preview` produces a working APK before
+      attempting a production build
+
+**17e — Real asset files**
+
+- [ ] Produce `assets/icon.png` at 1024×1024 px, no transparency (see `assets/ASSET_SPEC.md`)
+- [ ] Produce `assets/adaptive-icon.png` at 1024×1024 px, logo within inner 66% safe zone
+- [ ] Produce `assets/splash.png` at 1284×2778 px, background `#17110f`, logo centred
+- [ ] Run `npx expo start` and confirm assets render correctly on both Android and iOS simulators
+- [ ] Run `eas build --platform android --profile preview` and confirm the APK installs and
+      launches with the correct icon and splash
+
+Done means a production EAS build completes without errors, the correct icon and splash appear on
+device, and the iOS build will not be held at Apple's encryption review step.
+
+---
+
+## Phase 18: Store Assets and Listings
+
+Suggested branch: `mobile-store-assets` (for any in-code metadata changes)
+
+Purpose: produce every visual and text asset both stores require before the app can go live.
+None of this work requires a code change — it is all done in App Store Connect, the Google Play
+Console, and a design tool.
+
+### App Store Connect (iOS)
+
+**18a — App record**
+
+- [ ] Sign in to App Store Connect (appstoreconnect.apple.com) with an Apple Developer Program
+      account ($99/year membership required)
+- [ ] Create a new app record: platform iOS, bundle ID `com.toonranks.mobile`, primary language
+      English, category **Entertainment** (sub-category: none required)
+- [ ] Set the app name to "Toon Ranks" and confirm it is not already taken in the store
+
+**18b — Store listing copy**
+
+- [ ] Write a subtitle (30 chars max): e.g. "Manga & Webtoon Rankings"
+- [ ] Write a promotional text (170 chars max): shown above the description, changeable without
+      a new build
+- [ ] Write a description (4000 chars max): cover rankings, reading lists, voting, forum, and
+      the shared account with the website
+- [ ] Add keywords (100 chars total, comma-separated): manga, webtoon, comics, rankings, reading
+      list, forum, anime
+- [ ] Add support URL: `https://www.toonranks.com/support` or the support email page
+- [ ] Add privacy policy URL: `https://www.toonranks.com/privacy` — confirm this page is live
+      before submitting
+
+**18c — iOS screenshots**
+
+All screenshots must be taken from a production or preview build, not the Expo Go client.
+
+- [ ] **6.7-inch** (iPhone 15 Pro Max): 1290×2796 px — required
+- [ ] **5.5-inch** (iPhone 8 Plus): 1242×2208 px — required
+- [ ] **12.9-inch iPad Pro** (if `supportsTablet: true`): 2048×2732 px — required if tablet
+      is enabled; skip if `supportsTablet` was set to `false` in Phase 17b
+- [ ] Minimum 3 screenshots per size; aim for 5–6 showing home, series detail, reading lists,
+      forum, and account
+- [ ] Screenshots must not show the Expo dev menu, Metro bundler UI, or any debug overlay
+
+**18d — Age rating**
+
+- [ ] Complete the age rating questionnaire in App Store Connect
+- [ ] The forum contains user-generated text content — this typically results in a **12+** rating
+      due to "Infrequent/Mild" mature/suggestive themes from user posts
+- [ ] Do not select any gambling, realistic violence, or explicit sexual content categories
+
+### Google Play Console (Android)
+
+**18e — App record**
+
+- [ ] Sign in to play.google.com/console with a Google Play Developer account ($25 one-time fee)
+- [ ] Create a new app: free, available in all countries, app (not game), English
+- [ ] Package name: `com.toonranks.mobile`
+
+**18f — Store listing copy**
+
+- [ ] Short description (80 chars): e.g. "Rank, track, and discuss manga and webtoons"
+- [ ] Full description (4000 chars): same content as iOS description, adapted for Play tone
+- [ ] Add the app category: **Entertainment**
+- [ ] Upload a feature graphic: 1024×500 px JPEG or 24-bit PNG, no alpha — shown as the banner
+      at the top of the Play Store listing
+
+**18g — Android screenshots**
+
+- [ ] Phone screenshots: minimum 2, maximum 8 — same content as iOS, cropped for Android ratio
+- [ ] 7-inch tablet screenshots (optional but recommended if `supportsTablet: true`)
+- [ ] 10-inch tablet screenshots (optional)
+
+**18h — Content rating**
+
+- [ ] Complete the IARC content rating questionnaire in Play Console
+- [ ] Expected rating: **Teen** (due to user-generated forum content) or **Everyone 10+**
+- [ ] Confirm the rating before submitting — misrating is a policy violation
+
+**18i — Data safety section**
+
+This is mandatory and cannot be skipped. Declare every data type the app collects:
+
+- [ ] **Email address** — collected, used for account management, not shared with third parties
+- [ ] **Username** — collected, used for account management and public display
+- [ ] **Photos** — collected optionally for avatar upload, stored on Toon Ranks servers (S3)
+- [ ] **User-generated content** (forum posts, reading lists) — collected, publicly visible if
+      the user chooses to share
+- [ ] **App activity** (votes, reading progress) — collected, used for product features
+- [ ] Confirm data is encrypted in transit (HTTPS) and at rest (backend/S3)
+- [ ] Confirm no data is sold to third parties
+- [ ] Confirm users can request account deletion (add a delete-account flow or link to the
+      website account deletion page if one exists)
+
+Done means both store listings are complete, all required screenshots are uploaded, age and
+content ratings are confirmed, and the data safety form is submitted.
+
+---
+
+## Phase 19: Production Build Verification
+
+Suggested branch: none — this is a QA and ops phase, not a code phase
+
+Purpose: confirm the production EAS build behaves identically to the development build against
+the live production backend before submitting to either store.
+
+### Background
+
+Development builds (Expo Go or development client) differ from production builds in several
+important ways: environment variables are re-evaluated, Metro bundler is not present, JavaScript
+is bundled and minified, native modules use release configurations, and crash reporting (if added)
+is active. A flow that works in dev can silently break in production due to any of these
+differences.
+
+### Work items
+
+**19a — Android production build**
+
+- [ ] Run `eas build --platform android --profile production` to produce an AAB (Android App
+      Bundle) — this is what the Play Store requires
+- [ ] Also run `eas build --platform android --profile preview` to produce an APK for direct
+      install and testing on a physical device or emulator
+- [ ] Install the preview APK on a real Android device or emulator and confirm it launches
+
+**19b — iOS production build**
+
+- [ ] Run `eas build --platform ios --profile production`
+- [ ] Install on a real iOS device via TestFlight (requires the app record to exist in App Store
+      Connect and the device to be added as a tester)
+- [ ] Confirm it launches without the Expo splash being replaced by a blank screen
+
+**19c — Smoke test all critical flows against production backend**
+
+Test every flow that touches the real backend — do not use a staging or mock environment:
+
+- [ ] **Signup**: create a new account, receive verification email, verify, log in
+- [ ] **Login**: log in with verified credentials; confirm session persists after app restart
+- [ ] **Refresh token**: force an access token expiry (or wait) and confirm the session refreshes
+      silently rather than logging the user out
+- [ ] **Logout**: confirm session is cleared and the user is returned to the signed-out state
+- [ ] **Home rankings**: confirm titles load, type filters work, load-more works
+- [ ] **Search**: confirm results load and tapping a result navigates to Series Detail
+- [ ] **Series Detail**: confirm summary, detail, voting, and save-to-list work
+- [ ] **Reading lists**: confirm lists load, items show, add/remove/chapter edit work, share works
+- [ ] **Forum**: confirm threads load, replies work, create thread works, votes work
+- [ ] **Avatar upload**: confirm photo selection, crop, and upload land on the user's profile
+- [ ] **Issue report**: confirm a report submits and appears in the backend admin queue
+- [ ] **Forgot password**: confirm the in-app browser opens the correct reset page
+
+**19d — Crash and error monitoring (optional but recommended)**
+
+- [ ] Consider adding `expo-updates` for over-the-air (OTA) fixes after store approval — this
+      allows JS-layer bug fixes to ship without a full store review cycle
+- [ ] Consider adding Sentry (`@sentry/react-native`) for production crash reporting — the free
+      tier covers small apps and gives a stack trace for every crash
+- [ ] If either is added, confirm they do not trigger additional permission prompts or store
+      policy questions
+
+Done means the production build is confirmed working end-to-end against the live backend on real
+hardware, and any last-minute issues are fixed before submission.
+
+---
+
+## Phase 20: Store Submission
+
+Suggested branch: none — this is entirely done in App Store Connect and Play Console
+
+Purpose: submit the verified production build to both stores and respond to any reviewer
+feedback.
+
+### Work items
+
+**20a — iOS submission**
+
+- [ ] Upload the production IPA to App Store Connect using `eas submit --platform ios` or
+      Transporter
+- [ ] Complete the "What's new in this version" field (first version: describe the app, not
+      changes)
+- [ ] Select the build in App Store Connect and click "Submit for Review"
+- [ ] Standard review time: 24–48 hours; expedited review available if a critical issue is
+      discovered post-launch
+
+**20b — Android submission**
+
+- [ ] Upload the AAB to Play Console in the Production track using
+      `eas submit --platform android` or manual upload
+- [ ] Write release notes
+- [ ] Roll out to 100% of users (or start with a staged rollout at 10–20% if preferred)
+- [ ] Standard review time: 3–7 days for a new app
+
+**20c — Reviewer response plan**
+
+Common rejection reasons to be prepared for:
+
+- [ ] **"App does not work as described"** — ensure every feature shown in screenshots works in
+      the submitted build
+- [ ] **"Login required to review"** — create a dedicated reviewer account with pre-loaded data
+      (a reading list, a forum post, a vote) and include the credentials in the review notes
+- [ ] **"Privacy policy not accessible"** — confirm `https://www.toonranks.com/privacy` loads
+      without login
+- [ ] **"Missing account deletion flow"** — both Apple and Google require users to be able to
+      delete their account from within the app or via a clearly linked web page; add a
+      "Delete account" option to Settings or link to a web page that handles it
+- [ ] **"Guideline 4.0 — Design"** (Apple only) — may flag UI issues on specific device sizes;
+      address and resubmit
+
+Done means the app is live in both the App Store and Google Play and users can download it.
+
+---
+
 ## Working Rules For Future Phases
 
 - Do not claim login, voting, lists, or forum posting work until the app has a real stored session.
