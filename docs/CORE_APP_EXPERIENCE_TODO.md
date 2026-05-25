@@ -986,6 +986,126 @@ Done means the app is live in both the App Store and Google Play and users can d
 
 ---
 
+---
+
+## Phase 21: Settings Screen — Appearance and Account Safety
+
+Suggested branch: `mobile-settings-preferences`
+
+Purpose: replace the two informational placeholder rows in Settings with real controls.
+
+### Background
+
+`SettingsScreen` currently shows two static rows that describe future functionality but do
+nothing. Both are non-interactive info cards and will not cause a store review hold, but they
+should be replaced with real controls before a v2 release.
+
+**Appearance row** ("The mobile app currently uses the dark Toon Ranks palette.")
+
+`app.json` sets `userInterfaceStyle: "automatic"`, which passes the system color-scheme
+preference to React Native. However, all color tokens are hard-coded to the dark Toon Ranks
+palette, so the setting has no effect — light-mode users see the same dark UI. For v1 this is
+intentional (one palette, fully tested). A future iteration should either:
+
+- Add a light-mode palette and wire up `useColorScheme()` so the app truly follows the system, or
+- Allow the user to choose a preferred theme from Settings.
+
+**Account safety row** ("Session, sign-out, and verification controls will be expanded here.")
+
+The logout button on the same card already handles sign-out. Controls still missing:
+
+- View active session info (device, last signed-in date)
+- Revoke all sessions (backend: `DELETE /auth/sessions`)
+- Change password from mobile (currently handled via the website forgot-password flow)
+- Delete account (required by both Apple and Google — see Phase 20c)
+
+### Work items
+
+**21a — Native theme support**
+
+- [ ] Audit all color tokens in `src/theme/tokens.ts` and decide whether a full light palette is
+      in scope
+- [ ] If yes: implement `useColorScheme()` conditional token sets and update `userInterfaceStyle:
+"automatic"` behavior so the toggle actually changes the visible palette
+- [ ] If no for v1: update Appearance row copy to "Dark theme — light theme coming in a future
+      update" and leave the row non-interactive
+
+**21b — Account safety controls**
+
+- [ ] Add `deleteAccount()` → `DELETE /auth/me` (or equivalent) to `src/api/auth.ts` and add a
+      "Delete account" destructive option to Settings, guarded by a confirmation Alert; this is
+      mandatory for both Apple and Google store policies (see Phase 20c)
+- [ ] Add change-password entry point that opens the website reset flow via in-app browser
+      (same pattern as forgot-password)
+- [ ] Session info and multi-session revocation can be deferred to a later slice unless the
+      backend ships the relevant endpoint sooner
+
+Done means Settings contains real, working controls rather than informational placeholders, and
+the delete-account path satisfies App Store and Play Store policy requirements.
+
+---
+
+## Phase 22: Genre Browsing
+
+Suggested branch: `backend-rankings-genre-param` then `mobile-genre-filter`
+
+Purpose: let mobile users filter rankings by genre the same way the website does, without the
+data-completeness problem that comes from client-side filtering on a paginated list.
+
+### Background
+
+The website (`FilteredSeriesPage`) derives genres from already-loaded items and filters the
+display array client-side. This works on web because `InfiniteScroll` auto-loads as the user
+scrolls, so the genre set grows automatically. On mobile, ranking pages are paginated with an
+explicit "Load more" button — applying a client-side genre filter after loading only the first
+page (20 items) would show a dangerously incomplete slice (e.g. 2 of 10 "Horror" titles).
+The mobile type-rail filter (All / Manga / Manhwa / Manhua) is the correct level of filtering
+for v1.
+
+### Why server-side genre param is required first
+
+The backend `/series/rankings` endpoint currently accepts only `page`, `page_size`, and `type`.
+Adding a `genre` query param that filters `Series.genre` with a case-insensitive substring match
+lets the mobile app reset the list and fetch page 1 of only the matching titles — exactly like
+how `type` filtering works today. Without this, every genre-filter result on mobile would be
+misleadingly incomplete.
+
+### Work items
+
+**22a — Backend: `genre` param on `/series/rankings`**
+
+Suggested branch: `backend-rankings-genre-param`
+
+- [ ] Add `genre: Optional[str] = Query(None)` to `get_ranked_series` in `series_routes.py`
+- [ ] When `genre` is present, add `Series.genre.ilike(f"%{genre}%")` to the filter clause
+      (same pattern used by the search endpoint)
+- [ ] Add a backend test: request with `?type=MANGA&genre=action` returns only manga whose genre
+      field contains "action" (case-insensitive)
+
+**22b — Mobile API: pass `genre` to `fetchRankings`**
+
+Suggested branch: `mobile-genre-filter`
+
+- [ ] Add optional `genre?: string` to `fetchRankings()` in `src/api/series.ts`
+- [ ] Pass `genre` in the `params` object alongside `type`
+
+**22c — Mobile UX: genre strip below the type rail on HomeScreen**
+
+- [ ] Derive the genre list from already-loaded ranking items using the same
+      dedup/canonicalize logic as the website's `GenreStrip` component
+- [ ] Render a second horizontal `ScrollView` pill strip below the existing type rail, only when
+      there is at least one genre to show
+- [ ] Tapping a genre pill resets `queryKey` to `["rankings", activeType, activeGenre]` and
+      re-fetches from page 1 — identical to how the type rail works today
+- [ ] "ALL" pill (or deselecting the active pill) clears the genre filter
+- [ ] The genre list should be derived from the full loaded set, not just the first page — if
+      the user has loaded more items, those genres also appear in the strip
+
+Done means mobile users can narrow rankings by genre with accurate, server-filtered results, and
+the strip works reliably because the backend drives pagination, not client-side array slicing.
+
+---
+
 ## Working Rules For Future Phases
 
 - Do not claim login, voting, lists, or forum posting work until the app has a real stored session.
