@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Toon Ranks",
-    "slug": "toon-ranks-mobile",
+    "slug": "toonranks-mobile",
     "scheme": "toonranks",
     "newArchEnabled": false,
     "version": "1.0.0",
@@ -58,6 +58,12 @@
           "photosPermission": "Toon Ranks needs access to your photo library to set your profile avatar."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2999a815-1b7b-4cc0-b598-1648a3a41251"
+      }
+    },
+    "owner": "toonranks"
   }
 }
