@@ -5,6 +5,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  Share,
   StyleSheet,
   TextInput,
   View,
@@ -17,6 +18,8 @@ import {
   createReadingList,
   deleteReadingList,
   getMyReadingLists,
+  shareReadingList,
+  unshareReadingList,
 } from "../api/readingLists";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -77,6 +80,72 @@ export function ReadingListsScreen() {
       );
     },
   });
+
+  const shareMutation = useMutation({
+    mutationFn: (listId: number) => shareReadingList(listId),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
+      const shareUrl =
+        result.share_url || `https://toonranks.com/lists/${result.share_token}`;
+      void Share.share({ message: shareUrl, url: shareUrl });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Could not share",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const unshareMutation = useMutation({
+    mutationFn: (listId: number) => unshareReadingList(listId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Could not make private",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  function handleSharePress(
+    listId: number,
+    listName: string,
+    isPublic: boolean,
+    shareToken: string,
+  ) {
+    if (isPublic) {
+      const shareUrl = `https://toonranks.com/lists/${shareToken}`;
+      Alert.alert(listName, "This list is currently public.", [
+        {
+          text: "Share link",
+          onPress: () => void Share.share({ message: shareUrl, url: shareUrl }),
+        },
+        {
+          text: "Make private",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Make private?",
+              `"${listName}" will no longer be publicly viewable.`,
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Make private",
+                  style: "destructive",
+                  onPress: () => unshareMutation.mutate(listId),
+                },
+              ],
+            ),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    } else {
+      shareMutation.mutate(listId);
+    }
+  }
 
   function confirmDelete(listId: number, listName: string) {
     Alert.alert("Delete list", `Delete "${listName}"? This cannot be undone.`, [
@@ -175,6 +244,39 @@ export function ReadingListsScreen() {
                         </AppText>
                       </View>
                       <View style={styles.rowActions}>
+                        <Pressable
+                          onPress={() =>
+                            handleSharePress(
+                              list.id,
+                              list.name,
+                              list.is_public,
+                              list.share_token,
+                            )
+                          }
+                          hitSlop={8}
+                          disabled={
+                            (shareMutation.isPending &&
+                              shareMutation.variables === list.id) ||
+                            (unshareMutation.isPending &&
+                              unshareMutation.variables === list.id)
+                          }
+                          style={styles.shareBtn}
+                        >
+                          {(shareMutation.isPending &&
+                            shareMutation.variables === list.id) ||
+                          (unshareMutation.isPending &&
+                            unshareMutation.variables === list.id) ? (
+                            <ActivityIndicator size="small" color={colors.accentStrong} />
+                          ) : (
+                            <Ionicons
+                              name={
+                                list.is_public ? "share-social" : "share-social-outline"
+                              }
+                              size={18}
+                              color={colors.accentStrong}
+                            />
+                          )}
+                        </Pressable>
                         <Pressable
                           onPress={() => confirmDelete(list.id, list.name)}
                           hitSlop={8}
@@ -296,6 +398,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+  },
+  shareBtn: {
+    padding: spacing.xs,
   },
   deleteBtn: {
     padding: spacing.xs,

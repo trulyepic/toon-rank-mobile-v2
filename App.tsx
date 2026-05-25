@@ -1,11 +1,13 @@
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import type { LinkingOptions } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider } from "./src/auth/AuthContext";
 import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import type { RootStackParamList } from "./src/navigation/RootNavigator";
 import { colors } from "./src/theme/tokens";
 
 const queryClient = new QueryClient();
@@ -23,13 +25,22 @@ const theme = {
   },
 };
 
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ["toonranks://"],
+  config: {
+    screens: {
+      PublicReadingList: "lists/:token",
+    },
+  },
+};
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <CompareProvider>
-            <NavigationContainer theme={theme}>
+            <NavigationContainer theme={theme} linking={linking}>
               <StatusBar style="light" />
               <RootNavigator />
             </NavigationContainer>

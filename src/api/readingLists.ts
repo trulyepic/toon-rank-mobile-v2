@@ -5,6 +5,7 @@ import type {
   PaginatedReadingListItems,
   PublicReadingList,
   ReadingList,
+  ShareReadingListResponse,
   UpdateReadingListItemRequest,
 } from "../types/readingList";
 
@@ -60,4 +61,13 @@ export async function deleteReadingList(listId: number) {
 export async function getPublicReadingList(token: string) {
   const res = await api.get<PublicReadingList>(`/reading-lists/public/${token}`);
   return res.data;
+}
+
+export async function shareReadingList(listId: number) {
+  const res = await api.post<ShareReadingListResponse>(`/reading-lists/${listId}/share`);
+  return res.data;
+}
+
+export async function unshareReadingList(listId: number) {
+  await api.delete(`/reading-lists/${listId}/share`);
 }

@@ -13,7 +13,13 @@ export interface ReadingList {
 
 export interface PublicReadingList {
   name: string;
+  owner_username?: string | null;
   items: ReadingListItem[];
+}
+
+export interface ShareReadingListResponse {
+  share_token: string;
+  share_url?: string | null;
 }
 
 export type PaginatedReadingListItems = {
