@@ -471,29 +471,30 @@ The web reading list page lets users toggle a list between private and public, c
 
 **14a — API layer**
 
-- [ ] Add `shareReadingList(listId)` → `POST /reading-lists/:id/share` to `src/api/readingLists.ts`, returning `{ share_token, share_url }`
-- [ ] Add `unshareReadingList(listId)` → `DELETE /reading-lists/:id/share` to `src/api/readingLists.ts`
+- [x] Add `shareReadingList(listId)` → `POST /reading-lists/:id/share` to `src/api/readingLists.ts`, returning `{ share_token, share_url }`
+- [x] Add `unshareReadingList(listId)` → `DELETE /reading-lists/:id/share` to `src/api/readingLists.ts`
+- [x] Add `ShareReadingListResponse` type to `src/types/readingList.ts`
+- [x] Add `owner_username?: string | null` to `PublicReadingList` type so the viewer screen can attribute the list
 
 **14b — Share toggle UI**
 
-- [ ] In `ReadingListsScreen`, add a share toggle per list row (icon or pill) that reflects the list's current `is_public` state
-- [ ] Tapping the toggle on a private list calls `shareReadingList`, shows a loading state, then presents the returned `share_url` in a native share sheet (`Share.share`) or copies it to the clipboard
-- [ ] Tapping the toggle on a public list calls `unshareReadingList` and reverts the `is_public` indicator
-- [ ] Handle errors with an alert
+- [x] In `ReadingListsScreen`, added a share button (`share-social-outline` / `share-social` filled when public) per list row alongside the existing trash icon
+- [x] Tapping the share button on a private list calls `shareReadingList`, shows an `ActivityIndicator` while pending, then presents the returned `share_url` in a native `Share.share` sheet
+- [x] Tapping the share button on a public list shows an `Alert` with "Share link" (opens share sheet with `toonranks.com/lists/{token}`) and "Make private" (confirmation then calls `unshareReadingList`)
+- [x] Both mutations invalidate `["reading-lists", "me"]` on success and show an alert on error
 
 **14c — Public reading list viewer screen**
 
-- [ ] Add `PublicReadingList: { token: string }` to `RootStackParamList` in `RootNavigator.tsx`
-- [ ] Create `src/screens/PublicReadingListScreen.tsx` that calls `getPublicReadingList(token)` and renders the list items in the same style as `ReadingListDetailScreen`, but read-only (no edit/remove actions)
-- [ ] Each item should be tappable and navigate to `SeriesDetail`
-- [ ] Show the list owner's username and list name in the screen header
-- [ ] Handle not-found and private-list error states clearly
+- [x] Added `PublicReadingList: { token: string }` to `RootStackParamList` in `RootNavigator.tsx`
+- [x] Created `src/screens/PublicReadingListScreen.tsx` — calls `getPublicReadingList(token)`, enriches items with `getSeriesSummary` via `useQueries` (same pattern as `ReadingListDetailScreen`)
+- [x] Each item card shows cover, title (tappable → `SeriesDetail`), type badge, score, and `left_off_chapter` read-only — no edit or remove actions
+- [x] Screen title shows list name; subtitle shows `Shared by {owner_username}` when the field is present
+- [x] 404/403 response shows "This list is private or no longer available"; other errors show a generic retry message
 
 **14d — Deep link handling**
 
-- [ ] Register the `toonranks://lists/:token` deep link scheme in `app.json` under `expo.scheme`
-- [ ] Add a linking config entry in the navigation setup so `toonranks://lists/:token` routes to `PublicReadingList` with the correct `token` param
-- [ ] Verify the link opens correctly from a browser and from the native share sheet output
+- [x] `toonranks` scheme was already registered in `app.json` under `expo.scheme` (no change needed)
+- [x] Added `linking` config typed as `LinkingOptions<RootStackParamList>` to `NavigationContainer` in `App.tsx`: `toonranks://lists/:token` routes to `PublicReadingList` with the correct `token` param
 
 Done means mobile users can share their lists publicly, share the link externally, and anyone who receives the link can open it directly in the app and browse the shared list.
 
