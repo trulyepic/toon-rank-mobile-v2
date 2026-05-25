@@ -1026,7 +1026,7 @@ The logout button on the same card already handles sign-out. Controls still miss
 - [ ] Audit all color tokens in `src/theme/tokens.ts` and decide whether a full light palette is
       in scope
 - [ ] If yes: implement `useColorScheme()` conditional token sets and update `userInterfaceStyle:
-    "automatic"` behavior so the toggle actually changes the visible palette
+"automatic"` behavior so the toggle actually changes the visible palette
 - [ ] If no for v1: update Appearance row copy to "Dark theme — light theme coming in a future
       update" and leave the row non-interactive
 
