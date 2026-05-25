@@ -23,9 +23,13 @@ import {
   createForumPost,
   deleteForumPost,
   deleteForumPostMine,
+  deleteForumThread,
   editForumPost,
   getForumThreadPosts,
+  lockForumThread,
   setForumPostVote,
+  updateForumThread,
+  updateForumThreadSettings,
 } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -64,6 +68,7 @@ type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
 const POSTS_PAGE_SIZE = 20;
 const REPLY_MAX_LENGTH = 2000;
+const MAX_TITLE_LENGTH = 200;
 
 type PendingVote = {
   postId: number;
@@ -475,12 +480,16 @@ export function ForumThreadScreen() {
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [isEditingThread, setIsEditingThread] = useState(false);
+  const [editThreadTitle, setEditThreadTitle] = useState("");
+  const [editThreadBody, setEditThreadBody] = useState("");
   const { threadId, postId } = route.params;
   const scrollViewRef = useRef<ScrollView>(null);
   const postRefs = useRef<Map<number, View>>(new Map());
   const hasScrolledToPost = useRef(false);
   const queryKey = ["forum", "thread", threadId] as const;
   const activeMention = getActiveForumMention(replyText);
+  const activeThreadBodyMention = getActiveForumMention(editThreadBody);
   const postsQuery = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) => getForumThreadPosts(threadId, pageParam, POSTS_PAGE_SIZE),
@@ -629,6 +638,115 @@ export function ForumThreadScreen() {
       );
     },
   });
+  const updateThreadMutation = useMutation({
+    mutationFn: ({
+      title,
+      body,
+      originalPostId,
+    }: {
+      title: string;
+      body: string;
+      originalPostId: number;
+    }) =>
+      updateForumThread(threadId, {
+        title,
+        first_post_markdown: body,
+        series_ids: extractForumSeriesIds(body),
+      }),
+    onSuccess: (updatedThread, variables) => {
+      setIsEditingThread(false);
+      setEditThreadTitle("");
+      setEditThreadBody("");
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              thread: updatedThread,
+              posts: page.posts.map((post) =>
+                post.id === variables.originalPostId
+                  ? {
+                      ...post,
+                      content_markdown: variables.body,
+                      series_refs: updatedThread.series_refs,
+                    }
+                  : post,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Thread not updated",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const deleteThreadMutation = useMutation({
+    mutationFn: () => deleteForumThread(threadId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
+      navigation.goBack();
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Thread not deleted",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const lockMutation = useMutation({
+    mutationFn: (locked: boolean) => lockForumThread(threadId, locked),
+    onSuccess: (updatedThread) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({ ...page, thread: updatedThread })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Lock state not updated",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const settingsMutation = useMutation({
+    mutationFn: (latestFirst: boolean) =>
+      updateForumThreadSettings(threadId, { latest_first: latestFirst }),
+    onSuccess: (updatedThread) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({ ...page, thread: updatedThread })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Settings not updated",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
   const pages = postsQuery.data?.pages ?? [];
   const thread = pages[0]?.thread;
   const posts = pages
@@ -650,6 +768,10 @@ export function ForumThreadScreen() {
   const topLevelReplies = replies.filter(
     (post) => !post.parent_id || post.parent_id === originalPost?.id,
   );
+  const isThreadAuthor = Boolean(
+    user?.username && thread && user.username === thread.author_username,
+  );
+  const canManageThread = isThreadAuthor || isAdmin;
   const canReplyToThread = Boolean(thread && !thread.locked);
   const trimmedReply = replyText.trim();
   const canSubmitReply =
@@ -686,6 +808,69 @@ export function ForumThreadScreen() {
     }, 200);
     return () => clearTimeout(timer);
   }, [posts, postId]);
+
+  const handleEditThreadStart = () => {
+    if (!thread || !originalPost) return;
+    setEditThreadTitle(thread.title);
+    setEditThreadBody(originalPost.content_markdown);
+    setIsEditingThread(true);
+  };
+
+  const handleEditThreadCancel = () => {
+    setIsEditingThread(false);
+    setEditThreadTitle("");
+    setEditThreadBody("");
+  };
+
+  const handleEditThreadSave = () => {
+    if (!originalPost) return;
+    const trimmedTitle = editThreadTitle.trim();
+    const trimmedBody = editThreadBody.trim();
+    if (!trimmedTitle || !trimmedBody) return;
+    updateThreadMutation.mutate({
+      title: trimmedTitle,
+      body: trimmedBody,
+      originalPostId: originalPost.id,
+    });
+  };
+
+  const handleDeleteThread = () => {
+    Alert.alert(
+      "Delete thread",
+      "This cannot be undone. The thread and all its posts will be removed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteThreadMutation.mutate(),
+        },
+      ],
+    );
+  };
+
+  const handleLockThread = () => {
+    if (!thread) return;
+    const willBeLocked = !thread.locked;
+    Alert.alert(
+      willBeLocked ? "Lock thread?" : "Unlock thread?",
+      willBeLocked
+        ? "No new replies will be allowed once locked."
+        : "Replies will be allowed again after unlocking.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: willBeLocked ? "Lock" : "Unlock",
+          onPress: () => lockMutation.mutate(willBeLocked),
+        },
+      ],
+    );
+  };
+
+  const handleToggleLatestFirst = () => {
+    if (!thread) return;
+    settingsMutation.mutate(!thread.latest_first);
+  };
 
   const handleVote = (post: ForumPost, vote: ForumVote) => {
     if (!isSignedIn) {
@@ -823,7 +1008,7 @@ export function ForumThreadScreen() {
         <ErrorState message="This discussion could not be loaded. Try again in a moment." />
       ) : null}
 
-      {thread ? (
+      {thread && !isEditingThread ? (
         <Surface variant="accent" radius="hero" style={styles.hero}>
           <View style={styles.heroIcon}>
             <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.text} />
@@ -864,7 +1049,152 @@ export function ForumThreadScreen() {
                 </View>
               ) : null}
             </View>
+            {canManageThread ? (
+              <View style={styles.threadActions}>
+                <Pressable
+                  onPress={handleEditThreadStart}
+                  disabled={!originalPost}
+                  style={({ pressed }) => [
+                    styles.replyAction,
+                    pressed ? styles.pressedBadge : null,
+                  ]}
+                >
+                  <Ionicons name="pencil-outline" size={13} color={colors.text} />
+                  <AppText variant="caption">Edit</AppText>
+                </Pressable>
+                <Pressable
+                  onPress={handleDeleteThread}
+                  disabled={deleteThreadMutation.isPending}
+                  style={({ pressed }) => [
+                    styles.deleteAction,
+                    pressed ? styles.pressedBadge : null,
+                  ]}
+                >
+                  <Ionicons name="trash-outline" size={13} color={colors.danger} />
+                  <AppText variant="caption" tone="danger">
+                    Delete
+                  </AppText>
+                </Pressable>
+                {isAdmin ? (
+                  <>
+                    <Pressable
+                      onPress={handleLockThread}
+                      disabled={lockMutation.isPending}
+                      style={({ pressed }) => [
+                        styles.replyAction,
+                        pressed ? styles.pressedBadge : null,
+                      ]}
+                    >
+                      <Ionicons
+                        name={thread.locked ? "lock-open-outline" : "lock-closed-outline"}
+                        size={13}
+                        color={colors.text}
+                      />
+                      <AppText variant="caption">
+                        {thread.locked ? "Unlock" : "Lock"}
+                      </AppText>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleToggleLatestFirst}
+                      disabled={settingsMutation.isPending}
+                      style={({ pressed }) => [
+                        styles.replyAction,
+                        thread.latest_first ? styles.activeThreadAction : null,
+                        pressed ? styles.pressedBadge : null,
+                      ]}
+                    >
+                      <Ionicons
+                        name="swap-vertical-outline"
+                        size={13}
+                        color={thread.latest_first ? colors.accentStrong : colors.text}
+                      />
+                      <AppText
+                        variant="caption"
+                        tone={thread.latest_first ? "accent" : undefined}
+                      >
+                        Latest first
+                      </AppText>
+                    </Pressable>
+                  </>
+                ) : null}
+              </View>
+            ) : null}
           </View>
+        </Surface>
+      ) : null}
+
+      {isEditingThread ? (
+        <Surface radius="xl" style={styles.threadEditCard}>
+          <AppText variant="cardTitle">Edit thread</AppText>
+          <View style={styles.fieldHeader}>
+            <AppText variant="caption">Title</AppText>
+            <AppText variant="caption" tone="subtle">
+              {editThreadTitle.length}/{MAX_TITLE_LENGTH}
+            </AppText>
+          </View>
+          <TextInput
+            value={editThreadTitle}
+            onChangeText={(v) => setEditThreadTitle(v.slice(0, MAX_TITLE_LENGTH))}
+            placeholder="Thread title"
+            placeholderTextColor={colors.textSubtle}
+            style={styles.titleInput}
+          />
+          <View style={styles.fieldHeader}>
+            <AppText variant="caption">First post</AppText>
+            <AppText variant="caption" tone="subtle">
+              {editThreadBody.length}/{REPLY_MAX_LENGTH}
+            </AppText>
+          </View>
+          <TextInput
+            value={editThreadBody}
+            onChangeText={(v) => setEditThreadBody(v.slice(0, REPLY_MAX_LENGTH))}
+            placeholder="First post content..."
+            placeholderTextColor={colors.textSubtle}
+            multiline
+            textAlignVertical="top"
+            style={styles.replyInput}
+          />
+          <ForumMentionSuggestions
+            mention={activeThreadBodyMention}
+            onSelect={(series) => {
+              setEditThreadBody((current) =>
+                activeThreadBodyMention
+                  ? insertForumMention(current, activeThreadBodyMention, series).slice(
+                      0,
+                      REPLY_MAX_LENGTH,
+                    )
+                  : current,
+              );
+            }}
+          />
+          <View style={styles.editActions}>
+            <AppButton
+              label="Cancel"
+              disabled={updateThreadMutation.isPending}
+              onPress={handleEditThreadCancel}
+              iconLeft={<Ionicons name="close-outline" size={15} color={colors.text} />}
+            />
+            <AppButton
+              label={updateThreadMutation.isPending ? "Saving..." : "Save thread"}
+              selected
+              disabled={
+                updateThreadMutation.isPending ||
+                !editThreadTitle.trim() ||
+                !editThreadBody.trim()
+              }
+              onPress={handleEditThreadSave}
+              iconLeft={
+                updateThreadMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : (
+                  <Ionicons name="checkmark-outline" size={15} color={colors.text} />
+                )
+              }
+            />
+          </View>
+          {updateThreadMutation.isError ? (
+            <AppText tone="danger">Could not save changes. Try again.</AppText>
+          ) : null}
         </Surface>
       ) : null}
 
@@ -1345,6 +1675,36 @@ const styles = StyleSheet.create({
   inlineComposerActions: {
     flexDirection: "row",
     gap: spacing.sm,
+  },
+  threadActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+  },
+  activeThreadAction: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
+  },
+  threadEditCard: {
+    gap: spacing.md,
+  },
+  fieldHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  titleInput: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    color: colors.text,
+    backgroundColor: colors.backgroundSoft,
+    fontSize: 16,
+    fontWeight: "800",
   },
   reportLink: {
     flexDirection: "row",

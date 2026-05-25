@@ -392,29 +392,29 @@ The web forum lets thread authors edit the thread title and first post and delet
 
 **12a — API layer**
 
-- [ ] Add `updateForumThread(threadId, payload)` → `PATCH /forum/threads/:id` to `src/api/forum.ts` (payload: `{ title, first_post_markdown, series_ids }`)
-- [ ] Add `deleteForumThread(threadId)` → `DELETE /forum/threads/:id` to `src/api/forum.ts`
-- [ ] Add `lockForumThread(threadId, locked)` → `PATCH /forum/threads/:id/lock` to `src/api/forum.ts`
-- [ ] Add `updateForumThreadSettings(threadId, settings)` → `PATCH /forum/threads/:id/settings` to `src/api/forum.ts` (payload: `{ latest_first }`)
+- [x] Add `updateForumThread(threadId, payload)` → `PATCH /forum/threads/:id` to `src/api/forum.ts` (payload: `{ title, first_post_markdown, series_ids }`)
+- [x] Add `deleteForumThread(threadId)` → `DELETE /forum/threads/:id` to `src/api/forum.ts`
+- [x] Add `lockForumThread(threadId, locked)` → `PATCH /forum/threads/:id/lock` to `src/api/forum.ts`
+- [x] Add `updateForumThreadSettings(threadId, settings)` → `PATCH /forum/threads/:id/settings` to `src/api/forum.ts` (payload: `{ latest_first }`)
+- [x] Add `UpdateForumThreadRequest`, `LockForumThreadRequest`, `UpdateForumThreadSettingsRequest` types to `src/types/forum.ts`
 
 **12b — Edit thread UI**
 
-- [ ] In `ForumThreadScreen`, add an edit action to the hero card that appears when the signed-in user is the thread author or an admin
-- [ ] Tapping edit opens an inline or modal editor pre-filled with the current title and first post markdown (reuse the existing `TextInput` + series picker pattern from `ForumCreateThreadScreen`)
-- [ ] On save, call `updateForumThread` and update the query cache so title and first post update without a full refetch
-- [ ] Show saving/error states
+- [x] "Edit", "Delete", and (admin-only) "Lock/Unlock" and "Latest first" action pills appear in the hero card when the signed-in user is the thread author or admin
+- [x] Tapping "Edit" swaps the hero card for an inline edit form pre-filled with the current title and first post markdown, with character counters and series mention support
+- [x] On save, calls `updateForumThread`; cache is updated with the returned thread and the edited first-post body — no full refetch needed
+- [x] Shows saving spinner and inline error state
 
 **12c — Delete thread UI**
 
-- [ ] In `ForumThreadScreen`, add a delete action that appears for the thread author and admins
-- [ ] Show a destructive confirmation `Alert` before calling `deleteForumThread`
-- [ ] On success, navigate back to `ForumScreen` and invalidate the thread list query
+- [x] "Delete" pill in the hero card, visible to thread author and admins
+- [x] Destructive confirmation `Alert` before calling `deleteForumThread`
+- [x] On success, navigates back and invalidates the thread list query
 
 **12d — Admin lock and display controls**
 
-- [ ] In `ForumThreadScreen`, show a lock/unlock toggle for users with `role === "ADMIN"`
-- [ ] Call `lockForumThread` and reflect the new locked state in the hero card and reply composer immediately
-- [ ] Show a `latest_first` toggle for admins that calls `updateForumThreadSettings` and refreshes the post order
+- [x] "Lock" / "Unlock" pill visible only to admins; shows confirmation `Alert`; calls `lockForumThread` and updates cache immediately so the locked flag and reply composer state update without a refetch
+- [x] "Latest first" pill visible only to admins; active state highlighted; calls `updateForumThreadSettings` and updates cache
 
 Done means thread authors and admins have the same management capability on mobile as on the web, and threads managed from mobile correctly reflect on the website.
 

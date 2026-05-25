@@ -103,3 +103,17 @@ export interface EditForumPostRequest {
   content_markdown: string;
   series_ids?: number[];
 }
+
+export interface UpdateForumThreadRequest {
+  title: string;
+  first_post_markdown: string;
+  series_ids?: number[];
+}
+
+export interface LockForumThreadRequest {
+  locked: boolean;
+}
+
+export interface UpdateForumThreadSettingsRequest {
+  latest_first: boolean;
+}
