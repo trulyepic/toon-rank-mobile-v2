@@ -15,7 +15,7 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { setAvatarPreset, uploadAvatar } from "../api/auth";
+import { resetMyAvatar, setAvatarPreset, uploadAvatar } from "../api/auth";
 import type { AvatarPreset } from "../types/account";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -77,6 +77,16 @@ export function ProfileScreen() {
     },
     onSuccess: (data) => {
       if (!data) return;
+      void updateUser({
+        avatar_url: data.avatar_url,
+        avatar_preset: data.avatar_preset as AvatarPreset,
+      });
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: resetMyAvatar,
+    onSuccess: (data) => {
       void updateUser({
         avatar_url: data.avatar_url,
         avatar_preset: data.avatar_preset as AvatarPreset,
@@ -209,6 +219,37 @@ export function ProfileScreen() {
                 </AppText>
               ) : null}
             </Surface>
+            {user?.avatar_url ? (
+              <>
+                <AppButton
+                  label={resetMutation.isPending ? "Removing…" : "Remove photo"}
+                  variant="ghost"
+                  disabled={resetMutation.isPending}
+                  onPress={() =>
+                    Alert.alert(
+                      "Remove photo",
+                      "Your avatar will revert to your selected colour preset.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Remove",
+                          style: "destructive",
+                          onPress: () => resetMutation.mutate(),
+                        },
+                      ],
+                    )
+                  }
+                  iconLeft={
+                    <Ionicons name="trash-outline" size={15} color={colors.danger} />
+                  }
+                />
+                {resetMutation.isError ? (
+                  <AppText tone="danger" style={styles.presetNote}>
+                    Could not remove photo. Try again.
+                  </AppText>
+                ) : null}
+              </>
+            ) : null}
           </View>
         </>
       ) : null}

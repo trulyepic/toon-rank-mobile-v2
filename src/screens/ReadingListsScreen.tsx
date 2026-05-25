@@ -1,11 +1,23 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
 
-import { createReadingList, getMyReadingLists } from "../api/readingLists";
+import {
+  createReadingList,
+  deleteReadingList,
+  getMyReadingLists,
+} from "../api/readingLists";
 import { useAuth } from "../auth/AuthContext";
 import {
   AccountRequiredCard,
@@ -52,6 +64,30 @@ export function ReadingListsScreen() {
       );
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (listId: number) => deleteReadingList(listId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "List not deleted",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  function confirmDelete(listId: number, listName: string) {
+    Alert.alert("Delete list", `Delete "${listName}"? This cannot be undone.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteMutation.mutate(listId),
+      },
+    ]);
+  }
 
   const totalItems =
     listsQuery.data?.reduce((count, list) => count + list.items.length, 0) ?? 0;
@@ -138,11 +174,33 @@ export function ReadingListsScreen() {
                           {list.is_public ? "Public" : "Private"}
                         </AppText>
                       </View>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color={colors.textMuted}
-                      />
+                      <View style={styles.rowActions}>
+                        <Pressable
+                          onPress={() => confirmDelete(list.id, list.name)}
+                          hitSlop={8}
+                          disabled={
+                            deleteMutation.isPending &&
+                            deleteMutation.variables === list.id
+                          }
+                          style={styles.deleteBtn}
+                        >
+                          {deleteMutation.isPending &&
+                          deleteMutation.variables === list.id ? (
+                            <ActivityIndicator size="small" color={colors.danger} />
+                          ) : (
+                            <Ionicons
+                              name="trash-outline"
+                              size={18}
+                              color={colors.danger}
+                            />
+                          )}
+                        </Pressable>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={20}
+                          color={colors.textMuted}
+                        />
+                      </View>
                     </Surface>
                   </Pressable>
                 ))}
@@ -233,6 +291,14 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
     gap: spacing.xs,
+  },
+  rowActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  deleteBtn: {
+    padding: spacing.xs,
   },
   modalBackdrop: {
     flex: 1,
