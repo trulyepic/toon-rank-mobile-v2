@@ -17,9 +17,9 @@ import type {
   UpdateForumThreadSettingsRequest,
 } from "../types/forum";
 
-export async function getForumThreads(page = 1, pageSize = 20) {
+export async function getForumThreads(page = 1, pageSize = 20, q?: string) {
   const res = await api.get<ForumThreadPage>("/forum/threads-paged", {
-    params: { page, page_size: pageSize },
+    params: { page, page_size: pageSize, ...(q ? { q } : {}) },
   });
   return res.data;
 }

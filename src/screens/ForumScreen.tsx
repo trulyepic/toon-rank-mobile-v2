@@ -2,7 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { getForumThreads } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
@@ -95,9 +96,20 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
 export function ForumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn } = useAuth();
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const threadsQuery = useInfiniteQuery({
-    queryKey: ["forum", "threads"],
-    queryFn: ({ pageParam }) => getForumThreads(pageParam, 20),
+    queryKey: ["forum", "threads", debouncedQuery],
+    queryFn: ({ pageParam }) =>
+      getForumThreads(pageParam, 20, debouncedQuery || undefined),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
   });
@@ -144,6 +156,25 @@ export function ForumScreen() {
         </View>
       </Surface>
 
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="Search threads..."
+          placeholderTextColor={colors.textMuted}
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+        />
+        {query.length > 0 ? (
+          <Pressable onPress={() => setQuery("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
+      </View>
+
       {threadsQuery.isLoading ? (
         <LoadingState message="Loading forum threads..." />
       ) : null}
@@ -154,15 +185,19 @@ export function ForumScreen() {
 
       {threadsQuery.data && !hasThreads ? (
         <EmptyState
-          title="No discussions yet"
-          message="Public forum threads will appear here once the community starts posting."
+          title={debouncedQuery ? "No threads found" : "No discussions yet"}
+          message={
+            debouncedQuery
+              ? `No threads matched "${debouncedQuery}". Try a different keyword.`
+              : "Public forum threads will appear here once the community starts posting."
+          }
         />
       ) : null}
 
       {hasThreads ? (
         <View style={styles.section}>
           <SectionHeader
-            title="Recent threads"
+            title={debouncedQuery ? `Results for "${debouncedQuery}"` : "Recent threads"}
             body={`${formatForumCount(totalThreads, "thread")} available / ${threads.length} shown`}
           />
           <View style={styles.stack}>
@@ -212,6 +247,23 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.sm,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    paddingVertical: 0,
   },
   pressed: {
     opacity: 0.86,
