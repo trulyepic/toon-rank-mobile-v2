@@ -536,11 +536,11 @@ The limits are now significant:
 
 Two auth paths must be supported natively:
 
-| Path                         | Approach                                                                |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| Username + password          | Native form → new backend endpoint → JWT/refresh token                  |
-| Google Sign-In               | Native Google SDK → ID token → new backend endpoint → JWT/refresh token |
-| hCaptcha (username/password) | Native hCaptcha SDK (no browser needed)                                 |
+| Path                             | Approach                                                                |
+| -------------------------------- | ----------------------------------------------------------------------- |
+| Username + password              | Native form → new backend endpoint → JWT/refresh token                  |
+| Google Sign-In                   | Native Google SDK → ID token → new backend endpoint → JWT/refresh token |
+| reCAPTCHA v2 (username/password) | Native reCAPTCHA SDK via WebView (no external browser needed)           |
 
 Signup uses the same paths. The existing web-auth bridge is kept as a fallback for edge cases
 (e.g. password reset, email verification) but should not appear during the normal login/signup flow.
@@ -549,75 +549,85 @@ Signup uses the same paths. The existing web-auth bridge is kept as a fallback f
 
 Suggested branch: `backend-native-auth-endpoints`
 
-- [ ] Add `POST /auth/native/login` — accepts `{ username, password, captcha_token }`, verifies
-      hCaptcha server-side, validates credentials, returns the same `{ access_token, refresh_token,
-user }` shape as the existing mobile auth-code exchange endpoint.
-- [ ] Add `POST /auth/native/signup` — accepts `{ username, email, password, captcha_token }`,
-      verifies hCaptcha, creates the account, returns `{ access_token, refresh_token, user }`.
-- [ ] Add `POST /auth/native/google` — accepts `{ id_token }` (Google Sign-In ID token from the
-      native SDK), verifies with Google, creates or links account, returns
-      `{ access_token, refresh_token, user }`.
-- [ ] Rate-limit all three endpoints with the same brute-force protections used on the web login.
-- [ ] Add tests for valid credentials, wrong password, unknown user, expired captcha, duplicate
-      signup email/username, and Google token validation failure.
-- [ ] Document the three endpoint contracts in `docs/MOBILE_AUTH_CONTRACT.md` (add a
-      "native credential endpoints" section alongside the existing mobile auth-code section).
+> **Already done.** The backend already ships `POST /auth/login`, `POST /auth/signup`, and
+> `POST /auth/google-oauth`, all of which accept native credentials and return
+> `{ access_token, refresh_token, user }`. The matching API functions `login()`, `signup()`, and
+> `loginWithGoogle()` already exist in `src/api/auth.ts` and the request types
+> (`LoginRequest`, `SignupRequest`, `GoogleOAuthRequest`) are already in `src/types/account.ts`.
+> No new backend endpoints are needed.
 
-### Phase 15b — Mobile: hCaptcha SDK integration
+- [x] `POST /auth/login` accepts `{ username, password, captcha_token }` → `AuthSession`
+- [x] `POST /auth/signup` accepts `{ email, username, password, captcha_token }` → `SignupResponse`
+- [x] `POST /auth/google-oauth` accepts `{ token }` (Google ID token) → `AuthSession`
+- [x] All three are already rate-limited with the same protections as the web login
+
+### Phase 15b — Mobile: Google reCAPTCHA v2 SDK integration
 
 Suggested branch: `mobile-native-login`
 
-- [ ] Install `@hcaptcha/react-native-hcaptcha` (or the most-maintained community equivalent for
-      Expo managed workflow).
-- [ ] Wrap the SDK in a shared `useHCaptcha()` hook that triggers the challenge, awaits the token,
-      and returns `{ token, error }`.
-- [ ] Keep the sitekey in an environment variable (`EXPO_PUBLIC_HCAPTCHA_SITE_KEY`) so it is not
-      hard-coded in the bundle.
-- [ ] Handle captcha dismissal (user closes challenge) as a cancellation, not an error.
+- [x] `react-native-webview` was already installed; added `react-native-recaptcha-that-works` which
+      uses it internally to render the Google reCAPTCHA v2 challenge inside a Modal WebView
+- [x] `Recaptcha` component (default export) rendered in `LoginScreen` and `SignupScreen` with
+      `size="invisible"` — challenge only appears when Google deems the request suspicious; most
+      users pass silently
+- [x] Sitekey (`6Ld96JMrAAAAAOgkEHH4sARr5aHkCone2tYQBCXN`) read from
+      `EXPO_PUBLIC_RECAPTCHA_SITE_KEY` in `.env`; this is the same public sitekey used on the
+      Toon Ranks website — no new key is needed for production
+- [x] `recaptchaRef.current?.open()` triggers the challenge; `onVerify(token)` callback receives
+      the token string; `onError()` surfaces an inline error message to the user
+- [x] `recaptchaRef.current?.close()` called inside `onVerify` before passing the token to the
+      mutation so the Modal closes cleanly
 
 ### Phase 15c — Mobile: native login screen
 
 Suggested branch: `mobile-native-login`
 
-- [ ] Replace the current "Continue to login" browser-launch button in `LoginScreen` with:
-  - Email/username `TextInput`
-  - Password `TextInput` with show/hide toggle
-  - "Log in" primary `AppButton`
-- [ ] On submit: trigger hCaptcha challenge via `useHCaptcha()`, then call `POST /auth/native/login`
-      with `{ username, password, captcha_token }`.
-- [ ] On success: store `access_token`, `refresh_token`, and `user` via `AuthProvider` (same path
-      as the existing auth-code exchange).
-- [ ] Show inline field validation: empty fields, password too short, captcha failure.
-- [ ] Show a loading state on the "Log in" button while the request is in flight.
-- [ ] Keep "Forgot password?" as a web-bridge link (existing Phase 2.6 behaviour).
-- [ ] Keep the "Sign up" link navigating to the native signup screen (Phase 15d).
+- [x] Removed the disabled "Continue" stub button and the "Continue with CAPTCHA login" web-bridge
+      button from `LoginScreen`
+- [x] Removed the warning notice banner about the CAPTCHA browser step
+- [x] "Log in" primary button is now active: validates fields → triggers `recaptchaRef.current?.open()`
+      → `onVerify(token)` calls `login({ username, password, captcha_token })` via `useMutation`
+- [x] On success: calls `setSession()` and navigates to `MainTabs` — same path as the web bridge
+- [x] Inline field validation: empty username, empty password shown before CAPTCHA is triggered
+- [x] Inline error box shows server-returned message (wrong password, account not found, etc.)
+- [x] "Log in" button label changes to "Signing in..." while the mutation is in flight; disabled
+      until both fields are filled
+- [x] Password field has show/hide toggle (eye icon) inside the field border
+- [x] "Forgot password?" link retained — still opens the production website forgot-password page
+- [x] "Create account" link retained, navigates to `SignupScreen`
 
 ### Phase 15d — Mobile: native signup screen
 
 Suggested branch: `mobile-native-login`
 
-- [ ] Update `SignupScreen` (currently mirrors the login browser bridge) with:
-  - Username `TextInput`
-  - Email `TextInput`
-  - Password `TextInput` with show/hide toggle
-  - "Create account" primary `AppButton`
-- [ ] On submit: trigger hCaptcha challenge, then call `POST /auth/native/signup`.
-- [ ] On success: store session and navigate to the home tab (same as login success).
-- [ ] Show server-returned validation errors inline (username taken, email already registered, etc.).
+- [x] Removed the disabled "Create account" stub, the "Continue with CAPTCHA signup" web-bridge
+      button, and the warning notice banner from `SignupScreen`
+- [x] Removed the "Check email flow preview" development artifact button
+- [x] "Create account" primary button: validates fields → triggers `recaptchaRef.current?.open()`
+      → `onVerify(token)` calls `signup({ email, username, password, captcha_token })` via `useMutation`
+- [x] On success: navigates to `CheckEmail` (email verification required before first login)
+- [x] Inline field validation: empty email, empty username, empty password, password < 8 chars
+- [x] Inline error box shows server-returned validation errors (username taken, email registered)
+- [x] Password field has show/hide toggle matching the login screen style
 
 ### Phase 15e — Mobile: native Google Sign-In
 
 Suggested branch: `mobile-native-login`
 
-- [ ] Install `@react-native-google-signin/google-signin` (Expo config plugin available; works in
-      managed workflow with EAS build).
-- [ ] Add the plugin to `app.json` with the correct iOS `iosClientId` and Android client ID.
-- [ ] Add a "Continue with Google" button to both `LoginScreen` and `SignupScreen`.
-- [ ] On press: call `GoogleSignin.signIn()`, extract the `idToken` from the result, then call
-      `POST /auth/native/google` with `{ id_token }`.
-- [ ] Handle Google sign-in cancellation (user dismisses the picker) as a no-op.
-- [ ] No hCaptcha is required for the Google path — the Google ID token is sufficient proof of
-      identity.
+> **Deferred — requires Google OAuth credentials.** The backend `POST /auth/google-oauth` and
+> the `loginWithGoogle()` API function already exist. The mobile work requires:
+>
+> - A Google Cloud project with OAuth 2.0 enabled
+> - A web OAuth client ID (for the backend to verify tokens)
+> - An iOS OAuth client ID and an Android OAuth client ID (for the native SDK)
+>
+> Once credentials are available, the implementation is:
+
+- [ ] Install `@react-native-google-signin/google-signin` with its Expo config plugin
+- [ ] Add the plugin to `app.json` with `iosClientId` and Android `webClientId`
+- [ ] Add a "Continue with Google" button to both `LoginScreen` and `SignupScreen`
+- [ ] On press: call `GoogleSignin.signIn()`, extract `idToken`, call `loginWithGoogle({ token: idToken })`
+- [ ] Handle cancellation (user dismisses picker) as a no-op; show inline error on failure
 
 ### Phase 15f — Cleanup
 
@@ -633,6 +643,65 @@ Suggested branch: `mobile-native-login`
 Done means a user can create an account or sign in entirely within the native app without seeing a
 browser, the session is indistinguishable from a web session (same JWT/refresh pattern), and the
 experience meets App Store reviewer expectations for first-party credential flows.
+
+---
+
+## Phase 16: Mobile-Aware Email Verification Redirect
+
+Suggested branch group:
+
+- `backend-mobile-email-verify-redirect`
+- `frontend-mobile-verify-landing`
+
+Purpose: when a user signs up from the mobile app, the confirmation email should land them back in
+the app after verifying, rather than dropping them on the website.
+
+### Background
+
+Currently all verification emails send a web link (`https://toonranks.com/verify?token=...`)
+regardless of whether the account was created on web or mobile. This is intentional for now — the
+app is not yet in the app stores and Universal Links / App Links cannot be configured without a
+signed, publicly distributed build.
+
+The correct implementation requires three sides working together:
+
+- **Backend**: accept a `source` field (`"mobile"` or `"web"`) on `POST /auth/signup`; store it
+  alongside the verification token; after verifying, use it to choose the post-verification
+  redirect.
+- **Web frontend**: the verification landing page checks the stored source; if `"mobile"`, renders
+  an "Open in app" button that fires `toonranks://auth/verified` and auto-redirects on mobile
+  browsers where the app is installed; if `"web"`, uses the existing post-verification flow.
+- **Mobile**: register `toonranks://auth/verified` as a deep link route; navigate the user to the
+  Login screen with a success banner when this link fires.
+
+The email link must always be a web URL — `toonranks://` custom scheme links do not open in most
+desktop email clients (Gmail web, Outlook, Apple Mail on macOS) and would be a dead link for those
+users. The web-first approach ensures the link always works regardless of device.
+
+### Prerequisites before starting this phase
+
+- [ ] App is signed and live in the Apple App Store and Google Play Store
+- [ ] `apple-app-site-association` file served from `toonranks.com/.well-known/`
+- [ ] `assetlinks.json` file served from `toonranks.com/.well-known/`
+- [ ] Universal Links (iOS) and App Links (Android) verified end-to-end
+
+### Work items
+
+- [ ] Add `source?: "mobile" | "web"` to `POST /auth/signup` request body and store it with the
+      verification token
+- [ ] Update the backend verification handler to read `source` and pass it to the post-verify
+      redirect decision
+- [ ] Update the web verification landing page to show an "Open in app" button when
+      `source === "mobile"`, with a `toonranks://auth/verified` href and auto-redirect on mobile
+      browsers
+- [ ] Add `toonranks://auth/verified` to the deep link config in `App.tsx`
+- [ ] Add a `VerifiedScreen` or navigate to `Login` with a "Account verified — you can now log in"
+      banner when the deep link fires
+- [ ] Pass `source: "mobile"` in the `signup()` call from `SignupScreen.tsx`
+
+Done means a mobile-registered user who taps the confirmation email on their phone is taken
+directly back into the app, while a web-registered user or anyone opening the link on a desktop
+continues through the normal website flow.
 
 ---
 

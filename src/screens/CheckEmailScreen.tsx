@@ -22,8 +22,12 @@ export function CheckEmailScreen() {
           Check your inbox
         </AppText>
         <AppText tone="muted" align="center">
-          Toon Ranks sent a verification link to your email address. Open it to activate
-          your account, then come back and log in.
+          We sent a verification link to your email address. Open it to activate your
+          account, then come back here and log in.
+        </AppText>
+        <AppText tone="muted" align="center">
+          If it does not arrive within a few minutes, check your spam or junk folder and
+          mark it as not spam.
         </AppText>
         <AppButton label="Go to login" onPress={() => navigation.navigate("Login")} />
       </Surface>
