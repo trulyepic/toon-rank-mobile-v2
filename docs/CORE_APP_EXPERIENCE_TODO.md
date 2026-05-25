@@ -349,25 +349,27 @@ Three gaps were found in the May 2026 audit:
 
 **11a — Avatar reset**
 
-- [ ] Add `resetMyAvatar()` → `DELETE /auth/me/avatar` to `src/api/auth.ts`
-- [ ] Add a "Remove photo" / "Reset to preset" button in `ProfileScreen` that appears only when `user.avatar_url` is set (i.e. a custom photo is active)
-- [ ] Call `resetMyAvatar()`, then call `updateUser` with `avatar_url: null` and retain the current preset so the avatar reverts to the preset swatch
-- [ ] Show an error state if the reset call fails
+- [x] Add `resetMyAvatar()` → `DELETE /auth/me/avatar` to `src/api/auth.ts`
+- [x] Add a "Remove photo" button in `ProfileScreen` below the custom photo section, visible only when `user.avatar_url` is set; shows a destructive confirmation `Alert` before calling `resetMyAvatar()`
+- [x] Call `updateUser` with returned `avatar_url`/`avatar_preset` so avatar reverts to preset swatch immediately
+- [x] Show an inline error state if the reset call fails
 
 **11b — Reading list delete**
 
-- [ ] Add a delete action to `ReadingListsScreen` for each list row (swipe-to-delete or a trash icon with a confirmation `Alert`)
-- [ ] Call the existing `deleteReadingList(listId)` from `src/api/readingLists.ts`
-- [ ] Remove the list from local query cache optimistically or invalidate after success
-- [ ] Show an error alert if deletion fails
+- [x] Add a trash icon button inside each list row in `ReadingListsScreen` (nested `Pressable` so the row still navigates on tap)
+- [x] Show a destructive confirmation `Alert` before calling the existing `deleteReadingList(listId)`
+- [x] Invalidate `["reading-lists", "me"]` on success; show spinner on the trash icon while pending
+- [x] Show an error alert if deletion fails
 
 **11c — "Already in list" indicator on Series Detail save picker**
 
-- [ ] When the save picker modal opens in `SeriesDetailScreen`, check which lists already contain the series (the existing `useQueries` for series summaries does not cover this; fetch list items or use the list data already loaded)
-- [ ] Mark already-saved lists visually (e.g. a checkmark or "Saved" label) and disable the tap action for them
-- [ ] If the backend responds with a duplicate-save error anyway, surface a clearer message than the generic alert
+- [x] Load reading lists on screen mount (`enabled: isSignedIn`) so data is available before the picker opens
+- [x] Derive `isAlreadySaved` from any list containing the series; the "Save to list" button itself shows a filled bookmark icon + "Saved" label when true
+- [x] Inside the picker, each list row shows a filled bookmark (green) and "Already in this list" subtitle when the series is already saved to that list; the row is disabled
+- [x] Added inline "New list" section at the bottom of the picker (name input + "Create & save" button) so users never need to leave the screen to create a list; creation automatically saves the series into the new list
+- [x] Fixed keyboard covering the new list input: `Keyboard.addListener("keyboardDidShow")` triggers `scrollToEnd` after the keyboard fully appears, and `paddingBottom` equal to the keyboard height is added to the scroll content
 
-Done means users can fully manage their account from mobile: upload, preview, and remove their avatar, delete lists they no longer want, and clearly see which lists already have a given series.
+Done means users can fully manage their account from mobile: upload, preview, and remove their avatar, delete lists they no longer want, create lists inline from any series page, and clearly see which lists already have a given series — both on the save button itself and inside the picker.
 
 ---
 
@@ -497,19 +499,6 @@ The web reading list page lets users toggle a list between private and public, c
 Done means mobile users can share their lists publicly, share the link externally, and anyone who receives the link can open it directly in the app and browse the shared list.
 
 ---
-
-## Working Rules For Future Phases
-
-- Do not claim login, voting, lists, or forum posting work until the app has a real stored session.
-- Keep using the production backend contracts unless a backend change is explicitly part of the phase.
-- Keep phases branch-sized, but avoid tiny branches that only rename copy or move one small style.
-- After each phase, provide:
-  - what changed
-  - what to verify in the emulator
-  - commands run
-  - commit message
-  - short PR description
-- Run `npm run format`, `npm run lint`, `npx tsc --noEmit`, `npm run test -- --run`, and `git diff --check` before handing back mobile work.
 
 ## Working Rules For Future Phases
 

@@ -1,12 +1,25 @@
-import { useState } from "react";
-import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Keyboard,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getSeriesDetail, getSeriesSummary } from "../api/series";
-import { addReadingListItem, getMyReadingLists } from "../api/readingLists";
+import {
+  addReadingListItem,
+  createReadingList,
+  getMyReadingLists,
+} from "../api/readingLists";
 import { voteSeriesDetail } from "../api/votes";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -172,8 +185,25 @@ export function SeriesDetailScreen() {
   const queryClient = useQueryClient();
   const { isSignedIn } = useAuth();
   const seriesId = route.params.seriesId;
+  const saveModalScrollRef = useRef<ScrollView>(null);
   const [savePickerVisible, setSavePickerVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const onShow = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      saveModalScrollRef.current?.scrollToEnd({ animated: true });
+    });
+    const onHide = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      onShow.remove();
+      onHide.remove();
+    };
+  }, []);
   const [leftOffChapter, setLeftOffChapter] = useState("");
+  const [newListName, setNewListName] = useState("");
   const [coverLightboxVisible, setCoverLightboxVisible] = useState(false);
   const summaryQuery = useQuery({
     queryKey: ["series-summary", seriesId],
@@ -186,7 +216,7 @@ export function SeriesDetailScreen() {
   const readingListsQuery = useQuery({
     queryKey: ["reading-lists", "me"],
     queryFn: getMyReadingLists,
-    enabled: isSignedIn && savePickerVisible,
+    enabled: isSignedIn,
   });
   const voteMutation = useMutation({
     mutationFn: ({ category, score }: { category: VoteCategory; score: number }) =>
@@ -213,6 +243,7 @@ export function SeriesDetailScreen() {
     onSuccess: () => {
       setSavePickerVisible(false);
       setLeftOffChapter("");
+      setNewListName("");
       void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
       Alert.alert("Saved", "Title added to your reading list.");
     },
@@ -223,6 +254,26 @@ export function SeriesDetailScreen() {
       );
     },
   });
+
+  const createListMutation = useMutation({
+    mutationFn: () => createReadingList({ name: newListName.trim() }),
+    onSuccess: (list) => {
+      void queryClient.invalidateQueries({ queryKey: ["reading-lists", "me"] });
+      // Immediately save this series into the newly created list
+      saveMutation.mutate(list.id);
+    },
+    onError: (error) => {
+      Alert.alert(
+        "List not created",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const isAlreadySaved =
+    readingListsQuery.data?.some((list) =>
+      list.items.some((item) => item.series_id === seriesId),
+    ) ?? false;
 
   const isLoading = summaryQuery.isLoading || detailQuery.isLoading;
   const isMissingTitle = !isLoading && summaryQuery.isError && detailQuery.isError;
@@ -351,53 +402,56 @@ export function SeriesDetailScreen() {
               {status ? <Chip label={status.replace("_", " ")} tone="neutral" /> : null}
             </View>
 
-            <View style={styles.scoreActionRow}>
-              <View style={styles.scoreCard}>
-                <AppText variant="label" tone="muted">
-                  Rating
-                </AppText>
-                <AppText
-                  variant="sectionTitle"
-                  style={{ color: getScoreTone(averageScore) }}
-                >
-                  {averageScore.toFixed(1)}
-                </AppText>
-                <AppText variant="caption" tone="muted">
-                  {voteCount.toLocaleString()} votes
-                </AppText>
-              </View>
+            <View style={styles.scoreCard}>
+              <AppText variant="label" tone="muted">
+                Rating
+              </AppText>
+              <AppText
+                variant="sectionTitle"
+                style={{ color: getScoreTone(averageScore) }}
+              >
+                {averageScore.toFixed(1)}
+              </AppText>
+              <AppText variant="caption" tone="muted">
+                {voteCount.toLocaleString()} votes
+              </AppText>
+            </View>
 
-              <View style={styles.quickActions}>
-                <AppButton
-                  label="Save"
-                  size="sm"
-                  onPress={() => {
-                    if (!isSignedIn) {
-                      Alert.alert(
-                        "Log in to save",
-                        "Use your Toon Ranks account to add this title to a reading list.",
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          { text: "Log in", onPress: () => navigation.navigate("Login") },
-                        ],
-                      );
-                      return;
-                    }
-                    setSavePickerVisible(true);
-                  }}
-                  iconLeft={
-                    <Ionicons name="bookmark-outline" size={14} color={colors.text} />
+            <View style={styles.quickActions}>
+              <AppButton
+                label={isAlreadySaved ? "Saved" : "Save to list"}
+                style={styles.actionBtn}
+                selected={isAlreadySaved}
+                onPress={() => {
+                  if (!isSignedIn) {
+                    Alert.alert(
+                      "Log in to save",
+                      "Use your Toon Ranks account to add this title to a reading list.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Log in", onPress: () => navigation.navigate("Login") },
+                      ],
+                    );
+                    return;
                   }
-                />
-                <AppButton
-                  label="Discuss"
-                  size="sm"
-                  onPress={() => navigation.navigate("MainTabs", { screen: "Forum" })}
-                  iconLeft={
-                    <Ionicons name="chatbubble-outline" size={14} color={colors.text} />
-                  }
-                />
-              </View>
+                  setSavePickerVisible(true);
+                }}
+                iconLeft={
+                  <Ionicons
+                    name={isAlreadySaved ? "bookmark" : "bookmark-outline"}
+                    size={16}
+                    color={colors.text}
+                  />
+                }
+              />
+              <AppButton
+                label="Discuss"
+                style={styles.actionBtn}
+                onPress={() => navigation.navigate("MainTabs", { screen: "Forum" })}
+                iconLeft={
+                  <Ionicons name="chatbubble-outline" size={16} color={colors.text} />
+                }
+              />
             </View>
           </View>
 
@@ -522,61 +576,117 @@ export function SeriesDetailScreen() {
           <Surface radius="xl" style={styles.saveModal}>
             <View style={styles.saveModalHeader}>
               <AppText variant="sectionTitle">Save to list</AppText>
-              <Pressable onPress={() => setSavePickerVisible(false)}>
+              <Pressable
+                onPress={() => {
+                  setSavePickerVisible(false);
+                  setNewListName("");
+                }}
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
-            <AppText tone="muted">
-              Choose one of your Toon Ranks reading lists. You can also add a left-off
-              chapter.
-            </AppText>
-            <TextInput
-              value={leftOffChapter}
-              onChangeText={setLeftOffChapter}
-              placeholder="Left-off chapter, optional"
-              placeholderTextColor={colors.textSubtle}
-              style={styles.input}
-            />
 
-            {readingListsQuery.isLoading ? (
-              <LoadingState message="Loading lists..." />
-            ) : null}
-
-            {readingListsQuery.data?.length === 0 ? (
+            <ScrollView
+              ref={saveModalScrollRef}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.saveModalScroll,
+                keyboardHeight > 0 ? { paddingBottom: keyboardHeight } : null,
+              ]}
+            >
               <AppText tone="muted">
-                No lists found. Create a reading list on the website first.
+                Pick a list below or create a new one. You can also note where you left
+                off.
               </AppText>
-            ) : null}
+              <TextInput
+                value={leftOffChapter}
+                onChangeText={setLeftOffChapter}
+                placeholder="Left-off chapter, optional"
+                placeholderTextColor={colors.textSubtle}
+                style={styles.input}
+              />
 
-            <View style={styles.saveListStack}>
-              {readingListsQuery.data?.map((list) => (
-                <Pressable
-                  key={list.id}
-                  disabled={saveMutation.isPending}
-                  onPress={() => saveMutation.mutate(list.id)}
-                >
-                  <Surface variant="raised" radius="lg" style={styles.saveListRow}>
-                    <Ionicons
-                      name={list.is_public ? "earth-outline" : "lock-closed-outline"}
-                      size={18}
-                      color={colors.accentStrong}
-                    />
-                    <View style={styles.saveListText}>
-                      <AppText variant="cardTitle">{list.name}</AppText>
-                      <AppText tone="muted">
-                        {list.items.length} saved{" "}
-                        {list.items.length === 1 ? "title" : "titles"}
-                      </AppText>
-                    </View>
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={22}
-                      color={colors.accentStrong}
-                    />
-                  </Surface>
-                </Pressable>
-              ))}
-            </View>
+              {readingListsQuery.isLoading ? (
+                <LoadingState message="Loading lists..." />
+              ) : null}
+
+              {readingListsQuery.data && readingListsQuery.data.length > 0 ? (
+                <View style={styles.saveListStack}>
+                  {readingListsQuery.data.map((list) => {
+                    const alreadySaved = list.items.some(
+                      (item) => item.series_id === seriesId,
+                    );
+                    return (
+                      <Pressable
+                        key={list.id}
+                        disabled={saveMutation.isPending || alreadySaved}
+                        onPress={() => saveMutation.mutate(list.id)}
+                      >
+                        <Surface
+                          variant={alreadySaved ? "accent" : "raised"}
+                          radius="lg"
+                          style={[
+                            styles.saveListRow,
+                            alreadySaved ? styles.saveListRowSaved : null,
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              list.is_public ? "earth-outline" : "lock-closed-outline"
+                            }
+                            size={18}
+                            color={colors.accentStrong}
+                          />
+                          <View style={styles.saveListText}>
+                            <AppText variant="cardTitle">{list.name}</AppText>
+                            <AppText tone="muted">
+                              {alreadySaved
+                                ? "Already in this list"
+                                : `${list.items.length} saved ${list.items.length === 1 ? "title" : "titles"}`}
+                            </AppText>
+                          </View>
+                          <Ionicons
+                            name={alreadySaved ? "bookmark" : "bookmark-outline"}
+                            size={22}
+                            color={alreadySaved ? colors.success : colors.accentStrong}
+                          />
+                        </Surface>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              <View style={styles.createListSection}>
+                <AppText variant="label" tone="muted">
+                  New list
+                </AppText>
+                <View style={styles.createListRow}>
+                  <TextInput
+                    value={newListName}
+                    onChangeText={setNewListName}
+                    placeholder="List name"
+                    placeholderTextColor={colors.textSubtle}
+                    style={[styles.input, styles.createListInput]}
+                  />
+                  <AppButton
+                    label={createListMutation.isPending ? "Creating…" : "Create & save"}
+                    size="sm"
+                    selected
+                    disabled={
+                      !newListName.trim() ||
+                      createListMutation.isPending ||
+                      saveMutation.isPending
+                    }
+                    onPress={() => createListMutation.mutate()}
+                  />
+                </View>
+                {createListMutation.isError ? (
+                  <AppText tone="danger">Could not create list. Try again.</AppText>
+                ) : null}
+              </View>
+            </ScrollView>
           </Surface>
         </View>
       </Modal>
@@ -638,8 +748,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   scoreCard: {
-    flex: 1,
-    minWidth: 132,
     backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
     borderColor: colors.borderSoft,
@@ -647,16 +755,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: 4,
   },
-  scoreActionRow: {
+  quickActions: {
     flexDirection: "row",
-    alignItems: "stretch",
     gap: spacing.sm,
   },
-  quickActions: {
-    justifyContent: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+  actionBtn: {
+    flex: 1,
   },
   metricGrid: {
     flexDirection: "row",
@@ -770,7 +874,11 @@ const styles = StyleSheet.create({
   },
   saveModal: {
     maxHeight: "82%",
+    gap: spacing.sm,
+  },
+  saveModalScroll: {
     gap: spacing.md,
+    paddingBottom: spacing.sm,
   },
   saveModalHeader: {
     flexDirection: "row",
@@ -792,10 +900,29 @@ const styles = StyleSheet.create({
   saveListStack: {
     gap: spacing.sm,
   },
+  createListSection: {
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+    paddingTop: spacing.md,
+    marginTop: spacing.xs,
+  },
+  createListRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  createListInput: {
+    flex: 1,
+    minHeight: 44,
+  },
   saveListRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+  },
+  saveListRowSaved: {
+    opacity: 0.82,
   },
   saveListText: {
     flex: 1,
