@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import Recaptcha, { RecaptchaRef } from "react-native-recaptcha-that-works";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMutation } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
+import { login } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
-import { createMobileAuthState, openWebAuthBridge } from "../auth/webAuthBridge";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -14,40 +16,57 @@ import { openInAppBrowser } from "../utils/externalLinks";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
+const RECAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
+
 export function LoginScreen() {
   const navigation = useNavigation<Navigation>();
   const { setSession } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [openingWebAuth, setOpeningWebAuth] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const recaptchaRef = useRef<RecaptchaRef>(null);
 
-  const handleWebLogin = async () => {
-    const state = createMobileAuthState();
-    setOpeningWebAuth(true);
+  const loginMutation = useMutation({
+    mutationFn: (captchaToken: string) =>
+      login({ username: username.trim(), password, captcha_token: captchaToken }),
+    onMutate: () => setErrorMessage(null),
+    onSuccess: async (session) => {
+      await setSession(session);
+      navigation.navigate("MainTabs");
+    },
+    onError: (error) => {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Login failed. Check your details and try again.",
+      );
+    },
+  });
 
-    try {
-      const result = await openWebAuthBridge(WEB_AUTH_URLS.login(state), state);
-
-      if (result.status === "success") {
-        await setSession(result.session);
-        Alert.alert("Signed in", "Your Toon Ranks account is connected.");
-        navigation.navigate("MainTabs");
-        return;
-      }
-
-      if (result.status === "check_email") {
-        Alert.alert("Check your email", result.message);
-        navigation.navigate("CheckEmail");
-        return;
-      }
-
-      if (result.status === "error") {
-        Alert.alert("Sign-in stopped", result.message);
-      }
-    } finally {
-      setOpeningWebAuth(false);
+  function handleSubmit() {
+    setErrorMessage(null);
+    if (!username.trim()) {
+      setErrorMessage("Enter your username.");
+      return;
     }
-  };
+    if (!password) {
+      setErrorMessage("Enter your password.");
+      return;
+    }
+    recaptchaRef.current?.open();
+  }
+
+  function handleVerify(token: string) {
+    recaptchaRef.current?.close();
+    loginMutation.mutate(token);
+  }
+
+  function handleCaptchaError() {
+    setErrorMessage("CAPTCHA verification failed. Please try again.");
+  }
+
+  const canSubmit = !!username.trim() && !!password && !loginMutation.isPending;
 
   return (
     <ScreenShell title="Log in" subtitle="Use your Toon Ranks website account.">
@@ -56,8 +75,7 @@ export function LoginScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Welcome back</AppText>
           <AppText tone="muted">
-            Mobile will use the same saved titles, votes, and forum identity as the
-            website.
+            Mobile shares the same saved titles, votes, and forum identity as the website.
           </AppText>
         </View>
       </Surface>
@@ -71,9 +89,13 @@ export function LoginScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             value={username}
-            onChangeText={setUsername}
+            onChangeText={(v) => {
+              setUsername(v);
+              setErrorMessage(null);
+            }}
             placeholder="Your username"
             placeholderTextColor={colors.textSubtle}
+            returnKeyType="next"
             style={styles.input}
           />
         </View>
@@ -94,45 +116,67 @@ export function LoginScreen() {
               </AppText>
             </Pressable>
           </View>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Your password"
-            placeholderTextColor={colors.textSubtle}
-            secureTextEntry
-            style={styles.input}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                setErrorMessage(null);
+              }}
+              placeholder="Your password"
+              placeholderTextColor={colors.textSubtle}
+              secureTextEntry={!showPassword}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              style={styles.passwordInput}
+            />
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              style={styles.eyeBtn}
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color={colors.textMuted}
+              />
+            </Pressable>
+          </View>
         </View>
 
-        <Surface radius="lg" style={styles.notice}>
-          <Ionicons
-            name="information-circle-outline"
-            size={20}
-            color={colors.warningText}
-          />
-          <AppText tone="muted" style={styles.noticeText}>
-            Account access uses the secure website CAPTCHA step, then returns you to the
-            app automatically.
-          </AppText>
-        </Surface>
+        {errorMessage ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+            <AppText tone="muted" style={styles.errorText}>
+              {errorMessage}
+            </AppText>
+          </View>
+        ) : null}
 
         <AppButton
-          label="Continue"
-          disabled
-          iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
+          label={loginMutation.isPending ? "Signing in..." : "Log in"}
+          selected
+          disabled={!canSubmit}
+          iconLeft={<Ionicons name="log-in-outline" size={15} color={colors.text} />}
+          onPress={handleSubmit}
         />
-        <AppButton
-          label={openingWebAuth ? "Opening login..." : "Continue with CAPTCHA login"}
-          onPress={handleWebLogin}
-          disabled={openingWebAuth}
-          iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
-        />
+
         <AppButton
           label="Create account"
           variant="ghost"
           onPress={() => navigation.navigate("Signup")}
         />
       </Surface>
+
+      <Recaptcha
+        ref={recaptchaRef}
+        siteKey={RECAPTCHA_SITE_KEY}
+        baseUrl="https://toonranks.com"
+        size="normal"
+        onVerify={handleVerify}
+        onError={handleCaptchaError}
+      />
     </ScreenShell>
   );
 }
@@ -172,15 +216,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     fontSize: 16,
   },
-  notice: {
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 50,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  passwordInput: {
+    flex: 1,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    paddingVertical: spacing.sm,
+  },
+  eyeBtn: {
+    paddingHorizontal: spacing.sm,
+  },
+  errorBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.sm,
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(235, 106, 90, 0.12)",
+    borderWidth: 1,
+    borderColor: colors.danger,
   },
-  noticeText: {
+  errorText: {
     flex: 1,
-    minWidth: 0,
   },
 });

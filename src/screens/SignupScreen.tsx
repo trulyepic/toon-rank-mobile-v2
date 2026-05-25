@@ -1,53 +1,82 @@
-import { useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import Recaptcha, { RecaptchaRef } from "react-native-recaptcha-that-works";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMutation } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import { useAuth } from "../auth/AuthContext";
-import { createMobileAuthState, openWebAuthBridge } from "../auth/webAuthBridge";
+import { signup } from "../api/auth";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
-import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
+const RECAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
+
 export function SignupScreen() {
   const navigation = useNavigation<Navigation>();
-  const { setSession } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [openingWebAuth, setOpeningWebAuth] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const recaptchaRef = useRef<RecaptchaRef>(null);
 
-  const handleWebSignup = async () => {
-    const state = createMobileAuthState();
-    setOpeningWebAuth(true);
+  const signupMutation = useMutation({
+    mutationFn: (captchaToken: string) =>
+      signup({
+        email: email.trim(),
+        username: username.trim(),
+        password,
+        captcha_token: captchaToken,
+      }),
+    onMutate: () => setErrorMessage(null),
+    onSuccess: () => {
+      navigation.navigate("CheckEmail");
+    },
+    onError: (error) => {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Account could not be created. Try again in a moment.",
+      );
+    },
+  });
 
-    try {
-      const result = await openWebAuthBridge(WEB_AUTH_URLS.signup(state), state);
-
-      if (result.status === "success") {
-        await setSession(result.session);
-        Alert.alert("Signed in", "Your Toon Ranks account is connected.");
-        navigation.navigate("MainTabs");
-        return;
-      }
-
-      if (result.status === "check_email") {
-        Alert.alert("Check your email", result.message);
-        navigation.navigate("CheckEmail");
-        return;
-      }
-
-      if (result.status === "error") {
-        Alert.alert("Signup stopped", result.message);
-      }
-    } finally {
-      setOpeningWebAuth(false);
+  function handleSubmit() {
+    setErrorMessage(null);
+    if (!email.trim()) {
+      setErrorMessage("Enter your email address.");
+      return;
     }
-  };
+    if (!username.trim()) {
+      setErrorMessage("Choose a username.");
+      return;
+    }
+    if (!password) {
+      setErrorMessage("Choose a password.");
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters.");
+      return;
+    }
+    recaptchaRef.current?.open();
+  }
+
+  function handleVerify(token: string) {
+    recaptchaRef.current?.close();
+    signupMutation.mutate(token);
+  }
+
+  function handleCaptchaError() {
+    setErrorMessage("CAPTCHA verification failed. Please try again.");
+  }
+
+  const canSubmit =
+    !!email.trim() && !!username.trim() && !!password && !signupMutation.isPending;
 
   return (
     <ScreenShell title="Sign up" subtitle="Create one account for web and mobile.">
@@ -56,8 +85,7 @@ export function SignupScreen() {
         <View style={styles.heroText}>
           <AppText variant="sectionTitle">Start your library</AppText>
           <AppText tone="muted">
-            Your account will sync reading lists, votes, and forum activity across Toon
-            Ranks.
+            Your account syncs reading lists, votes, and forum activity across Toon Ranks.
           </AppText>
         </View>
       </Surface>
@@ -72,9 +100,13 @@ export function SignupScreen() {
             autoCorrect={false}
             keyboardType="email-address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(v) => {
+              setEmail(v);
+              setErrorMessage(null);
+            }}
             placeholder="you@example.com"
             placeholderTextColor={colors.textSubtle}
+            returnKeyType="next"
             style={styles.input}
           />
         </View>
@@ -87,9 +119,13 @@ export function SignupScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             value={username}
-            onChangeText={setUsername}
+            onChangeText={(v) => {
+              setUsername(v);
+              setErrorMessage(null);
+            }}
             placeholder="Choose a username"
             placeholderTextColor={colors.textSubtle}
+            returnKeyType="next"
             style={styles.input}
           />
         </View>
@@ -98,50 +134,67 @@ export function SignupScreen() {
           <AppText variant="caption" tone="muted">
             Password
           </AppText>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Choose a password"
-            placeholderTextColor={colors.textSubtle}
-            secureTextEntry
-            style={styles.input}
-          />
+          <View style={styles.passwordRow}>
+            <TextInput
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                setErrorMessage(null);
+              }}
+              placeholder="At least 8 characters"
+              placeholderTextColor={colors.textSubtle}
+              secureTextEntry={!showPassword}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+              style={styles.passwordInput}
+            />
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              style={styles.eyeBtn}
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color={colors.textMuted}
+              />
+            </Pressable>
+          </View>
         </View>
 
-        <Surface radius="lg" style={styles.notice}>
-          <Ionicons
-            name="information-circle-outline"
-            size={20}
-            color={colors.warningText}
-          />
-          <AppText tone="muted" style={styles.noticeText}>
-            Account creation uses the secure website CAPTCHA step. New username/password
-            accounts still need email verification before logging in.
-          </AppText>
-        </Surface>
+        {errorMessage ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+            <AppText tone="muted" style={styles.errorText}>
+              {errorMessage}
+            </AppText>
+          </View>
+        ) : null}
 
         <AppButton
-          label="Create account"
-          disabled
-          iconLeft={<Ionicons name="lock-closed-outline" size={15} color={colors.text} />}
+          label={signupMutation.isPending ? "Creating account..." : "Create account"}
+          selected
+          disabled={!canSubmit}
+          iconLeft={<Ionicons name="person-add-outline" size={15} color={colors.text} />}
+          onPress={handleSubmit}
         />
-        <AppButton
-          label={openingWebAuth ? "Opening signup..." : "Continue with CAPTCHA signup"}
-          onPress={handleWebSignup}
-          disabled={openingWebAuth}
-          iconLeft={<Ionicons name="open-outline" size={15} color={colors.text} />}
-        />
+
         <AppButton
           label="Already have an account?"
           variant="ghost"
           onPress={() => navigation.navigate("Login")}
         />
-        <AppButton
-          label="Check email flow preview"
-          variant="ghost"
-          onPress={() => navigation.navigate("CheckEmail")}
-        />
       </Surface>
+
+      <Recaptcha
+        ref={recaptchaRef}
+        siteKey={RECAPTCHA_SITE_KEY}
+        baseUrl="https://toonranks.com"
+        size="normal"
+        onVerify={handleVerify}
+        onError={handleCaptchaError}
+      />
     </ScreenShell>
   );
 }
@@ -172,15 +225,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     fontSize: 16,
   },
-  notice: {
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 50,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  passwordInput: {
+    flex: 1,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
+    paddingVertical: spacing.sm,
+  },
+  eyeBtn: {
+    paddingHorizontal: spacing.sm,
+  },
+  errorBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.sm,
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(235, 106, 90, 0.12)",
+    borderWidth: 1,
+    borderColor: colors.danger,
   },
-  noticeText: {
+  errorText: {
     flex: 1,
-    minWidth: 0,
   },
 });
