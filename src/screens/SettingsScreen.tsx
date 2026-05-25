@@ -22,11 +22,6 @@ const settingsRows = [
     body: "The mobile app currently uses the dark Toon Ranks palette.",
   },
   {
-    icon: "notifications-outline" as const,
-    title: "Notifications",
-    body: "Future reminders for replies, saved titles, and account events.",
-  },
-  {
     icon: "shield-checkmark-outline" as const,
     title: "Account safety",
     body: "Session, sign-out, and verification controls will be expanded here.",
