@@ -256,7 +256,7 @@ export function ProfileScreen() {
 
       {isSignedIn ? (
         <View style={styles.section}>
-          <SectionHeader title="Series ratings" />
+          <SectionHeader title="Series rated" />
           <SeriesRatingsSection />
         </View>
       ) : null}
