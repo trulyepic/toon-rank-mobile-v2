@@ -69,6 +69,11 @@ export async function resetMyAvatar() {
   return res.data;
 }
 
+export async function deleteAccount() {
+  const res = await api.delete<MessageResponse>("/auth/me");
+  return res.data;
+}
+
 export async function uploadAvatar(uri: string, mimeType: string) {
   const formData = new FormData();
   const ext = mimeType.split("/")[1] ?? "jpg";

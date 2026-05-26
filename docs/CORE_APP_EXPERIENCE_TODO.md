@@ -749,7 +749,7 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
 
 **17c — Notifications placeholder**
 
-- [ ] Remove the "Notifications" settings row from `SettingsScreen.tsx` for v1, or replace the
+- [x] Remove the "Notifications" settings row from `SettingsScreen.tsx` for v1, or replace the
       body copy with "Coming in a future update" and disable any tappable behavior so reviewers
       cannot interact with a non-functional feature
 
@@ -1027,15 +1027,15 @@ The logout button on the same card already handles sign-out. Controls still miss
       in scope
 - [ ] If yes: implement `useColorScheme()` conditional token sets and update `userInterfaceStyle:
 "automatic"` behavior so the toggle actually changes the visible palette
-- [ ] If no for v1: update Appearance row copy to "Dark theme — light theme coming in a future
+- [x] If no for v1: update Appearance row copy to "Dark theme — light theme coming in a future
       update" and leave the row non-interactive
 
 **21b — Account safety controls**
 
-- [ ] Add `deleteAccount()` → `DELETE /auth/me` (or equivalent) to `src/api/auth.ts` and add a
+- [x] Add `deleteAccount()` → `DELETE /auth/me` (or equivalent) to `src/api/auth.ts` and add a
       "Delete account" destructive option to Settings, guarded by a confirmation Alert; this is
       mandatory for both Apple and Google store policies (see Phase 20c)
-- [ ] Add change-password entry point that opens the website reset flow via in-app browser
+- [x] Add change-password entry point that opens the website reset flow via in-app browser
       (same pattern as forgot-password)
 - [ ] Session info and multi-session revocation can be deferred to a later slice unless the
       backend ships the relevant endpoint sooner
