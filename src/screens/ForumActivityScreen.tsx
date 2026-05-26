@@ -19,6 +19,7 @@ import {
   ScreenShell,
   Surface,
 } from "../components";
+import { stripMarkdownToText } from "../components/ForumMarkdown";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { ForumPost, ForumThread } from "../types/forum";
@@ -78,7 +79,7 @@ function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boo
     <Surface variant="raised" radius="xl" style={styles.postCard}>
       <View style={styles.postCardTop}>
         <AppText tone="muted" style={styles.postContent} numberOfLines={4}>
-          {truncate(post.content_markdown)}
+          {truncate(stripMarkdownToText(post.content_markdown))}
         </AppText>
         {showVoteBadge && post.viewer_vote ? (
           <View

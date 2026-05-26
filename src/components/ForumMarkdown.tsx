@@ -95,15 +95,152 @@ function cleanPlainText(value: string) {
     .trim();
 }
 
+/**
+ * Reduce a markdown/HTML string to plain text suitable for a one-line or
+ * truncated preview (e.g. an activity feed card). HTML is converted first via
+ * preprocessHtml, then all markdown syntax is stripped.
+ */
+export function stripMarkdownToText(value: string): string {
+  let s = preprocessHtml(value);
+  s = s
+    .replace(/```[\s\S]*?```/g, "") // drop code blocks entirely
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "") // headings
+    .replace(/\*\*([\s\S]*?)\*\*/g, "$1") // **bold**
+    .replace(/__([\s\S]*?)__/g, "$1") // __bold__
+    .replace(/~~([\s\S]*?)~~/g, "$1") // ~~strike~~
+    .replace(/\*([\s\S]*?)\*/g, "$1") // *italic*
+    .replace(/`([^`]+)`/g, "$1") // `code`
+    .replace(/^>\s*/gm, "") // blockquote prefix
+    .replace(/^[-*+]\s+/gm, "") // unordered list bullets
+    .replace(/^\d+\.\s+/gm, "") // ordered list numbers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // [label](url) → label
+    .replace(/\n+/g, " ") // collapse all newlines to spaces
+    .replace(/\s{2,}/g, " ") // normalise multiple spaces
+    .trim();
+  return s;
+}
+
+// ─── HTML → Markdown preprocessor ──────────────────────────────────────────
+
+/** Strip all remaining HTML tags, keeping inner text. */
+function stripTags(html: string): string {
+  return html.replace(/<[^>]+>/g, "");
+}
+
+/**
+ * Convert common HTML tags found in forum posts into equivalent markdown
+ * so the block/inline parsers can render them correctly.
+ *
+ * Called on text segments AFTER the outer tokenizer has already extracted
+ * <details>/<summary>, <img>, and markdown image/link/series patterns.
+ */
+function preprocessHtml(src: string): string {
+  let s = src;
+
+  // 1. Fenced code blocks: <pre><code>…</code></pre> → ``` … ```
+  s = s.replace(/<pre[^>]*>\s*<code[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi, (_, code) => {
+    const inner = code.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    return "```\n" + inner.trim() + "\n```";
+  });
+
+  // 2. Inline code: <code>…</code> → `…`
+  s = s.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, code) => {
+    const inner = code
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/\n/g, " ")
+      .trim();
+    return "`" + inner + "`";
+  });
+
+  // 3. Headings: <h1>…</h1> through <h6>…</h6>
+  s = s.replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_, level, text) => {
+    return "#".repeat(Number(level)) + " " + stripTags(text).trim() + "\n";
+  });
+
+  // 4. Inline formatting — convert before block elements so nesting works correctly.
+  s = s.replace(/<(?:strong|b)[^>]*>([\s\S]*?)<\/(?:strong|b)>/gi, "**$1**");
+  s = s.replace(/<(?:em|i)[^>]*>([\s\S]*?)<\/(?:em|i)>/gi, "*$1*");
+  s = s.replace(/<(?:strike|del|s)[^>]*>([\s\S]*?)<\/(?:strike|del|s)>/gi, "~~$1~~");
+  s = s.replace(/<u[^>]*>([\s\S]*?)<\/u>/gi, "$1");
+
+  // 5. Anchors: <a href="url">label</a> → [label](url)
+  s = s.replace(
+    /<a\s[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    (_, url, label) => "[" + stripTags(label).trim() + "](" + url + ")",
+  );
+
+  // 6. Blockquote: <blockquote>…</blockquote> → > prefixed lines
+  s = s.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, inner) => {
+    return (
+      inner
+        .trim()
+        .split("\n")
+        .map((l: string) => "> " + l.trim())
+        .join("\n") + "\n"
+    );
+  });
+
+  // 7. Ordered list: <ol><li>…</li></ol>
+  s = s.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, inner) => {
+    const items = [...inner.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+    return (
+      items.map((m, idx) => `${idx + 1}. ` + stripTags(m[1]).trim()).join("\n") + "\n"
+    );
+  });
+
+  // 8. Unordered list: <ul><li>…</li></ul>
+  s = s.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, inner) => {
+    const items = [...inner.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)];
+    return items.map((m) => "- " + stripTags(m[1]).trim()).join("\n") + "\n";
+  });
+
+  // 9. Paragraph: <p>…</p> → text + double newline
+  s = s.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, inner) => inner.trim() + "\n\n");
+
+  // 10. Line breaks
+  s = s.replace(/<br\s*\/?>/gi, "\n");
+
+  // 11. Divs add a newline boundary
+  s = s.replace(/<div[^>]*>/gi, "\n");
+  s = s.replace(/<\/div>/gi, "\n");
+
+  // 12. Span tags: strip wrapper, keep content
+  s = s.replace(/<\/?span[^>]*>/gi, "");
+
+  // 13. HTML entities
+  s = s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+
+  // 14. Strip any remaining unknown HTML tags (preserve their inner text).
+  s = s.replace(/<[^>]+>/g, "");
+
+  // 15. Normalise excessive blank lines.
+  s = s.replace(/\n{3,}/g, "\n\n").trim();
+
+  return s;
+}
+
 // ─── Inline token renderer ───────────────────────────────────────────────────
 
 type InlineToken =
   | { k: "t"; v: string }
   | { k: "b"; v: string }
   | { k: "i"; v: string }
-  | { k: "c"; v: string };
+  | { k: "c"; v: string }
+  | { k: "s"; v: string }
+  | { k: "a"; v: string; url: string };
 
-const inlinePattern = /\*\*([\s\S]*?)\*\*|`([^`\n]+)`|\*([\s\S]*?)\*/g;
+// Groups: 1=**bold** 2=__bold__ 3=~~strike~~ 4=`code` 5+6=[label](url) 7=*italic*
+const inlinePattern =
+  /\*\*([\s\S]*?)\*\*|__([\s\S]*?)__|~~([\s\S]*?)~~|`([^`\n]+)`|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*([\s\S]*?)\*/g;
 
 function parseInline(src: string): InlineToken[] {
   const out: InlineToken[] = [];
@@ -113,8 +250,12 @@ function parseInline(src: string): InlineToken[] {
     const at = m.index!;
     if (at > pos) out.push({ k: "t", v: src.slice(pos, at) });
     if (m[1] !== undefined) out.push({ k: "b", v: m[1] });
-    else if (m[2] !== undefined) out.push({ k: "c", v: m[2] });
-    else if (m[3] !== undefined) out.push({ k: "i", v: m[3] });
+    else if (m[2] !== undefined) out.push({ k: "b", v: m[2] });
+    else if (m[3] !== undefined) out.push({ k: "s", v: m[3] });
+    else if (m[4] !== undefined) out.push({ k: "c", v: m[4] });
+    else if (m[5] !== undefined && m[6] !== undefined)
+      out.push({ k: "a", v: m[5], url: m[6] });
+    else if (m[7] !== undefined) out.push({ k: "i", v: m[7] });
     pos = at + m[0].length;
   }
 
@@ -146,6 +287,22 @@ function InlineText({ text, extra }: { text: string; extra?: object }) {
               {token.v}
             </Text>
           );
+        if (token.k === "s")
+          return (
+            <Text key={i} style={styles.mdStrike}>
+              {token.v}
+            </Text>
+          );
+        if (token.k === "a")
+          return (
+            <Text
+              key={i}
+              style={styles.mdLink}
+              onPress={() => Linking.openURL(token.url)}
+            >
+              {token.v}
+            </Text>
+          );
         return token.v;
       })}
     </Text>
@@ -161,8 +318,14 @@ type MdBlock =
   | { type: "list"; ordered: boolean; items: string[] }
   | { type: "code"; text: string };
 
+/**
+ * Parse markdown into blocks, processing line-by-line so that block
+ * transitions on single newlines are handled correctly (e.g. a blockquote
+ * immediately followed by a list, or a heading inside a paragraph).
+ */
 function parseMdBlocks(src: string): MdBlock[] {
   const blocks: MdBlock[] = [];
+  // Split out fenced code blocks first to preserve their content verbatim.
   const parts = src.split(/(```[\w]*\n?[\s\S]*?```)/g);
 
   for (const part of parts) {
@@ -175,36 +338,69 @@ function parseMdBlocks(src: string): MdBlock[] {
       continue;
     }
 
-    for (const chunk of part.split(/\n\n+/)) {
-      const trimmed = chunk.trim();
-      if (!trimmed) continue;
+    const lines = part.split("\n");
+    let i = 0;
 
-      const lines = trimmed.split("\n");
+    while (i < lines.length) {
+      const trimmed = lines[i].trim();
 
-      if (lines.length === 1) {
-        const hm = lines[0].match(/^(#{1,6})\s+(.*)/);
-        if (hm) {
-          blocks.push({ type: "heading", level: hm[1].length, text: hm[2] });
-          continue;
+      // Skip blank lines between blocks.
+      if (!trimmed) {
+        i++;
+        continue;
+      }
+
+      // Heading — must be on its own line.
+      const hm = trimmed.match(/^(#{1,6})\s+(.*)/);
+      if (hm) {
+        blocks.push({ type: "heading", level: hm[1].length, text: hm[2].trim() });
+        i++;
+        continue;
+      }
+
+      // Blockquote — collect consecutive > lines.
+      if (/^>\s?/.test(trimmed)) {
+        const quoteLines: string[] = [];
+        while (i < lines.length && /^>\s?/.test(lines[i].trim())) {
+          quoteLines.push(lines[i].replace(/^>\s?/, ""));
+          i++;
         }
-      }
-
-      if (lines.every((l) => /^>\s*/.test(l))) {
-        blocks.push({ type: "quote", lines: lines.map((l) => l.replace(/^>\s*/, "")) });
+        if (quoteLines.length) blocks.push({ type: "quote", lines: quoteLines });
         continue;
       }
 
-      if (lines.every((l) => /^[-*+]\s+/.test(l) || /^\d+\.\s+/.test(l))) {
-        const ordered = /^\d+\./.test(lines[0]);
-        blocks.push({
-          type: "list",
-          ordered,
-          items: lines.map((l) => l.replace(/^(?:[-*+]|\d+\.)\s+/, "")),
-        });
+      // List — collect consecutive list-item lines.
+      if (/^[-*+]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed)) {
+        const ordered = /^\d+\./.test(trimmed);
+        const items: string[] = [];
+        while (
+          i < lines.length &&
+          (/^[-*+]\s+/.test(lines[i].trim()) || /^\d+\.\s+/.test(lines[i].trim()))
+        ) {
+          items.push(lines[i].replace(/^(?:[-*+]|\d+\.)\s+/, ""));
+          i++;
+        }
+        if (items.length) blocks.push({ type: "list", ordered, items });
         continue;
       }
 
-      blocks.push({ type: "para", text: trimmed });
+      // Paragraph — collect until a blank line or a block-starting line.
+      const paraLines: string[] = [];
+      while (i < lines.length) {
+        const l = lines[i];
+        const tl = l.trim();
+        if (!tl) {
+          i++;
+          break;
+        }
+        if (/^#{1,6}\s/.test(tl)) break;
+        if (/^>\s?/.test(tl)) break;
+        if (/^[-*+]\s+/.test(tl) || /^\d+\.\s+/.test(tl)) break;
+        paraLines.push(l);
+        i++;
+      }
+      const paraText = paraLines.join("\n").trim();
+      if (paraText) blocks.push({ type: "para", text: paraText });
     }
   }
 
@@ -212,7 +408,8 @@ function parseMdBlocks(src: string): MdBlock[] {
 }
 
 function MarkdownText({ text }: { text: string }) {
-  const blocks = parseMdBlocks(text);
+  const clean = preprocessHtml(text);
+  const blocks = parseMdBlocks(clean);
   if (!blocks.length) return null;
 
   return (
@@ -240,7 +437,7 @@ function MarkdownText({ text }: { text: string }) {
           return (
             <View key={bi} style={styles.mdBlockquote}>
               {block.lines.map((line, li) => (
-                <InlineText key={li} text={line || " "} extra={styles.mdQuoteText} />
+                <InlineText key={li} text={line || " "} extra={styles.mdQuoteText} />
               ))}
             </View>
           );
@@ -440,6 +637,13 @@ const styles = StyleSheet.create({
   },
   mdItalic: {
     fontStyle: "italic",
+  },
+  mdStrike: {
+    textDecorationLine: "line-through",
+  },
+  mdLink: {
+    color: colors.accentStrong,
+    textDecorationLine: "underline",
   },
   mdInlineCode: {
     fontFamily: MONOSPACE,
