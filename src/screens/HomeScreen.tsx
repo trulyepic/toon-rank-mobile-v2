@@ -28,6 +28,27 @@ function getTypeParam(filter: TitleTypeFilter): SeriesType | undefined {
   return filter === "All" ? undefined : (filter.toUpperCase() as SeriesType);
 }
 
+/** Derive a sorted, deduplicated list of genres from all loaded rankings. */
+function deriveGenres(items: RankedSeries[]): string[] {
+  const seen = new Set<string>();
+  const genres: string[] = [];
+  for (const item of items) {
+    if (!item.genre) continue;
+    // Genres may be stored as "Action, Fantasy" — split and treat each separately.
+    for (const raw of item.genre.split(",")) {
+      const g = raw.trim();
+      if (!g) continue;
+      // Normalise to title-case for display (e.g. "action" → "Action").
+      const display = g.charAt(0).toUpperCase() + g.slice(1).toLowerCase();
+      if (!seen.has(display)) {
+        seen.add(display);
+        genres.push(display);
+      }
+    }
+  }
+  return genres.sort();
+}
+
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
   if (score >= 7.5) return colors.accentStrong;
@@ -113,15 +134,23 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
+  const [activeGenre, setActiveGenre] = useState<string | null>(null);
+
   const rankingsQuery = useInfiniteQuery({
-    queryKey: ["rankings", activeType],
+    queryKey: ["rankings", activeType, activeGenre],
     queryFn: ({ pageParam }) =>
-      fetchRankings(pageParam, HOME_RANKINGS_PAGE_SIZE, getTypeParam(activeType)),
+      fetchRankings(
+        pageParam,
+        HOME_RANKINGS_PAGE_SIZE,
+        getTypeParam(activeType),
+        activeGenre ?? undefined,
+      ),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === HOME_RANKINGS_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
   const rankings = rankingsQuery.data?.pages.flat() ?? [];
+  const genres = deriveGenres(rankings);
 
   return (
     <ScreenShell
@@ -153,7 +182,10 @@ export function HomeScreen() {
               key={filter}
               accessibilityRole="button"
               accessibilityState={{ selected }}
-              onPress={() => setActiveType(filter)}
+              onPress={() => {
+                setActiveType(filter);
+                setActiveGenre(null);
+              }}
               style={({ pressed }) => [
                 styles.segmentButton,
                 selected ? styles.segmentButtonActive : null,
@@ -172,6 +204,35 @@ export function HomeScreen() {
           );
         })}
       </ScrollView>
+
+      {genres.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.genreRail}
+        >
+          {genres.map((genre) => {
+            const selected = activeGenre === genre;
+            return (
+              <Pressable
+                key={genre}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => setActiveGenre(selected ? null : genre)}
+                style={({ pressed }) => [
+                  styles.genrePill,
+                  selected ? styles.genrePillActive : null,
+                  pressed ? styles.segmentButtonPressed : null,
+                ]}
+              >
+                <AppText variant="caption" tone={selected ? "primary" : "muted"}>
+                  {genre}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       <FlatList
         data={rankings}
@@ -192,11 +253,19 @@ export function HomeScreen() {
         ListEmptyComponent={
           !rankingsQuery.isLoading && !rankingsQuery.isError ? (
             <EmptyState
-              title={activeType === "All" ? undefined : `No ${activeType} yet`}
+              title={
+                activeGenre
+                  ? `No ${activeGenre} titles`
+                  : activeType !== "All"
+                    ? `No ${activeType} yet`
+                    : undefined
+              }
               message={
-                activeType === "All"
-                  ? "No rankings are available yet. Check back soon for ranked titles."
-                  : "Try another type filter or check back after more titles are ranked."
+                activeGenre
+                  ? "Try a different genre or clear the genre filter."
+                  : activeType !== "All"
+                    ? "Try another type filter or check back after more titles are ranked."
+                    : "No rankings are available yet. Check back soon for ranked titles."
               }
             />
           ) : null
@@ -215,9 +284,11 @@ export function HomeScreen() {
                 />
               ) : (
                 <AppText variant="caption" tone="subtle" align="center">
-                  {activeType === "All"
-                    ? "You are caught up."
-                    : `All loaded for ${activeType}.`}
+                  {activeGenre
+                    ? `All ${activeGenre} titles loaded.`
+                    : activeType === "All"
+                      ? "You are caught up."
+                      : `All loaded for ${activeType}.`}
                 </AppText>
               )}
             </View>
@@ -243,6 +314,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     paddingRight: spacing.md,
+  },
+  genreRail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingRight: spacing.md,
+  },
+  genrePill: {
+    minHeight: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.backgroundSoft,
+    borderColor: colors.borderSoft,
+    borderWidth: 1,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm,
+  },
+  genrePillActive: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
   },
   segmentButton: {
     minHeight: 38,

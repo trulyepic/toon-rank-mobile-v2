@@ -635,7 +635,7 @@ Suggested branch: `mobile-native-login`
       available for password reset and email verification only).
 - [x] Update `LoginScreen` and `SignupScreen` copy to remove references to "continuing to the
       website".
-- [ ] Smoke-test both native flows (username/password and Google) against the production backend on
+- [x] Smoke-test both native flows (username/password and Google) against the production backend on
       Android and iOS emulators before submitting to stores.
 - [x] Update `docs/MOBILE_SESSION_STRATEGY.md` to reflect the new native-credential flow alongside
       the existing auth-code exchange.
@@ -737,14 +737,13 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
 
 **17a — iOS encryption declaration**
 
-- [ ] Add `"ITSAppUsesNonExemptEncryption": false` to `ios.infoPlist` in `app.json`
-- [ ] Confirm no custom encryption libraries are used anywhere in the dependency tree
+- [x] Add `"ITSAppUsesNonExemptEncryption": false` to `ios.infoPlist` in `app.json`
+- [x] Confirm no custom encryption libraries are used anywhere in the dependency tree
 
 **17b — Tablet support decision**
 
-- [ ] Test the full app on an iPad simulator (all tabs, all modals, all forms)
-- [ ] If layout is acceptable: leave `supportsTablet: true` and add iPad screenshots to Phase 18
-- [ ] If layout needs work: set `supportsTablet: false` in `app.json` for v1; add a tablet
+- [x] Test the full app on an iPad simulator (all tabs, all modals, all forms)
+- [x] If layout needs work: set `supportsTablet: false` in `app.json` for v1; add a tablet
       optimisation phase before v2
 
 **17c — Notifications placeholder**
@@ -1086,19 +1085,19 @@ Suggested branch: `backend-rankings-genre-param`
 
 Suggested branch: `mobile-genre-filter`
 
-- [ ] Add optional `genre?: string` to `fetchRankings()` in `src/api/series.ts`
-- [ ] Pass `genre` in the `params` object alongside `type`
+- [x] Add optional `genre?: string` to `fetchRankings()` in `src/api/series.ts`
+- [x] Pass `genre` in the `params` object alongside `type`
 
 **22c — Mobile UX: genre strip below the type rail on HomeScreen**
 
-- [ ] Derive the genre list from already-loaded ranking items using the same
+- [x] Derive the genre list from already-loaded ranking items using the same
       dedup/canonicalize logic as the website's `GenreStrip` component
-- [ ] Render a second horizontal `ScrollView` pill strip below the existing type rail, only when
+- [x] Render a second horizontal `ScrollView` pill strip below the existing type rail, only when
       there is at least one genre to show
-- [ ] Tapping a genre pill resets `queryKey` to `["rankings", activeType, activeGenre]` and
+- [x] Tapping a genre pill resets `queryKey` to `["rankings", activeType, activeGenre]` and
       re-fetches from page 1 — identical to how the type rail works today
-- [ ] "ALL" pill (or deselecting the active pill) clears the genre filter
-- [ ] The genre list should be derived from the full loaded set, not just the first page — if
+- [x] "ALL" pill (or deselecting the active pill) clears the genre filter
+- [x] The genre list should be derived from the full loaded set, not just the first page — if
       the user has loaded more items, those genres also appear in the strip
 
 Done means mobile users can narrow rankings by genre with accurate, server-filtered results, and
