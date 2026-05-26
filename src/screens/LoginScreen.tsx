@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { login } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
+import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -26,6 +27,25 @@ export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recaptchaRef = useRef<RecaptchaRef>(null);
+
+  const googleSignIn = useGoogleSignIn();
+
+  async function handleGoogleSignIn() {
+    setErrorMessage(null);
+    try {
+      const session = await googleSignIn.mutateAsync();
+      if (session) {
+        await setSession(session);
+        navigation.navigate("MainTabs");
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Google sign-in failed. Please try again.",
+      );
+    }
+  }
 
   const loginMutation = useMutation({
     mutationFn: (captchaToken: string) =>
@@ -162,6 +182,22 @@ export function LoginScreen() {
           onPress={handleSubmit}
         />
 
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <AppText variant="caption" tone="muted">
+            or
+          </AppText>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <AppButton
+          label={googleSignIn.isPending ? "Signing in..." : "Continue with Google"}
+          variant="secondary"
+          disabled={googleSignIn.isPending || loginMutation.isPending}
+          iconLeft={<Ionicons name="logo-google" size={15} color={colors.text} />}
+          onPress={() => void handleGoogleSignIn()}
+        />
+
         <AppButton
           label="Create account"
           variant="ghost"
@@ -247,5 +283,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.borderSoft,
   },
 });

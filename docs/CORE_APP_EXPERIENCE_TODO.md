@@ -767,7 +767,7 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
 
 - [ ] Produce `assets/icon.png` at 1024×1024 px, no transparency (see `assets/ASSET_SPEC.md`)
 - [ ] Produce `assets/adaptive-icon.png` at 1024×1024 px, logo within inner 66% safe zone
-- [ ] Produce `assets/splash.png` at 1284×2778 px, background `#17110f`, logo centred
+- [ ] Produce `assets/splash.png` at 1284×2778 px, background `#17110f`, logo centered
 - [ ] Run `npx expo start` and confirm assets render correctly on both Android and iOS simulators
 - [ ] Run `eas build --platform android --profile preview` and confirm the APK installs and
       launches with the correct icon and splash
