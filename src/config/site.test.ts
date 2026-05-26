@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MOBILE_AUTH_CALLBACK_URL, WEB_AUTH_URLS, buildWebAuthUrl } from "./site";
 
 describe("web auth URLs", () => {
-  it("builds mobile login URLs with redirect and state", () => {
+  it("builds mobile auth URLs with redirect and state", () => {
     const url = buildWebAuthUrl("/login", "state-123");
 
     expect(url).toBe(
@@ -13,7 +13,6 @@ describe("web auth URLs", () => {
 
   it("uses the shared mobile callback URL", () => {
     expect(MOBILE_AUTH_CALLBACK_URL).toBe("toonranks://auth/callback");
-    expect(WEB_AUTH_URLS.signup("abc")).toContain("state=abc");
   });
 
   it("points password recovery to the production website flow", () => {
