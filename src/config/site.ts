@@ -17,8 +17,7 @@ export function buildWebAuthUrl(path: string, state?: string) {
 }
 
 export const WEB_AUTH_URLS = {
-  login: (state?: string) => buildWebAuthUrl("/login", state),
-  signup: (state?: string) => buildWebAuthUrl("/signup", state),
+  // login and signup are handled natively — this is kept for password reset only.
   forgotPassword: `${SITE_ORIGIN}/forgot-password`,
 };
 

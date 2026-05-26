@@ -89,7 +89,7 @@ export function LoginScreen() {
   const canSubmit = !!username.trim() && !!password && !loginMutation.isPending;
 
   return (
-    <ScreenShell title="Log in" subtitle="Use your Toon Ranks website account.">
+    <ScreenShell title="Log in" subtitle="Sign in to your Toon Ranks account.">
       <Surface variant="accent" radius="xl" style={styles.hero}>
         <Ionicons name="shield-checkmark-outline" size={24} color={colors.text} />
         <View style={styles.heroText}>

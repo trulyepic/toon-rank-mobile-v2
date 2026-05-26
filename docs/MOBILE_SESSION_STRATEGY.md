@@ -1,71 +1,129 @@
 # Mobile Session Strategy
 
-This document captures the Toon Ranks mobile session plan after the first real mobile login bridge.
+This document describes how the Toon Ranks mobile app authenticates users and manages
+sessions. It covers the two active auth paths, the refresh-token strategy, and the
+narrower role the web-auth bridge now plays.
 
-## Current State
+---
 
-- Mobile login uses the production website CAPTCHA flow.
-- The website returns a short-lived mobile auth code to `toonranks://auth/callback`.
-- The app exchanges that code with the backend for the normal Toon Ranks JWT/user response.
-- The app stores the JWT/user in `expo-secure-store`.
-- The backend access token currently expires after about 3 days.
+## Auth paths
 
-This is enough for a working first login, but it is not the final mobile session model.
+### 1. Native username / password (primary)
 
-## Target Mobile Behavior
+The app submits credentials directly to the backend without opening a browser.
 
-Mobile users should stay signed in for roughly 30 days, which is consistent with normal app
-expectations. They should only be asked to log in again when:
+```
+User fills form → reCAPTCHA v2 (WebView modal, invisible for most users)
+  → POST /auth/login  { username, password, captcha_token }
+  → { access_token, refresh_token, user }
+  → stored in expo-secure-store via AuthProvider.setSession()
+```
 
-- they manually log out,
-- the refresh session expires,
-- the backend rejects/revokes the session,
-- their account state changes in a way that invalidates access,
-- or a security-sensitive backend change requires a fresh login.
+Signup follows the same pattern via `POST /auth/signup`, which returns a
+`{ message, token }` response — the user must verify their email before their
+first login.
 
-## Preferred Architecture
+The reCAPTCHA sitekey (`EXPO_PUBLIC_RECAPTCHA_SITE_KEY`) is the same public key
+used on the Toon Ranks website — no separate mobile key is needed.
 
-Use the standard access-token plus refresh-token pattern:
+### 2. Native Google Sign-In (primary)
 
-- Access token: short-lived JWT used on API requests.
-- Refresh token: longer-lived opaque token stored securely on the phone.
-- Mobile app silently refreshes the access token before or after expiry.
-- Backend can revoke refresh tokens without waiting for a long-lived JWT to expire.
+```
+User taps "Continue with Google"
+  → GoogleSignin.signOut()  (clears cache so picker always appears)
+  → GoogleSignin.signIn()   (native Google account picker)
+  → ID token extracted from result
+  → POST /auth/google-oauth  { token, signup_platform: "mobile" }
+  → { access_token, refresh_token, user }
+  → stored via AuthProvider.setSession()
+```
 
-Avoid simply extending the current JWT to 30 days. That would work mechanically, but it gives the
-backend less control if a token needs to be invalidated.
+Google Sign-In is configured once at app startup in `App.tsx` via
+`GoogleSignin.configure()`. Client IDs are read from `.env` — see `.env.example`
+for the required variable names.
 
-## First Safety Net Implemented
+The backend `POST /auth/google-oauth` handles both new and returning Google
+accounts in one endpoint, so the same button and flow works for both login and
+signup screens.
 
-Until refresh tokens exist, the app must fail cleanly when a stored token is no longer accepted.
+### 3. Web-auth bridge (limited use only)
 
-The mobile API client now treats authenticated `401` and `403` responses as session-expired events.
-`AuthProvider` responds by clearing secure storage and returning the app to a signed-out state.
+The original auth flow opened an in-app browser pointing at the Toon Ranks login
+page, which handled reCAPTCHA, then redirected back to `toonranks://auth/callback`
+with a short-lived code the app exchanged for a session.
 
-The app intentionally does not clear auth state for unauthenticated `401` responses, such as a failed
-web/mobile login attempt.
+This flow is **no longer used for login or signup**. It remains available for two
+edge cases that still require a browser step:
 
-## Future Refresh-Token Contract
+| Use case           | Trigger                                  |
+| ------------------ | ---------------------------------------- |
+| Forgot password    | "Forgot password?" link on `LoginScreen` |
+| Email verification | Future: Phase 16 deep-link redirect      |
 
-Suggested backend work:
+The bridge lives in `src/auth/webAuthBridge.ts`. `WEB_AUTH_URLS.login` and
+`.signup` have been removed — only `WEB_AUTH_URLS.forgotPassword` remains.
 
-- Add a `mobile_refresh_tokens` table with hashed token storage.
-- Include device/session metadata, issued time, expiry time, revoked time, and last-used time.
-- Return `refresh_token` plus `access_token` from `/auth/mobile-token`.
-- Add `POST /auth/mobile-refresh` to exchange refresh token for a new access token.
-- Add `POST /auth/mobile-logout` or reuse logout semantics to revoke the current refresh token.
-- Start with a 30-day refresh token lifetime.
+---
 
-Suggested mobile work:
+## Session storage
 
-- Store `refresh_token` in `expo-secure-store` beside the access token and user snapshot.
-- On app launch, try a refresh when the access token is missing or rejected.
-- On authenticated `401`, attempt refresh once before clearing the session.
-- Clear both access and refresh tokens on logout or refresh failure.
+All session data is stored with `expo-secure-store` via `AuthProvider`:
 
-## UX Rules
+| Key             | Value                                                             |
+| --------------- | ----------------------------------------------------------------- |
+| `access_token`  | Short-lived JWT sent as `Authorization: Bearer` on every API call |
+| `refresh_token` | Long-lived token (~30 days) used to obtain new access tokens      |
+| `user`          | Snapshot of `AuthUser` (id, username, role, avatar)               |
 
-- A signed-in user should not see stale signed-in UI after the backend rejects the token.
-- The app should show a clear "Session expired. Please log in again." style message when possible.
-- Normal failed login/signup errors should stay local to the auth screen and should not clear an
-  unrelated stored session unless the failing request used that stored session.
+On app launch, `AuthProvider` reads the stored session and restores signed-in
+state without prompting the user again.
+
+---
+
+## Token refresh
+
+When an authenticated API call returns `401`, the session event bus fires
+`SESSION_EXPIRED`. `AuthProvider` catches this and:
+
+1. Calls `POST /auth/mobile-refresh  { refresh_token }` to get a new `access_token`
+2. Stores the new token and continues
+3. If the refresh also fails (expired or revoked), the session is cleared and the
+   user is returned to the signed-out state
+
+Only one refresh attempt runs at a time (`isRefreshingRef`) to prevent duplicate
+calls under concurrent request failures.
+
+---
+
+## Logout
+
+`AuthProvider.logout()`:
+
+1. Calls `POST /auth/mobile-logout  { refresh_token }` to revoke the token on the backend
+2. Calls `GoogleSignin.signOut()` to clear the cached Google session (ensures the
+   account picker appears on the next Google sign-in rather than auto-signing in)
+3. Clears `expo-secure-store`
+4. Resets all in-memory auth state
+
+---
+
+## Google OAuth credentials
+
+Three OAuth 2.0 client IDs are required — see `.env.example` for variable names:
+
+| Client               | Purpose                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| iOS                  | Passed to `GoogleSignin.configure({ iosClientId })`                                            |
+| Android (production) | Registered in Google Cloud Console for the EAS release keystore SHA-1                          |
+| Android (debug)      | Registered in Google Cloud Console for the local debug keystore SHA-1                          |
+| Web                  | Passed to `GoogleSignin.configure({ webClientId })` — the backend verifies tokens against this |
+
+Android client IDs are **not** referenced in app code. Google matches them
+automatically by package name + signing certificate SHA-1. Both the debug and
+production Android clients must exist in Google Cloud Console for development
+and store builds to work respectively.
+
+> **Note:** If the `android/` directory is deleted and regenerated by Expo,
+> copy `~/.android/debug.keystore` to `android/app/debug.keystore` before
+> testing Google Sign-In on Android. Expo generates a new random keystore on
+> each fresh prebuild.

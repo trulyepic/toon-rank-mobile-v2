@@ -623,21 +623,21 @@ Suggested branch: `mobile-native-login`
 >
 > Once credentials are available, the implementation is:
 
-- [ ] Install `@react-native-google-signin/google-signin` with its Expo config plugin
-- [ ] Add the plugin to `app.json` with `iosClientId` and Android `webClientId`
-- [ ] Add a "Continue with Google" button to both `LoginScreen` and `SignupScreen`
-- [ ] On press: call `GoogleSignin.signIn()`, extract `idToken`, call `loginWithGoogle({ token: idToken })`
-- [ ] Handle cancellation (user dismisses picker) as a no-op; show inline error on failure
+- [x] Install `@react-native-google-signin/google-signin` with its Expo config plugin
+- [x] Add the plugin to `app.json` with `iosClientId` and Android `webClientId`
+- [x] Add a "Continue with Google" button to both `LoginScreen` and `SignupScreen`
+- [x] On press: call `GoogleSignin.signIn()`, extract `idToken`, call `loginWithGoogle({ token: idToken })`
+- [x] Handle cancellation (user dismisses picker) as a no-op; show inline error on failure
 
 ### Phase 15f — Cleanup
 
-- [ ] Remove or hide the `openWebAuthBridge` login/signup path from the normal UI flow (keep it
+- [x] Remove or hide the `openWebAuthBridge` login/signup path from the normal UI flow (keep it
       available for password reset and email verification only).
-- [ ] Update `LoginScreen` and `SignupScreen` copy to remove references to "continuing to the
+- [x] Update `LoginScreen` and `SignupScreen` copy to remove references to "continuing to the
       website".
 - [ ] Smoke-test both native flows (username/password and Google) against the production backend on
       Android and iOS emulators before submitting to stores.
-- [ ] Update `docs/MOBILE_SESSION_STRATEGY.md` to reflect the new native-credential flow alongside
+- [x] Update `docs/MOBILE_SESSION_STRATEGY.md` to reflect the new native-credential flow alongside
       the existing auth-code exchange.
 
 Done means a user can create an account or sign in entirely within the native app without seeing a
