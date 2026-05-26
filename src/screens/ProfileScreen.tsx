@@ -228,7 +228,7 @@ export function ProfileScreen() {
                   onPress={() =>
                     Alert.alert(
                       "Remove photo",
-                      "Your avatar will revert to your selected colour preset.",
+                      "Your avatar will revert to your selected color preset.",
                       [
                         { text: "Cancel", style: "cancel" },
                         {

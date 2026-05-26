@@ -2,6 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import type { LinkingOptions } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider } from "./src/auth/AuthContext";
@@ -9,6 +10,13 @@ import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import type { RootStackParamList } from "./src/navigation/RootNavigator";
 import { colors } from "./src/theme/tokens";
+
+// Configure Google Sign-In once at app startup before any sign-in attempt.
+GoogleSignin.configure({
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  scopes: ["profile", "email"],
+});
 
 const queryClient = new QueryClient();
 

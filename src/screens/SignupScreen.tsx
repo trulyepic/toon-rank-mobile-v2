@@ -7,6 +7,8 @@ import { useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { signup } from "../api/auth";
+import { useAuth } from "../auth/AuthContext";
+import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -17,12 +19,32 @@ const RECAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 
 export function SignupScreen() {
   const navigation = useNavigation<Navigation>();
+  const { setSession } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recaptchaRef = useRef<RecaptchaRef>(null);
+
+  const googleSignIn = useGoogleSignIn();
+
+  async function handleGoogleSignIn() {
+    setErrorMessage(null);
+    try {
+      const session = await googleSignIn.mutateAsync();
+      if (session) {
+        await setSession(session);
+        navigation.navigate("MainTabs");
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Google sign-in failed. Please try again.",
+      );
+    }
+  }
 
   const signupMutation = useMutation({
     mutationFn: (captchaToken: string) =>
@@ -181,6 +203,22 @@ export function SignupScreen() {
           onPress={handleSubmit}
         />
 
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <AppText variant="caption" tone="muted">
+            or
+          </AppText>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <AppButton
+          label={googleSignIn.isPending ? "Signing in..." : "Continue with Google"}
+          variant="secondary"
+          disabled={googleSignIn.isPending || signupMutation.isPending}
+          iconLeft={<Ionicons name="logo-google" size={15} color={colors.text} />}
+          onPress={() => void handleGoogleSignIn()}
+        />
+
         <AppButton
           label="Already have an account?"
           variant="ghost"
@@ -257,5 +295,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.borderSoft,
   },
 });

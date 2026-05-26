@@ -57,6 +57,12 @@
         {
           "photosPermission": "Toon Ranks needs access to your photo library to set your profile avatar."
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.33290208569-dnfbfbk5ebmbt7i7tu64o1p3msfvsmc3"
+        }
       ]
     ],
     "extra": {

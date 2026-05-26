@@ -40,6 +40,7 @@ export interface SignupRequest extends LoginRequest {
 
 export interface GoogleOAuthRequest {
   token: string;
+  signup_platform?: "web" | "mobile";
 }
 
 export interface ResendVerificationRequest {
