@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { StyleSheet, View } from "react-native";
+import { useMutation } from "@tanstack/react-query";
+import { Alert, StyleSheet, View } from "react-native";
 
 import {
   AppButton,
@@ -12,26 +13,44 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
+import { deleteAccount } from "../api/auth";
+import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-
-const settingsRows = [
-  {
-    icon: "moon-outline" as const,
-    title: "Appearance",
-    body: "The mobile app currently uses the dark Toon Ranks palette.",
-  },
-  {
-    icon: "shield-checkmark-outline" as const,
-    title: "Account safety",
-    body: "Session, sign-out, and verification controls will be expanded here.",
-  },
-];
+import { openInAppBrowser } from "../utils/externalLinks";
 
 export function SettingsScreen() {
   const { isSignedIn, logout, status, user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isLoadingAuth = status === "loading";
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteAccount,
+    onSuccess: async () => {
+      await logout();
+    },
+    onError: () => {
+      Alert.alert(
+        "Could not delete account",
+        "Something went wrong. Please try again or contact support.",
+      );
+    },
+  });
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Delete account",
+      "This will permanently delete your Toon Ranks account, reading lists, votes, and forum posts. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteMutation.mutate(),
+        },
+      ],
+    );
+  }
 
   return (
     <ScreenShell
@@ -90,20 +109,42 @@ export function SettingsScreen() {
 
       <View style={styles.section}>
         <SectionHeader title="Preferences" />
-        <View style={styles.stack}>
-          {settingsRows.map((item) => (
-            <Surface key={item.title} variant="raised" radius="xl" style={styles.row}>
-              <View style={styles.rowIcon}>
-                <Ionicons name={item.icon} size={19} color={colors.accentStrong} />
-              </View>
-              <View style={styles.rowText}>
-                <AppText variant="cardTitle">{item.title}</AppText>
-                <AppText tone="muted">{item.body}</AppText>
-              </View>
-            </Surface>
-          ))}
-        </View>
+        <Surface variant="raised" radius="xl" style={styles.row}>
+          <View style={styles.rowIcon}>
+            <Ionicons name="moon-outline" size={19} color={colors.accentStrong} />
+          </View>
+          <View style={styles.rowText}>
+            <AppText variant="cardTitle">Appearance</AppText>
+            <AppText tone="muted">
+              Dark theme — light theme coming in a future update.
+            </AppText>
+          </View>
+        </Surface>
       </View>
+
+      {isSignedIn ? (
+        <View style={styles.section}>
+          <SectionHeader title="Account" />
+          <Surface variant="raised" radius="xl" style={styles.accountCard}>
+            <AppButton
+              label="Change password"
+              variant="secondary"
+              onPress={() => openInAppBrowser(WEB_AUTH_URLS.forgotPassword)}
+              iconLeft={
+                <Ionicons name="lock-closed-outline" size={15} color={colors.text} />
+              }
+            />
+            <View style={styles.divider} />
+            <AppButton
+              label={deleteMutation.isPending ? "Deleting account…" : "Delete account"}
+              variant="ghost"
+              disabled={deleteMutation.isPending}
+              onPress={handleDeleteAccount}
+              iconLeft={<Ionicons name="trash-outline" size={15} color={colors.danger} />}
+            />
+          </Surface>
+        </View>
+      ) : null}
     </ScreenShell>
   );
 }
@@ -140,9 +181,6 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
-  stack: {
-    gap: spacing.sm,
-  },
   row: {
     flexDirection: "row",
     gap: spacing.md,
@@ -161,5 +199,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: spacing.xs,
+  },
+  accountCard: {
+    gap: spacing.sm,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderSoft,
   },
 });
