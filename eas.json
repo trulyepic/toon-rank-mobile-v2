@@ -12,11 +12,21 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_RECAPTCHA_SITE_KEY": "6Ld96JMrAAAAAOgkEHH4sARr5aHkCone2tYQBCXN",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "33290208569-dnfbfbk5ebmbt7i7tu64o1p3msfvsmc3.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "33290208569-l4gmljsl81r51g81irs7mdpl7rjfml1l.apps.googleusercontent.com"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_RECAPTCHA_SITE_KEY": "6Ld96JMrAAAAAOgkEHH4sARr5aHkCone2tYQBCXN",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "33290208569-dnfbfbk5ebmbt7i7tu64o1p3msfvsmc3.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "33290208569-l4gmljsl81r51g81irs7mdpl7rjfml1l.apps.googleusercontent.com"
       }
     }
   },

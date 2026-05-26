@@ -754,20 +754,20 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
 
 **17d — EAS account and project link**
 
-- [ ] Create a free Expo account at expo.dev if one does not already exist
-- [ ] Run `npm install -g eas-cli` to install the EAS CLI globally
-- [ ] Run `eas login` to authenticate
-- [ ] Run `eas build:configure` inside the mobile project to link the project to the Expo account
+- [x] Create a free Expo account at expo.dev if one does not already exist
+- [x] Run `npm install -g eas-cli` to install the EAS CLI globally
+- [x] Run `eas login` to authenticate
+- [x] Run `eas build:configure` inside the mobile project to link the project to the Expo account
       and generate the project ID in `app.json`
 - [ ] Confirm `eas build --platform android --profile preview` produces a working APK before
       attempting a production build
 
 **17e — Real asset files**
 
-- [ ] Produce `assets/icon.png` at 1024×1024 px, no transparency (see `assets/ASSET_SPEC.md`)
-- [ ] Produce `assets/adaptive-icon.png` at 1024×1024 px, logo within inner 66% safe zone
-- [ ] Produce `assets/splash.png` at 1284×2778 px, background `#17110f`, logo centered
-- [ ] Run `npx expo start` and confirm assets render correctly on both Android and iOS simulators
+- [x] Produce `assets/icon.png` at 1024×1024 px, no transparency (see `assets/ASSET_SPEC.md`)
+- [x] Produce `assets/adaptive-icon.png` at 1024×1024 px, logo within inner 66% safe zone
+- [x] Produce `assets/splash.png` at 1284×2778 px, background `#17110f`, logo centered
+- [x] Run `npx expo start` and confirm assets render correctly on both Android and iOS simulators
 - [ ] Run `eas build --platform android --profile preview` and confirm the APK installs and
       launches with the correct icon and splash
 
