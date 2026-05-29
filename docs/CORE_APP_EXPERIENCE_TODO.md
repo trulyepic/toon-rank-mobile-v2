@@ -1689,6 +1689,80 @@ submission status from the mobile app.
 
 ---
 
+## Phase 29: Username Change
+
+Suggested branch: `mobile-username-change`
+
+Purpose: let signed-in users update their username directly from the mobile app, matching the
+pencil-icon modal added to the web account page.
+
+### Background — what was built on the web
+
+**Backend endpoint (already live, no further backend work needed):**
+
+| Endpoint | Auth | Body | Returns |
+| --- | --- | --- | --- |
+| `PATCH /auth/me/username` | Required (JWT) | `{ new_username: string }` | `UsernameUpdateOut` (`id`, `username`, `role`, `avatar_url`, `avatar_preset`) |
+
+Rules enforced by the backend:
+- Username must match `^[A-Za-z0-9_-]{3,20}$` — validated server-side via Pydantic
+- Uniqueness checked against existing users; returns 409 if already taken
+- No password required — JWT is sufficient proof of identity, works for Google OAuth accounts too
+- Rate limited: 5 requests per hour per user
+
+**Frontend (web):** a small pencil icon sits next to the username `<h2>` on the account page.
+Clicking it opens a modal with a single "New username" field. On success the stored session user
+is updated immediately and a toast confirms the change.
+
+### Work items
+
+**29a — API layer**
+
+- [ ] Add `updateMyUsername(newUsername: string): Promise<UsernameUpdateOut>` →
+      `PATCH /auth/me/username` with body `{ new_username: newUsername }` to `src/api/auth.ts`
+- [ ] Add `UsernameUpdateOut` type to `src/types/account.ts`:
+  ```ts
+  export interface UsernameUpdateOut {
+    id: number;
+    username: string;
+    role: string;
+    avatar_url: string | null;
+    avatar_preset: string | null;
+  }
+  ```
+- [ ] Handle 409 (username taken) and 429 (rate limited) errors with readable messages
+
+**29b — UI**
+
+- [ ] Add a small edit/pencil icon button next to the username text on `ProfileScreen`
+- [ ] Tapping it opens a bottom sheet or modal with a single "New username" text input
+- [ ] Input is pre-filled with the current username; user clears and types the new one
+- [ ] Inline validation before submit: enforce the `^[A-Za-z0-9_-]{3,20}$` rule client-side
+      and show a helper text ("3–20 characters — letters, numbers, underscores, or hyphens")
+- [ ] Save button is disabled until the input is non-empty and different from the current username
+- [ ] On success: call `updateUser` with the returned username so all surfaces update immediately;
+      show a success toast; close the modal
+- [ ] On error: show the backend detail message inline (e.g. "That username is already taken.")
+- [ ] Show a loading state on the Save button while the request is in flight
+
+**29c — Emulator test steps**
+
+1. Sign in, open `ProfileScreen` — confirm the pencil icon appears next to the username.
+2. Tap it — confirm the modal opens with the current username pre-filled (or empty).
+3. Clear the field and type a valid new username — confirm the Save button becomes active.
+4. Save — confirm the username updates on screen immediately and a success toast appears.
+5. Open the modal again and type a username that already exists — confirm a "already taken"
+   error appears inline.
+6. Type a username shorter than 3 characters or with a disallowed character — confirm the
+   client-side validation message appears before the request is even sent.
+7. Sign in as a Google OAuth account — confirm the pencil icon appears and the change works
+   (no password prompt, works identically to email/password accounts).
+
+Done means signed-in users can change their username from mobile with the same rules and
+behavior as the web account page, including Google OAuth accounts.
+
+---
+
 ## Working Rules For Future Phases
 
 - Do not claim login, voting, lists, or forum posting work until the app has a real stored session.
