@@ -893,11 +893,11 @@ differences.
 
 **19a — Android production build**
 
-- [ ] Run `eas build --platform android --profile production` to produce an AAB (Android App
+- [x] Run `eas build --platform android --profile production` to produce an AAB (Android App
       Bundle) — this is what the Play Store requires
-- [ ] Also run `eas build --platform android --profile preview` to produce an APK for direct
+- [x] Also run `eas build --platform android --profile preview` to produce an APK for direct
       install and testing on a physical device or emulator
-- [ ] Install the preview APK on a real Android device or emulator and confirm it launches
+- [x] Install the preview APK on a real Android device or emulator and confirm it launches
 
 **19b — iOS production build**
 
@@ -911,18 +911,18 @@ differences.
 Test every flow that touches the real backend — do not use a staging or mock environment:
 
 - [ ] **Signup**: create a new account, receive verification email, verify, log in
-- [ ] **Login**: log in with verified credentials; confirm session persists after app restart
+- [x] **Login**: log in with verified credentials; confirm session persists after app restart
 - [ ] **Refresh token**: force an access token expiry (or wait) and confirm the session refreshes
       silently rather than logging the user out
-- [ ] **Logout**: confirm session is cleared and the user is returned to the signed-out state
-- [ ] **Home rankings**: confirm titles load, type filters work, load-more works
-- [ ] **Search**: confirm results load and tapping a result navigates to Series Detail
-- [ ] **Series Detail**: confirm summary, detail, voting, and save-to-list work
-- [ ] **Reading lists**: confirm lists load, items show, add/remove/chapter edit work, share works
-- [ ] **Forum**: confirm threads load, replies work, create thread works, votes work
-- [ ] **Avatar upload**: confirm photo selection, crop, and upload land on the user's profile
-- [ ] **Issue report**: confirm a report submits and appears in the backend admin queue
-- [ ] **Forgot password**: confirm the in-app browser opens the correct reset page
+- [x] **Logout**: confirm session is cleared and the user is returned to the signed-out state
+- [x] **Home rankings**: confirm titles load, type filters work, load-more works
+- [x] **Search**: confirm results load and tapping a result navigates to Series Detail
+- [x] **Series Detail**: confirm summary, detail, voting, and save-to-list work
+- [x] **Reading lists**: confirm lists load, items show, add/remove/chapter edit work, share works
+- [x] **Forum**: confirm threads load, replies work, create thread works, votes work
+- [x] **Avatar upload**: confirm photo selection, crop, and upload land on the user's profile
+- [x] **Issue report**: confirm a report submits and appears in the backend admin queue
+- [x] **Forgot password**: confirm the in-app browser opens the correct reset page
 
 **19d — Crash and error monitoring (optional but recommended)**
 
@@ -1075,10 +1075,10 @@ misleadingly incomplete.
 
 Suggested branch: `backend-rankings-genre-param`
 
-- [ ] Add `genre: Optional[str] = Query(None)` to `get_ranked_series` in `series_routes.py`
-- [ ] When `genre` is present, add `Series.genre.ilike(f"%{genre}%")` to the filter clause
+- [x] Add `genre: Optional[str] = Query(None)` to `get_ranked_series` in `series_routes.py`
+- [x] When `genre` is present, add `Series.genre.ilike(f"%{genre}%")` to the filter clause
       (same pattern used by the search endpoint)
-- [ ] Add a backend test: request with `?type=MANGA&genre=action` returns only manga whose genre
+- [x] Add a backend test: request with `?type=MANGA&genre=action` returns only manga whose genre
       field contains "action" (case-insensitive)
 
 **22b — Mobile API: pass `genre` to `fetchRankings`**
@@ -1102,6 +1102,590 @@ Suggested branch: `mobile-genre-filter`
 
 Done means mobile users can narrow rankings by genre with accurate, server-filtered results, and
 the strip works reliably because the backend drives pagination, not client-side array slicing.
+
+---
+
+## Phase 23: Community Leaderboard And Cred Points
+
+Suggested branch: `mobile-community-leaderboard`
+
+Purpose: bring the Rankers leaderboard, Cred Point display, and ranker badges to mobile, matching
+the features shipped to the production website in May 2026.
+
+### Background — what was built on the web
+
+**Backend changes (already live, no further backend work needed):**
+
+| Endpoint | Returns |
+| --- | --- |
+| `GET /users/leaderboard?page=1&page_size=50` | Paginated leaderboard ranked by `cred_score` descending. Each item includes `rank`, `username`, `role`, `avatar_url`, `avatar_preset`, `cred_score`, `post_count`, `series_rated`. Admins are excluded. |
+| `GET /users/{username}` | Public profile — already returned `cred_score` and `rank` before; `post_count` confirmed correct (counts all forum posts including thread OPs). |
+
+**Frontend additions on web:**
+
+- **Leaderboard page** (`/leaderboard`): top-3 podium spotlight cards (gold/silver/bronze) arranged
+  #2 · #1 · #3 so #1 is centred and taller. Below that, a paginated ranked list (#4 onward) showing
+  avatar, username, CP, series rated, and post count.
+- **CP + rank chips on public user profiles** (`/user/:username`): amber ◆ N CP chip and slate
+  #N Ranker chip in the profile header, both tapping through to the leaderboard. Only shown when
+  `cred_score > 0` / rank is set.
+- **CP + rank chips on own account page** (`/account`): same chips in the left panel, fetched via
+  the public profile endpoint since `cred_score`/`rank` are not in the JWT payload.
+- **Ranker badges in forum bylines**: ◆ symbol for top-3 users (gold = #1, silver = #2, bronze = #3)
+  and muted `#N` text for ranks 4–10. Shown next to usernames in the thread list and in all
+  post/reply bylines. The rank map (top-10 username → rank) is fetched once per session and cached.
+
+### Work items
+
+**23a — API layer**
+
+- [ ] Add `LeaderboardUser` and `LeaderboardPage` types to `src/types/account.ts`:
+  ```ts
+  export interface LeaderboardUser {
+    rank: number;
+    username: string;
+    role: string;
+    avatar_url: string | null;
+    avatar_preset: string | null;
+    cred_score: number;
+    post_count: number;
+    series_rated: number;
+  }
+  export interface LeaderboardPage {
+    items: LeaderboardUser[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  }
+  ```
+- [ ] Add `getLeaderboard(page: number, pageSize: number)` → `GET /users/leaderboard` to
+      `src/api/auth.ts` (or a new `src/api/users.ts`)
+- [ ] Confirm `PublicProfile` type in `src/types/account.ts` already includes `cred_score: number`,
+      `rank: number | null`, and `post_count: number` — add them if missing
+
+**23b — Leaderboard screen**
+
+- [ ] Create `src/screens/LeaderboardScreen.tsx`
+- [ ] Top section: podium cards for #1, #2, #3 arranged #2 · #1 · #3 — #1 card is taller/elevated.
+      Each card shows avatar (`UserAvatar`), username (role-colored), CP score with ◆ symbol, post
+      count, series rated. Tapping a card navigates to the public profile.
+- [ ] Below podium: flat list of ranks #4+ using `useInfiniteQuery` with a "Load more" button
+- [ ] Each list row shows rank number, avatar, username, CP, series rated, post count
+- [ ] Show skeleton placeholder cards while loading; empty state if no ranked members
+- [ ] Only show podium section on page 1 (not when user loads more pages)
+
+**23c — Add Leaderboard to navigation**
+
+- [ ] Add `Leaderboard: undefined` to `RootStackParamList` in `RootNavigator.tsx`
+- [ ] Add a "Rankers" entry point — either a tab in the bottom nav or a row in `MoreScreen`
+      (follow the same tab/more pattern used by the web's nav placement)
+
+**23d — CP and rank display on profile screens**
+
+- [ ] On `ProfileScreen` (own account): below the role text, show an amber CP chip
+      (`◆ {cred_score} CP`) and a slate rank chip (`#{rank} Ranker`) when `cred_score > 0`.
+      Both chips navigate to `LeaderboardScreen`. Use the same `getPublicProfile(username)` fetch
+      pattern as the web account page since `cred_score`/`rank` are not in the JWT.
+- [ ] On the public user profile screen (if one exists in mobile): apply the same CP + rank chips
+      in the profile header. If a separate public profile screen doesn't exist yet, note it as a
+      dependency.
+
+**23e — Ranker badges in forum bylines**
+
+- [ ] Create a `useTopRankMap()` hook (or module-level cache) in `src/hooks/` that fetches
+      `getLeaderboard(1, 10)` once per app session and returns a `Record<string, number>`
+      (username → rank). Cache the result so it is not re-fetched on every screen mount.
+- [ ] Create a `RankerBadge` component in `src/components/`:
+  - Rank 1: gold ◆ (amber color)
+  - Rank 2: silver ◆ (slate color)
+  - Rank 3: bronze ◆ (amber-brown color)
+  - Ranks 4–10: muted `#N` text
+  - No rank or rank > 10: renders nothing
+- [ ] Add `RankerBadge` next to the author username in `ForumScreen` thread row bylines
+- [ ] Add `RankerBadge` next to the author username in `ForumThreadScreen` post and reply bylines
+      (original post byline and all `PostCard` reply bylines)
+
+**23f — Emulator test steps**
+
+1. Open the Rankers / Leaderboard screen — confirm top-3 podium cards load with correct avatars,
+   CP values, and names.
+2. Confirm #1 card is visually elevated/taller than #2 and #3.
+3. Tap a top-3 card — confirm it navigates to that user's profile.
+4. Scroll down — confirm ranked list (#4+) loads. Tap "Load more" — confirm next page appends.
+5. Open `ForumScreen` — find a post by a top-10 ranked user and confirm the ◆ or #N badge appears
+   next to their name.
+6. Open a thread by a top-3 user — confirm the gold/silver/bronze ◆ appears in the OP byline and
+   in any replies they wrote.
+7. Open own `ProfileScreen` while signed in with a ranked account — confirm CP chip and rank chip
+   appear. Tap either chip — confirm it navigates to the leaderboard.
+8. Sign out — confirm the leaderboard screen is still accessible (it is public).
+
+Done means mobile users can browse the community leaderboard natively, see Cred Points and rank on
+profiles, and immediately identify top-ranked contributors by the ◆ badge in forum discussions.
+
+---
+
+## Phase 24: Public User Profiles And Pinned Favorites
+
+Suggested branch: `mobile-public-profiles`
+
+Purpose: let mobile users view any member's public profile — avatar, role, Cred Points, rank, post
+count, join date, pinned favorite series grid, and public reading lists — and let signed-in users
+manage their own pinned favorites from their profile screen. Matches the feature set already live on
+the production website.
+
+### Background — what was built on the web
+
+**Backend (already live, no further backend work needed):**
+
+| Endpoint | Auth | Description |
+| --- | --- | --- |
+| `GET /users/{username}` | None | Public profile. Returns `username`, `role`, `avatar_url`, `avatar_preset`, `registered_at`, `cred_score`, `rank`, `post_count`, `favourites` (pinned series array), `reading_lists` (public-only array). |
+| `GET /me/favourites` | Required | Returns the signed-in user's pinned series in position order. |
+| `PUT /me/favourites` | Required | Atomically replaces pinned series with the provided ordered `series_ids` array. Max 15. |
+| `DELETE /me/favourites/{series_id}` | Required | Removes a single pinned series and re-compacts positions. |
+
+**Frontend features on web:**
+
+- **Public profile page** (`/user/:username`):
+  - Header card with role-colored accent strip, avatar, username (role-colored gradient), role badge,
+    CP chip (amber, navigates to `/leaderboard`), rank chip (slate, navigates to `/leaderboard`),
+    post count, join date.
+  - Pinned favorites section: grid of up to 15 series cover images (2 cols mobile → 3 tablet →
+    5 desktop). Each card taps through to the series detail page. Hover overlay shows title.
+  - Public reading lists section: only shows if the user has at least one public list. Each row is a
+    tappable card showing list name and item count; navigates to the shared list view.
+  - Accessible from forum author bylines (clicking a username) and leaderboard cards.
+- **Own account favorites management** (`/account` → Pinned Favorites section):
+  - Shows current pinned series with reorder handles and remove (×) buttons.
+  - "+" button opens a series search modal; selecting a series appends it to the end.
+  - Uses `PUT /me/favourites` for both add (append) and `DELETE /me/favourites/{series_id}` for
+    removal. Max 15 pins.
+
+### Work items
+
+**24a — API layer and types**
+
+- [ ] In `src/types/account.ts`, add the following (if not already present from Phase 23):
+  ```ts
+  export interface FavoriteSeries {
+    series_id: number;
+    position: number;
+    title: string;
+    cover_url: string | null;
+    type: string | null;
+  }
+
+  export interface PublicReadingListPreview {
+    name: string;
+    item_count: number;
+    share_token: string;
+  }
+
+  export interface PublicProfile {
+    username: string;
+    role: string;
+    avatar_url: string | null;
+    avatar_preset: string | null;
+    registered_at: string | null;
+    cred_score: number;
+    rank: number | null;
+    post_count: number;
+    favourites: FavoriteSeries[];
+    reading_lists: PublicReadingListPreview[];
+  }
+  ```
+- [ ] In `src/api/users.ts` (create if it doesn't exist), add:
+  - `getPublicProfile(username: string): Promise<PublicProfile>` → `GET /users/{username}`
+  - `getMyFavorites(): Promise<FavoriteSeries[]>` → `GET /me/favourites`
+  - `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>` → `PUT /me/favourites`
+    with body `{ series_ids: seriesIds }`
+  - `removeMyFavorite(seriesId: number): Promise<FavoriteSeries[]>` →
+    `DELETE /me/favourites/{seriesId}`
+- [ ] In Phase 23's `src/api/users.ts` (or `auth.ts`), `getPublicProfile` may already exist — check
+      and consolidate into one file before adding duplicates.
+
+**24b — PublicProfileScreen**
+
+- [ ] Create `src/screens/PublicProfileScreen.tsx`
+- [ ] Fetch `getPublicProfile(username)` with `useQuery`. Show a skeleton while loading; show a
+      centered "User not found" state with a back button on 404.
+- [ ] **Profile header card:**
+  - Role-colored accent strip at the top (amber for ADMIN, blue for CONTRIBUTOR, muted for GENERAL).
+  - `UserAvatar` (size `xl`), username in role-colored text (match the gradient/color logic from
+    `RankerBadge` and forum bylines), role badge pill, CP chip (`◆ N CP`, amber, taps to
+    `LeaderboardScreen`), rank chip (`#N Ranker`, slate, taps to `LeaderboardScreen`) — only shown
+    when `cred_score > 0` / rank is set, post count, join date (formatted as "Month D, YYYY").
+- [ ] **Pinned Favorites section:**
+  - Section heading "Favorite Series". If `favourites` is empty, show muted text
+    `"{username} hasn't pinned any series yet."`.
+  - Grid: 2 columns (mobile). Each cell is a pressable cover image card with `aspectRatio: 2/3`,
+    rounded corners, `SeriesCoverImage` or `Image` component. On press navigate to
+    `SeriesDetail` with the `series_id`.
+  - Show a title label overlay on long-press (or use a bottom overlay that fades in on press for
+    discoverability).
+- [ ] **Public Reading Lists section:**
+  - Only render this section when `reading_lists.length > 0`.
+  - Section heading "Reading Lists", sub-heading "Shared lists from {username}."
+  - Each list renders as a pressable row card: list name (bold), item count (muted), trailing arrow.
+  - On press: navigate to the shared list view (use `PublicReadingList: { token: string }` route if
+    it exists, or note it as a dependency to add in a later phase).
+- [ ] Show a "← Back" button or rely on the native stack back arrow (no custom back button needed if
+      the navigator provides one).
+
+**24c — Navigation and entry points**
+
+- [ ] Add `PublicProfile: { username: string }` to `RootStackParamList` in `RootNavigator.tsx` and
+      register `PublicProfileScreen` in the stack.
+- [ ] **Forum author bylines** (from Phase 23 forum work or current implementation): tapping the
+      author username in a thread row (`ForumScreen`) and in post/reply bylines
+      (`ForumThreadScreen`) should navigate to `PublicProfile: { username: authorUsername }`.
+      - If the author is the signed-in user, navigate to the own `ProfileScreen` instead.
+- [ ] **Leaderboard cards** (Phase 23, 23b): confirm that tapping a leaderboard card already
+      navigates to `PublicProfile: { username }`. If it was left as a placeholder, wire it up here.
+- [ ] Optionally: tapping the username on `ProfileScreen` (own profile) should NOT navigate
+      anywhere — it is already the profile view.
+
+**24d — Own profile: pinned favorites management**
+
+- [ ] On `ProfileScreen`, below the role/stats row, add a "Favorite Series" section (auth-gated —
+      only visible when signed in).
+- [ ] Fetch `getMyFavorites()` with `useQuery` on mount. Display the same 2-column cover grid as
+      `PublicProfileScreen`.
+- [ ] Each cover card shows a small `×` remove button in the corner. Tapping it calls
+      `removeMyFavorite(series_id)`, then invalidates the query to refresh the list.
+- [ ] Show a "＋ Add Series" button (or an empty-slot card) when fewer than 15 series are pinned.
+      Tapping it opens a series search modal (can reuse or adapt the search logic from `SearchScreen`
+      or the series search already wired in Series Detail) where the user can pick a series to pin.
+      On selection, call `replaceMyFavorites([...currentIds, newId])` and refresh.
+- [ ] Show a loading/saving indicator while any mutation is in flight; show an error toast on failure.
+- [ ] Note: the backend enforces max 15 pins and rejects duplicate IDs — handle the error response
+      gracefully.
+
+**24e — Emulator test steps**
+
+1. Open the forum, tap any post's author username — confirm it navigates to that user's
+   `PublicProfileScreen` and loads their profile (avatar, role badge, CP/rank chips if applicable).
+2. Tap a user who has pinned favorites — confirm the cover art grid appears. Tap a cover — confirm
+   it navigates to the correct `SeriesDetailScreen`.
+3. Tap a user with no pinned series — confirm the "hasn't pinned any series yet" message appears.
+4. Tap the CP chip or rank chip on a public profile — confirm it navigates to the Leaderboard
+   screen.
+5. Tap the back button — confirm it returns to the forum thread or previous screen correctly.
+6. Open `LeaderboardScreen`, tap a top-3 podium card — confirm it navigates to `PublicProfileScreen`
+   for that user.
+7. Sign in, open own `ProfileScreen` — confirm the Favorite Series section appears.
+8. Add a series via the "＋ Add Series" flow — confirm it appears in the grid and on the public
+   profile (navigate to own public profile from forum to verify).
+9. Remove a series via the `×` button — confirm it disappears from the grid and the list re-compacts
+   without gaps.
+10. Sign out — confirm the favorites management section is hidden on `ProfileScreen`, and that public
+    profiles are still viewable without auth.
+
+Done means any user can tap an author name in the forum or leaderboard and see their public profile
+with pinned series cover art, and signed-in users can manage their own pinned favorites from their
+profile screen, matching the production web experience.
+
+---
+
+## Phase 25: Reading List Detail — Filter And Sort
+
+Suggested branch: `mobile-reading-list-filters`
+
+Purpose: bring the filter and sort controls from the web's reading list detail view to mobile, so
+users with long lists can slice and sort their titles without scrolling through everything.
+
+### Background — what was built on the web
+
+The web's `/my-lists` page embeds a filter+sort bar inside every expanded reading list. Controls:
+
+- **Type filter**: Manhwa / Manga / Manhua / All
+- **Status filter**: Ongoing / Complete / Hiatus / Season End / Unknown / All
+- **Sort**: Default (list insertion order), Rank ↑, Rank ↓, Stars high→low, Stars low→high, Votes
+  high→low, Votes low→high, Title A–Z, Title Z–A
+- **Stars floor**: free-text minimum stars (e.g., `7.5` shows only titles with score ≥ 7.5 and < 8)
+- **Reset** button that clears all filters to defaults
+
+Filters apply client-side against series summary data already fetched for each item. When any filter
+or sort is active, infinite pagination is disabled (only already-loaded items are shown, sorted in
+memory). Pagination resumes when filters are cleared.
+
+The mobile `ReadingListDetailScreen` currently shows items in insertion order with no filter or sort
+controls.
+
+### Work items
+
+**25a — Filter state and logic**
+
+- [ ] Add a `FilterBar` component (or inline state block) to `ReadingListDetailScreen`:
+  - `filterType: "" | "MANHWA" | "MANGA" | "MANHUA"` — picker or segmented chips
+  - `filterStatus: "" | "ONGOING" | "COMPLETE" | "HIATUS" | "SEASON_END" | "UNKNOWN"` — picker
+  - `sortBy: "DEFAULT" | "RANK_ASC" | "RANK_DESC" | "STARS_DESC" | "STARS_ASC" | "VOTES_DESC" |
+    "VOTES_ASC" | "TITLE_ASC" | "TITLE_DESC"` — picker
+  - `minStars: string` — numeric text input (e.g., `"7.5"`)
+  - "Reset" button that clears all four fields to their defaults
+- [ ] Apply filters and sort client-side against the `summaries` map already built from fetched items.
+  Filtering predicate:
+  - type: `summary.type === filterType` (skip if blank)
+  - status: `summary.status.toUpperCase() === filterStatus` (skip if blank)
+  - min stars: `summary.final_score >= parsed` and `< parsed + step` (where step depends on decimal
+    precision of the input; e.g., `"7.5"` means `>= 7.5 and < 7.6`)
+  - Sort: apply the chosen sort key after filtering; use `localeCompare` for title sorts; nulls last
+    for numeric sorts
+- [ ] When any filter/sort is active, suppress the "Load more" pagination button and show a muted
+  note "Load all items first to sort accurately" if `hasNextPage` is true.
+- [ ] Reset clears all state and re-enables pagination.
+
+**25b — UI placement**
+
+- [ ] Show the FilterBar as a collapsible/expandable section at the top of the screen below the list
+  header — collapsed by default (to keep the screen clean for users with short lists). A single
+  "Sort & Filter" chip shows the active filter count as a badge when any filter is active.
+- [ ] Inside the expanded bar, lay out the four controls in a 2-column grid or vertical stack
+  appropriate for the screen width.
+
+**25c — Emulator test steps**
+
+1. Open a reading list with ≥ 10 items of mixed types. Expand the filter bar. Set type = Manhwa —
+   confirm only Manhwa items remain visible.
+2. Set status = Ongoing — confirm combined filter (Manhwa + Ongoing) works.
+3. Change sort to Stars high→low — confirm items reorder by score.
+4. Set min stars to `7.5` — confirm only items with score ≥ 7.5 and < 7.6 are shown.
+5. Tap Reset — confirm all items return and the list is back in default insertion order.
+6. Open a reading list with < 5 items — confirm the filter bar is still accessible but gracefully
+   shows results (including "no items match" if filters are too strict).
+
+Done means users with long reading lists can filter by type or status and sort by score or rank,
+matching the filtering capability of the production website.
+
+---
+
+## Phase 26: Issue Tracker View
+
+Suggested branch: `mobile-issue-tracker`
+
+Purpose: let mobile users view the public Toon Ranks issue tracker so they can see what bugs and
+features have been reported, their current status, and whether their own issue is already known —
+matching the `/issues` page on the web.
+
+### Background — what was built on the web
+
+The web's `/issues` page is **publicly accessible** (no login required). It shows:
+
+- A "Report an Issue" button linking to the report form
+- Summary count cards: Open / In Progress / Resolved / Won't Fix
+- Status tab filters: All / Open / In Progress / Resolved / Won't Fix
+- A search field (searches title + description)
+- A type filter dropdown (Bug / Feature / Content / Other)
+- A paginated table of issues showing: title, description preview, type, status badge, reported date,
+  screenshot link
+- Admins see: inline status change dropdown and delete button per row
+
+**Backend endpoint (already live):**
+
+| Endpoint | Auth | Returns |
+| --- | --- | --- |
+| `GET /issues` (or `GET /issues?q=...&type=...&status=...&page=1&page_size=50`) | None | Paginated list of issues |
+
+### Work items
+
+**26a — API and types**
+
+- [ ] Add `Issue` type to `src/types/issue.ts` if not already there (it may already exist from the
+  report screen). Ensure it includes: `id`, `title`, `description`, `type`, `status`,
+  `created_at`, `screenshot_url`.
+- [ ] Add `listIssues(params: { q?: string; type?: string; status?: string; page?: number;
+  page_size?: number }): Promise<Issue[]>` → `GET /issues` to `src/api/issues.ts`
+
+**26b — IssueTrackerScreen**
+
+- [ ] Create `src/screens/IssueTrackerScreen.tsx`
+- [ ] Header section: screen title "Site Updates & Known Issues", subtitle explaining what the tracker
+  is for, and a "Report an Issue" button that navigates to `ReportIssue`.
+- [ ] Status summary row: four chips showing count of Open / In Progress / Resolved / Won't Fix.
+  Tapping a chip sets the active status filter.
+- [ ] Filter bar: status tab pills (All / Open / In Progress / Resolved / Won't Fix), type dropdown
+  or segmented control (All / Bug / Feature / Content / Other), and a search text input.
+- [ ] List: `FlatList` of issue rows. Each row shows title (bold), truncated description (2 lines),
+  type chip, status badge (color-coded), and reported date.
+- [ ] Status badge colors: Open = amber, In Progress = blue, Resolved = green, Won't Fix = muted.
+- [ ] Load up to 50 issues per page; show a "Load more" button if `has_more` is true. Refetch when
+  filter inputs change (debounce search by 300 ms).
+- [ ] Empty state when no issues match the filters.
+- [ ] Screenshot link: if `screenshot_url` is set on an issue, show a small camera icon that opens
+  the URL in the in-app browser.
+- [ ] Admin status editing: admin-only — skip for mobile (the tracker is read-only on mobile).
+
+**26c — Navigation**
+
+- [ ] Add `IssueTracker: undefined` to `RootStackParamList` in `RootNavigator.tsx` and register
+  `IssueTrackerScreen`.
+- [ ] Add "Issue Tracker" entry to `MoreScreen` in the Support section, below "Report an Issue".
+  Icon: `list-outline`. Navigate to `IssueTracker`.
+
+**26d — Emulator test steps**
+
+1. Open `MoreScreen` — confirm "Issue Tracker" row appears in the Support section.
+2. Tap it — confirm `IssueTrackerScreen` loads with issues visible and summary counts.
+3. Tap the "Open" chip in the summary row — confirm the list filters to open issues only.
+4. Type a search term — confirm the list narrows to matching titles/descriptions.
+5. Tap "Report an Issue" button — confirm it navigates to `ReportIssueScreen`.
+6. Tap a row with a screenshot — confirm the screenshot opens in the in-app browser.
+7. Sign out — confirm the issue tracker is still accessible without auth.
+
+Done means mobile users can browse the live issue tracker, see what's been reported and resolved,
+and reach the report form from the same screen.
+
+---
+
+## Phase 27: Forum Image And GIF Uploads
+
+Suggested branch: `mobile-forum-media`
+
+Purpose: let signed-in users attach images and GIFs to new forum posts and replies, matching the
+image embedding already available on the web.
+
+### Background — what was built on the web
+
+The web's `RichReplyEditor` and thread creation modal support image/GIF attachment via
+`POST /forum/media/upload`. On upload, the backend:
+1. Validates MIME type (png/jpeg/webp/gif), file size (300 KB for images, 1 MB for GIFs), and
+   dimensions (1024×1024 max for images, 512×512 max for GIFs).
+2. Uploads to S3 under `forum/media/`.
+3. Returns a public URL and the `ForumMedia` record.
+
+The client inserts the URL as a Markdown image: `![alt text](url)`. The web forum renderer already
+supports `<img>` tags inside markdown via `rehype-raw` + `rehype-sanitize` (only `https://` sources
+allowed).
+
+The mobile `ForumCreateThreadScreen.tsx` already notes: `"Series references and image uploads are
+coming in the next forum slices."` The thread screen's markdown renderer already renders inline
+images.
+
+**Backend endpoint:**
+
+| Endpoint | Auth | Body | Returns |
+| --- | --- | --- | --- |
+| `POST /forum/media/upload` | Required | `thread_id` (form), `file` (multipart) | `{ url, width, height, media_type }` |
+
+Note: `thread_id` is required by the endpoint. For new threads, image upload must happen after the
+thread is created (or a placeholder thread_id must be used — check the endpoint behavior).
+
+### Work items
+
+**27a — API**
+
+- [ ] Add `uploadForumMedia(threadId: number, fileUri: string, mimeType: string): Promise<{ url:
+  string; width: number; height: number }>` → `POST /forum/media/upload` (multipart form) to
+  `src/api/forum.ts`
+- [ ] Handle the size/dimension validation error from the backend gracefully (show a toast with the
+  reason)
+
+**27b — Image picker and upload flow (thread creation)**
+
+- [ ] In `ForumCreateThreadScreen`, add an "Attach image" button in the editor toolbar area.
+  Tapping it opens `ImagePicker.launchImageLibraryAsync` (or camera). Limit to 1 attachment at a
+  time to start.
+- [ ] On pick: show a thumbnail preview in the compose area with a remove (×) button.
+- [ ] On "Post thread": if an image is attached, upload it first via `uploadForumMedia`, then insert
+  `\n![image](url)\n` at the end of the body before submitting.
+- [ ] Show an upload progress indicator while the image is uploading.
+
+**27c — Image picker and upload flow (replies)**
+
+- [ ] In the reply composer (`ForumThreadScreen`), add the same "Attach image" button.
+- [ ] Same flow: pick → preview → upload on submit → insert markdown into reply body.
+
+**27d — Emulator test steps**
+
+1. Create a new thread, attach a JPEG under 300 KB — confirm it uploads, the thread posts, and the
+   image renders in the thread view.
+2. Attach a GIF under 1 MB — confirm it uploads and renders.
+3. Attach a file over the size limit — confirm the backend error is shown as a toast and the post
+   is not submitted.
+4. Write a reply in an existing thread, attach an image — confirm the image renders inline in the
+   reply.
+5. Remove the attachment (× button) before submitting — confirm the post goes through without an
+   image.
+
+Done means mobile users can embed images and GIFs in forum posts and replies using the same upload
+infrastructure as the web.
+
+---
+
+## Phase 28: Series Submission (Contributor Feature)
+
+Suggested branch: `mobile-series-submission`
+
+Purpose: let Contributor and Admin users submit new series for ranking consideration directly from
+the mobile app, and track the status of their submissions — matching the web's series submission
+flow.
+
+### Background — what was built on the web
+
+**Who can submit:** users with `role === "CONTRIBUTOR"` or `role === "ADMIN"`. The `canSubmitSeriesUser`
+utility checks for this. Regular members (`GENERAL` role) cannot submit.
+
+**Submission flow on web:**
+1. Contributor clicks "Add Series" (via `AddSeriesModal`), fills in: title, type
+   (Manhwa/Manga/Manhua), genre, author, artist, and uploads a cover image.
+2. Backend creates the series record in `PENDING` state with `approval_status = PENDING_REVIEW`.
+3. The series immediately appears in `MySubmissionsPage` under the contributor's "My submitted
+   titles" list, with `detail_ready = false`.
+4. The contributor opens the series detail page and adds a synopsis and a secondary cover image
+   (the "detail" fields needed for review). When done, `detail_ready` flips to `true`.
+5. An admin reviews and approves the series via `PendingTitlesPage`.
+6. Once approved, the series goes live across search, rankings, and series detail.
+
+**Backend endpoints (already live):**
+
+| Endpoint | Auth | Description |
+| --- | --- | --- |
+| `POST /series/` | Contributor+ | Submit a new series (multipart: title, type, genre, author, artist, cover image) |
+| `GET /series/submissions/mine` | Contributor+ | List own submitted series with status |
+| `PUT /series/{series_id}` | Contributor (own) / Admin | Edit a pending submission's metadata |
+
+**28a — Series submission form**
+
+- [ ] Create `src/screens/SubmitSeriesScreen.tsx` (Contributor/Admin only — show
+  `AccountRequiredCard` or a "Contributor access required" card if the signed-in user is `GENERAL`
+  role).
+- [ ] Form fields: Title (required), Type selector (Manhwa/Manga/Manhua), Genre (required), Author
+  (optional), Artist (optional), Cover image (required — use `ImagePicker`, then upload as
+  multipart to `POST /series/`).
+- [ ] On submit, show progress while uploading the cover image. On success, navigate to
+  `MySubmissionsScreen` and show a success toast.
+- [ ] On failure, show the backend error (e.g., duplicate title, invalid type).
+
+**28b — My Submissions screen**
+
+- [ ] Create `src/screens/MySubmissionsScreen.tsx`
+- [ ] Fetch `GET /series/submissions/mine`. Show a card per submission with: cover thumbnail, title,
+  type badge, status badge (`Awaiting approval` / `Approved`), and `detail_ready` readiness chip.
+- [ ] If `detail_ready` is false and not yet approved, show a prompt: "Open the title page to add
+  synopsis and secondary cover before admin review."
+- [ ] Tapping a submission navigates to `SeriesDetailScreen` for that series.
+- [ ] Empty state: "You haven't submitted any titles yet."
+
+**28c — Navigation**
+
+- [ ] Add `SubmitSeries: undefined` and `MySubmissions: undefined` to `RootStackParamList` and
+  register both screens.
+- [ ] Add a "My Submissions" entry to `MoreScreen` (only visible when `user.role === "CONTRIBUTOR"`
+  or `"ADMIN"`), with a "Submit a Title" button inside `MySubmissionsScreen`.
+
+**28d — Emulator test steps**
+
+1. Sign in as a GENERAL user — confirm "My Submissions" does not appear in MoreScreen.
+2. Sign in as a Contributor — confirm "My Submissions" appears.
+3. Tap "Submit a Title" — fill in the form, attach a cover image — confirm the series is created
+   and appears in the submissions list with `detail_ready = false`.
+4. Tap the submission card — confirm it navigates to the series detail page.
+5. Sign in as Admin — confirm the same screens are accessible.
+
+Done means Contributor and Admin users can submit new series for the rankings and track their
+submission status from the mobile app.
 
 ---
 
