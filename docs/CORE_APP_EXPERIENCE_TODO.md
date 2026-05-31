@@ -1135,117 +1135,71 @@ Suggested branch: `mobile-community-leaderboard`
 Purpose: bring the Rankers leaderboard, Cred Point display, and ranker badges to mobile, matching
 the features shipped to the production website in May 2026.
 
-### Background — what was built on the web
+### Background - what was built on the web
 
 **Backend changes (already live, no further backend work needed):**
 
 | Endpoint                                     | Returns                                                                                                                                                                                                 |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /users/leaderboard?page=1&page_size=50` | Paginated leaderboard ranked by `cred_score` descending. Each item includes `rank`, `username`, `role`, `avatar_url`, `avatar_preset`, `cred_score`, `post_count`, `series_rated`. Admins are excluded. |
-| `GET /users/{username}`                      | Public profile — already returned `cred_score` and `rank` before; `post_count` confirmed correct (counts all forum posts including thread OPs).                                                         |
+| `GET /users/{username}`                      | Public profile. Includes `cred_score`, `rank`, and `post_count` for profile headers and account summaries.                                                                                              |
 
 **Frontend additions on web:**
 
-- **Leaderboard page** (`/leaderboard`): top-3 podium spotlight cards (gold/silver/bronze) arranged
-  #2 · #1 · #3 so #1 is centred and taller. Below that, a paginated ranked list (#4 onward) showing
-  avatar, username, CP, series rated, and post count.
-- **CP + rank chips on public user profiles** (`/user/:username`): amber ◆ N CP chip and slate
-  #N Ranker chip in the profile header, both tapping through to the leaderboard. Only shown when
-  `cred_score > 0` / rank is set.
-- **CP + rank chips on own account page** (`/account`): same chips in the left panel, fetched via
-  the public profile endpoint since `cred_score`/`rank` are not in the JWT payload.
-- **Ranker badges in forum bylines**: ◆ symbol for top-3 users (gold = #1, silver = #2, bronze = #3)
-  and muted `#N` text for ranks 4–10. Shown next to usernames in the thread list and in all
-  post/reply bylines. The rank map (top-10 username → rank) is fetched once per session and cached.
+- **Leaderboard page** (`/leaderboard`): top-3 podium spotlight cards arranged #2 / #1 / #3 so #1 is centred and taller. Below that, a paginated ranked list (#4 onward) shows avatar, username, CP, series rated, and post count.
+- **CP + rank chips on public user profiles** (`/user/:username`): CP chip and #N Ranker chip in the profile header, both linking to the leaderboard.
+- **CP + rank chips on own account page** (`/account`): same chips in the left panel, fetched via the public profile endpoint since `cred_score` and `rank` are not in the JWT payload.
+- **Ranker badges in forum bylines**: diamond symbol for top-3 users and muted `#N` text for ranks 4-10. Shown next to usernames in the thread list and in all post/reply bylines. The rank map is fetched once per session and cached.
 
 ### Work items
 
-**23a — API layer**
+**23a - API layer**
 
-- [ ] Add `LeaderboardUser` and `LeaderboardPage` types to `src/types/account.ts`:
-  ```ts
-  export interface LeaderboardUser {
-    rank: number;
-    username: string;
-    role: string;
-    avatar_url: string | null;
-    avatar_preset: string | null;
-    cred_score: number;
-    post_count: number;
-    series_rated: number;
-  }
-  export interface LeaderboardPage {
-    items: LeaderboardUser[];
-    total: number;
-    page: number;
-    page_size: number;
-    total_pages: number;
-  }
-  ```
-- [ ] Add `getLeaderboard(page: number, pageSize: number)` → `GET /users/leaderboard` to
-      `src/api/auth.ts` (or a new `src/api/users.ts`)
-- [ ] Confirm `PublicProfile` type in `src/types/account.ts` already includes `cred_score: number`,
-      `rank: number | null`, and `post_count: number` — add them if missing
+- [x] Add `LeaderboardUser` and `LeaderboardPage` types to `src/types/account.ts`.
+- [x] Add `PublicProfile` type with `cred_score`, `rank`, and `post_count` to `src/types/account.ts`.
+- [x] Add `getLeaderboard(page, pageSize)` and `getPublicProfile(username)` to `src/api/users.ts`.
 
-**23b — Leaderboard screen**
+**23b - Leaderboard screen**
 
-- [ ] Create `src/screens/LeaderboardScreen.tsx`
-- [ ] Top section: podium cards for #1, #2, #3 arranged #2 · #1 · #3 — #1 card is taller/elevated.
-      Each card shows avatar (`UserAvatar`), username (role-colored), CP score with ◆ symbol, post
-      count, series rated. Tapping a card navigates to the public profile.
-- [ ] Below podium: flat list of ranks #4+ using `useInfiniteQuery` with a "Load more" button
-- [ ] Each list row shows rank number, avatar, username, CP, series rated, post count
-- [ ] Show skeleton placeholder cards while loading; empty state if no ranked members
-- [ ] Only show podium section on page 1 (not when user loads more pages)
+- [x] Create `src/screens/LeaderboardScreen.tsx`.
+- [x] Add a top-3 podium arranged #2 / #1 / #3 with #1 visually taller/elevated.
+- [x] Show avatar, role-colored username, CP, post count, and series rated on podium cards.
+- [x] Add ranked list rows for #4+ using `useInfiniteQuery` and a `Load more` button.
+- [x] Add loading, error, and empty states.
+- [ ] Add podium/list card taps to native public profiles after Phase 24 adds `PublicProfileScreen`.
 
-**23c — Add Leaderboard to navigation**
+**23c - Add Leaderboard to navigation**
 
-- [ ] Add `Leaderboard: undefined` to `RootStackParamList` in `RootNavigator.tsx`
-- [ ] Add a "Rankers" entry point — either a tab in the bottom nav or a row in `MoreScreen`
-      (follow the same tab/more pattern used by the web's nav placement)
+- [x] Add `Leaderboard: undefined` to `RootStackParamList` in `RootNavigator.tsx`.
+- [x] Register `LeaderboardScreen` in `RootNavigator.tsx`.
+- [x] Add a `Rankers` row in `MoreScreen`.
 
-**23d — CP and rank display on profile screens**
+**23d - CP and rank display on profile screens**
 
-- [ ] On `ProfileScreen` (own account): below the role text, show an amber CP chip
-      (`◆ {cred_score} CP`) and a slate rank chip (`#{rank} Ranker`) when `cred_score > 0`.
-      Both chips navigate to `LeaderboardScreen`. Use the same `getPublicProfile(username)` fetch
-      pattern as the web account page since `cred_score`/`rank` are not in the JWT.
-- [ ] On the public user profile screen (if one exists in mobile): apply the same CP + rank chips
-      in the profile header. If a separate public profile screen doesn't exist yet, note it as a
-      dependency.
+- [x] On `ProfileScreen` (own account), fetch the public profile by username.
+- [x] Show CP and `#N Ranker` chips under the identity card when data is available.
+- [x] Make the chips navigate to `LeaderboardScreen`.
+- [ ] Add the same chips to native public profile headers after Phase 24 adds public profiles.
 
-**23e — Ranker badges in forum bylines**
+**23e - Ranker badges in forum bylines**
 
-- [ ] Create a `useTopRankMap()` hook (or module-level cache) in `src/hooks/` that fetches
-      `getLeaderboard(1, 10)` once per app session and returns a `Record<string, number>`
-      (username → rank). Cache the result so it is not re-fetched on every screen mount.
-- [ ] Create a `RankerBadge` component in `src/components/`:
-  - Rank 1: gold ◆ (amber color)
-  - Rank 2: silver ◆ (slate color)
-  - Rank 3: bronze ◆ (amber-brown color)
-  - Ranks 4–10: muted `#N` text
-  - No rank or rank > 10: renders nothing
-- [ ] Add `RankerBadge` next to the author username in `ForumScreen` thread row bylines
-- [ ] Add `RankerBadge` next to the author username in `ForumThreadScreen` post and reply bylines
-      (original post byline and all `PostCard` reply bylines)
+- [x] Create `useTopRankMap()` in `src/hooks/` backed by React Query cache.
+- [x] Create `RankerBadge` in `src/components/`.
+- [x] Add `RankerBadge` next to usernames in `ForumScreen` thread row bylines.
+- [x] Add `RankerBadge` next to usernames in `ForumThreadScreen` hero, original post, and reply bylines.
 
-**23f — Emulator test steps**
+**23f - Emulator test steps**
 
-1. Open the Rankers / Leaderboard screen — confirm top-3 podium cards load with correct avatars,
-   CP values, and names.
-2. Confirm #1 card is visually elevated/taller than #2 and #3.
-3. Tap a top-3 card — confirm it navigates to that user's profile.
-4. Scroll down — confirm ranked list (#4+) loads. Tap "Load more" — confirm next page appends.
-5. Open `ForumScreen` — find a post by a top-10 ranked user and confirm the ◆ or #N badge appears
-   next to their name.
-6. Open a thread by a top-3 user — confirm the gold/silver/bronze ◆ appears in the OP byline and
-   in any replies they wrote.
-7. Open own `ProfileScreen` while signed in with a ranked account — confirm CP chip and rank chip
-   appear. Tap either chip — confirm it navigates to the leaderboard.
-8. Sign out — confirm the leaderboard screen is still accessible (it is public).
+1. Open `More` -> `Rankers` and confirm the leaderboard screen loads.
+2. Confirm top-3 podium cards show avatars, role-colored names, CP values, post counts, and rated counts.
+3. Confirm the #1 card is visually taller/elevated compared with #2 and #3.
+4. Scroll down and tap `Load more` if available; confirm additional ranks append.
+5. Open `More` -> `Profile` while signed in; confirm CP and rank chips show under your identity card and tapping them opens `Rankers`.
+6. Open `Forum`; confirm top-10 ranked users show a small diamond or `#N` badge next to their usernames.
+7. Open a thread by a ranked user; confirm the badge appears in the thread hero, original post, and reply bylines.
+8. Sign out and confirm `More` -> `Rankers` is still accessible because the leaderboard is public.
 
-Done means mobile users can browse the community leaderboard natively, see Cred Points and rank on
-profiles, and immediately identify top-ranked contributors by the ◆ badge in forum discussions.
+Done means mobile users can browse the community leaderboard natively, see Cred Points and rank on their profile, and immediately identify top-ranked contributors in forum discussions. Public profile navigation remains tracked in Phase 24.
 
 ---
 

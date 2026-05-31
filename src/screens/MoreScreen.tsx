@@ -122,6 +122,12 @@ export function MoreScreen() {
   });
   const accountRows: MenuRowProps[] = [
     {
+      icon: "trophy-outline",
+      title: "Rankers",
+      subtitle: "Cred Points, posts, and series ratings.",
+      onPress: () => navigation.navigate("Leaderboard"),
+    },
+    {
       icon: "bookmark-outline",
       title: "Reading Lists",
       subtitle: "Saved, planned, reading, and completed titles.",

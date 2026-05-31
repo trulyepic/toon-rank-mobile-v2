@@ -14,6 +14,7 @@ import {
   ErrorState,
   ForumSeriesStrip,
   LoadingState,
+  RankerBadge,
   RoleNameText,
   ScreenShell,
   SectionHeader,
@@ -24,8 +25,9 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { ForumThread } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
+import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
 
-function ThreadCard({ thread }: { thread: ForumThread }) {
+function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const seriesLabel =
     thread.series_refs.length > 0
@@ -63,9 +65,12 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
             size="sm"
           />
           <View style={styles.metaText}>
-            <RoleNameText variant="caption" role={thread.author_role}>
-              {thread.author_username || "Unknown"}
-            </RoleNameText>
+            <View style={styles.authorNameRow}>
+              <RoleNameText variant="caption" role={thread.author_role}>
+                {thread.author_username || "Unknown"}
+              </RoleNameText>
+              <RankerBadge rank={rank} />
+            </View>
             <AppText variant="caption" tone="muted">
               {formatForumDate(thread.last_post_at || thread.updated_at)}
             </AppText>
@@ -96,6 +101,7 @@ function ThreadCard({ thread }: { thread: ForumThread }) {
 export function ForumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn } = useAuth();
+  const topRankMap = useTopRankMap();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -202,7 +208,11 @@ export function ForumScreen() {
           />
           <View style={styles.stack}>
             {threads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} />
+              <ThreadCard
+                key={thread.id}
+                thread={thread}
+                rank={rankForUsername(topRankMap, thread.author_username)}
+              />
             ))}
           </View>
           {hasNextPage ? (
@@ -301,6 +311,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 1,
+  },
+  authorNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.xs,
   },
   badgeRow: {
     flexDirection: "row",
