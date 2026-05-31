@@ -8,11 +8,11 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 import { refreshMobileSession, revokeMobileSession } from "../api/auth";
 import { setApiAuthToken } from "../api/client";
 import type { AuthSession, AuthUser } from "../types/account";
+import { signOutGoogle } from "../utils/googleSignInNative";
 import {
   clearStoredAuthSession,
   getStoredAuthSession,
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     // Clear the Google Sign-In session so the account picker appears on next sign-in.
-    await GoogleSignin.signOut().catch(() => undefined);
+    await signOutGoogle();
 
     await clearStoredAuthSession();
     setApiAuthToken(null);

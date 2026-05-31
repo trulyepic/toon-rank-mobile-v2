@@ -19,30 +19,32 @@ The current mobile app already has a usable public browsing shell:
 - Mobile login includes a forgot-password entry point that opens the production website reset flow.
 - Series voting, reading-list management, forum replies, and forum up/down votes are connected.
 
-The biggest remaining product blockers are long-lived mobile sessions, native avatar management,
-forum creation/editing parity, and app-store readiness.
+The biggest remaining product blockers are app-store readiness checks, native avatar upload,
+Rankers/Cred Point parity, public profiles, and the remaining forum parity slices
+(categories/sort, reporting, follows/bookmarks, notifications, read state, and richer composer
+tools).
 
 ## Web-To-Mobile Parity Index
 
 Use this index before adding new phases. It maps major website features to the mobile roadmap so
 future work does not miss or duplicate large feature areas.
 
-| Website feature area | Mobile status | TODO phase |
-| --- | --- | --- |
-| Auth, signup, and longer mobile sessions | Mostly implemented; refresh/session hardening tracked | Phases 1, 2, 2.5 |
-| Series ratings and category voting | Implemented | Phase 3 |
-| Reading lists and public list sharing | Mostly implemented; list detail filter/sort still tracked | Phases 4, 14, 25 |
-| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked | Phases 5, 6, 27 |
-| Forum thread sort, pinned threads, categories, category management | Missing on mobile | Phase 30 |
-| Forum follow, post bookmarks, saved/following activity tabs | Missing on mobile | Phase 31 |
-| Forum post reporting and admin report queue | Missing on mobile | Phases 32, 36 |
-| Forum notifications, unread counts, read-state badges | Missing on mobile | Phases 33, 34 |
-| Forum post-content search and user mention autocomplete | Missing on mobile | Phase 35 |
-| Rankers leaderboard, Cred Points, rank chips, ranker badges | Missing on mobile | Phase 23 |
-| Public user profiles and pinned favorite series | Missing on mobile | Phase 24 |
-| My submissions, pending titles, contributor/admin title review | Missing on mobile | Phases 28, 36 where relevant |
-| Public issue tracker view and optional admin issue triage | Missing on mobile; report submission exists | Phases 21, 26, 40 |
-| Public info pages, route/deep-link parity, fallback screens | Partially implemented; Terms/Privacy and public list deep link exist | Phases 37, 41 |
+| Website feature area                                                  | Mobile status                                                        | TODO phase                   |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- |
+| Auth, signup, and longer mobile sessions                              | Mostly implemented; refresh/session hardening tracked                | Phases 1, 2, 2.5             |
+| Series ratings and category voting                                    | Implemented                                                          | Phase 3                      |
+| Reading lists and public list sharing                                 | Mostly implemented; list detail filter/sort still tracked            | Phases 4, 14, 25             |
+| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked          | Phases 5, 6, 27              |
+| Forum thread sort, pinned threads, categories, category management    | Missing on mobile                                                    | Phase 30                     |
+| Forum follow, post bookmarks, saved/following activity tabs           | Missing on mobile                                                    | Phase 31                     |
+| Forum post reporting and admin report queue                           | Missing on mobile                                                    | Phases 32, 36                |
+| Forum notifications, unread counts, read-state badges                 | Missing on mobile                                                    | Phases 33, 34                |
+| Forum post-content search and user mention autocomplete               | Missing on mobile                                                    | Phase 35                     |
+| Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                    | Phase 23                     |
+| Public user profiles and pinned favorite series                       | Missing on mobile                                                    | Phase 24                     |
+| My submissions, pending titles, contributor/admin title review        | Missing on mobile                                                    | Phases 28, 36 where relevant |
+| Public issue tracker view and optional admin issue triage             | Missing on mobile; report submission exists                          | Phases 21, 26, 40            |
+| Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist | Phases 37, 41                |
 
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
@@ -717,7 +719,7 @@ users. The web-first approach ensures the link always works regardless of device
       `source === "mobile"`, with a `toonranks://auth/verified` href and auto-redirect on mobile
       browsers
 - [ ] Add `toonranks://auth/verified` to the deep link config in `App.tsx`
-- [ ] Add a `VerifiedScreen` or navigate to `Login` with a "Account verified — you can now log in"
+- [ ] Add a `VerifiedScreen` or navigate to `Login` with a "Account verified - you can now log in"
       banner when the deep link fires
 - [ ] Pass `source: "mobile"` in the `signup()` call from `SignupScreen.tsx`
 
@@ -732,7 +734,7 @@ continues through the normal website flow.
 Suggested branch: `mobile-store-build-config`
 
 Purpose: resolve every configuration gap that would cause an App Store or Play Store rejection
-before a single reviewer sees the app. These are all code and config changes — no external accounts
+before a single reviewer sees the app. These are all code and config changes - no external accounts
 or assets required yet.
 
 ### Background
@@ -744,37 +746,36 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
    will fail without the real files. Asset creation is design work handled separately; the spec is
    documented in `assets/ASSET_SPEC.md`.
 2. **Missing iOS encryption declaration.** Apple requires every app to declare whether it uses
-   non-exempt encryption. The app uses only standard HTTPS — the correct declaration is
+   non-exempt encryption. The app uses only standard HTTPS - the correct declaration is
    `ITSAppUsesNonExemptEncryption: false` in `app.json`. Without it Apple holds the submission for
    French export compliance paperwork that does not apply.
 3. **`supportsTablet: true` without iPad testing.** Apple requires iPad screenshots and tests the
    app on iPad when this flag is set. If the layout has not been verified on tablet, this flag must
    be set to `false` for v1 to avoid a rejection on tablet-specific layout issues.
-4. **Notifications placeholder in Settings.** The Settings screen shows a "Notifications" row
-   describing future reminders. It does nothing. App Store reviewers sometimes request a demo of
-   features shown in the UI. For v1 this row should be removed or clearly marked "Coming soon" so
-   reviewers cannot hold the submission.
+4. **Placeholder settings copy.** Settings should not advertise unavailable controls. App Store
+   reviewers sometimes request a demo of features shown in the UI. For v1, unavailable settings
+   should either be removed or clearly marked as future work without tappable behavior.
 
 ### Work items
 
-**17a — iOS encryption declaration**
+**17a - iOS encryption declaration**
 
 - [x] Add `"ITSAppUsesNonExemptEncryption": false` to `ios.infoPlist` in `app.json`
 - [x] Confirm no custom encryption libraries are used anywhere in the dependency tree
 
-**17b — Tablet support decision**
+**17b - Tablet support decision**
 
 - [x] Test the full app on an iPad simulator (all tabs, all modals, all forms)
 - [x] If layout needs work: set `supportsTablet: false` in `app.json` for v1; add a tablet
       optimisation phase before v2
 
-**17c — Notifications placeholder**
+**17c - Placeholder settings copy**
 
 - [x] Remove the "Notifications" settings row from `SettingsScreen.tsx` for v1, or replace the
       body copy with "Coming in a future update" and disable any tappable behavior so reviewers
       cannot interact with a non-functional feature
 
-**17d — EAS account and project link**
+**17d - EAS account and project link**
 
 - [x] Create a free Expo account at expo.dev if one does not already exist
 - [x] Run `npm install -g eas-cli` to install the EAS CLI globally
@@ -784,7 +785,7 @@ Four hard blockers were identified in the May 2026 store-readiness audit:
 - [x] Confirm `eas build --platform android --profile preview` produces a working APK before
       attempting a production build
 
-**17e — Real asset files**
+**17e - Real asset files**
 
 - [x] Produce `assets/icon.png` at 1024×1024 px, no transparency (see `assets/ASSET_SPEC.md`)
 - [x] Produce `assets/adaptive-icon.png` at 1024×1024 px, logo within inner 66% safe zone
@@ -1138,10 +1139,10 @@ the features shipped to the production website in May 2026.
 
 **Backend changes (already live, no further backend work needed):**
 
-| Endpoint | Returns |
-| --- | --- |
+| Endpoint                                     | Returns                                                                                                                                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /users/leaderboard?page=1&page_size=50` | Paginated leaderboard ranked by `cred_score` descending. Each item includes `rank`, `username`, `role`, `avatar_url`, `avatar_preset`, `cred_score`, `post_count`, `series_rated`. Admins are excluded. |
-| `GET /users/{username}` | Public profile — already returned `cred_score` and `rank` before; `post_count` confirmed correct (counts all forum posts including thread OPs). |
+| `GET /users/{username}`                      | Public profile — already returned `cred_score` and `rank` before; `post_count` confirmed correct (counts all forum posts including thread OPs).                                                         |
 
 **Frontend additions on web:**
 
@@ -1261,12 +1262,12 @@ the production website.
 
 **Backend (already live, no further backend work needed):**
 
-| Endpoint | Auth | Description |
-| --- | --- | --- |
-| `GET /users/{username}` | None | Public profile. Returns `username`, `role`, `avatar_url`, `avatar_preset`, `registered_at`, `cred_score`, `rank`, `post_count`, `favourites` (pinned series array), `reading_lists` (public-only array). |
-| `GET /me/favourites` | Required | Returns the signed-in user's pinned series in position order. |
-| `PUT /me/favourites` | Required | Atomically replaces pinned series with the provided ordered `series_ids` array. Max 15. |
-| `DELETE /me/favourites/{series_id}` | Required | Removes a single pinned series and re-compacts positions. |
+| Endpoint                            | Auth     | Description                                                                                                                                                                                              |
+| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /users/{username}`             | None     | Public profile. Returns `username`, `role`, `avatar_url`, `avatar_preset`, `registered_at`, `cred_score`, `rank`, `post_count`, `favourites` (pinned series array), `reading_lists` (public-only array). |
+| `GET /me/favourites`                | Required | Returns the signed-in user's pinned series in position order.                                                                                                                                            |
+| `PUT /me/favourites`                | Required | Atomically replaces pinned series with the provided ordered `series_ids` array. Max 15.                                                                                                                  |
+| `DELETE /me/favourites/{series_id}` | Required | Removes a single pinned series and re-compacts positions.                                                                                                                                                |
 
 **Frontend features on web:**
 
@@ -1290,6 +1291,7 @@ the production website.
 **24a — API layer and types**
 
 - [ ] In `src/types/account.ts`, add the following (if not already present from Phase 23):
+
   ```ts
   export interface FavoriteSeries {
     series_id: number;
@@ -1318,6 +1320,7 @@ the production website.
     reading_lists: PublicReadingListPreview[];
   }
   ```
+
 - [ ] In `src/api/users.ts` (create if it doesn't exist), add:
   - `getPublicProfile(username: string): Promise<PublicProfile>` → `GET /users/{username}`
   - `getMyFavorites(): Promise<FavoriteSeries[]>` → `GET /me/favourites`
@@ -1362,8 +1365,7 @@ the production website.
       register `PublicProfileScreen` in the stack.
 - [ ] **Forum author bylines** (from Phase 23 forum work or current implementation): tapping the
       author username in a thread row (`ForumScreen`) and in post/reply bylines
-      (`ForumThreadScreen`) should navigate to `PublicProfile: { username: authorUsername }`.
-      - If the author is the signed-in user, navigate to the own `ProfileScreen` instead.
+      (`ForumThreadScreen`) should navigate to `PublicProfile: { username: authorUsername }`. - If the author is the signed-in user, navigate to the own `ProfileScreen` instead.
 - [ ] **Leaderboard cards** (Phase 23, 23b): confirm that tapping a leaderboard card already
       navigates to `PublicProfile: { username }`. If it was left as a placeholder, wire it up here.
 - [ ] Optionally: tapping the username on `ProfileScreen` (own profile) should NOT navigate
@@ -1444,11 +1446,11 @@ controls.
   - `filterType: "" | "MANHWA" | "MANGA" | "MANHUA"` — picker or segmented chips
   - `filterStatus: "" | "ONGOING" | "COMPLETE" | "HIATUS" | "SEASON_END" | "UNKNOWN"` — picker
   - `sortBy: "DEFAULT" | "RANK_ASC" | "RANK_DESC" | "STARS_DESC" | "STARS_ASC" | "VOTES_DESC" |
-    "VOTES_ASC" | "TITLE_ASC" | "TITLE_DESC"` — picker
+"VOTES_ASC" | "TITLE_ASC" | "TITLE_DESC"` — picker
   - `minStars: string` — numeric text input (e.g., `"7.5"`)
   - "Reset" button that clears all four fields to their defaults
 - [ ] Apply filters and sort client-side against the `summaries` map already built from fetched items.
-  Filtering predicate:
+      Filtering predicate:
   - type: `summary.type === filterType` (skip if blank)
   - status: `summary.status.toUpperCase() === filterStatus` (skip if blank)
   - min stars: `summary.final_score >= parsed` and `< parsed + step` (where step depends on decimal
@@ -1456,16 +1458,16 @@ controls.
   - Sort: apply the chosen sort key after filtering; use `localeCompare` for title sorts; nulls last
     for numeric sorts
 - [ ] When any filter/sort is active, suppress the "Load more" pagination button and show a muted
-  note "Load all items first to sort accurately" if `hasNextPage` is true.
+      note "Load all items first to sort accurately" if `hasNextPage` is true.
 - [ ] Reset clears all state and re-enables pagination.
 
 **25b — UI placement**
 
 - [ ] Show the FilterBar as a collapsible/expandable section at the top of the screen below the list
-  header — collapsed by default (to keep the screen clean for users with short lists). A single
-  "Sort & Filter" chip shows the active filter count as a badge when any filter is active.
+      header — collapsed by default (to keep the screen clean for users with short lists). A single
+      "Sort & Filter" chip shows the active filter count as a badge when any filter is active.
 - [ ] Inside the expanded bar, lay out the four controls in a 2-column grid or vertical stack
-  appropriate for the screen width.
+      appropriate for the screen width.
 
 **25c — Emulator test steps**
 
@@ -1506,8 +1508,8 @@ The web's `/issues` page is **publicly accessible** (no login required). It show
 
 **Backend endpoint (already live):**
 
-| Endpoint | Auth | Returns |
-| --- | --- | --- |
+| Endpoint                                                                       | Auth | Returns                  |
+| ------------------------------------------------------------------------------ | ---- | ------------------------ |
 | `GET /issues` (or `GET /issues?q=...&type=...&status=...&page=1&page_size=50`) | None | Paginated list of issues |
 
 ### Work items
@@ -1515,36 +1517,36 @@ The web's `/issues` page is **publicly accessible** (no login required). It show
 **26a — API and types**
 
 - [ ] Add `Issue` type to `src/types/issue.ts` if not already there (it may already exist from the
-  report screen). Ensure it includes: `id`, `title`, `description`, `type`, `status`,
-  `created_at`, `screenshot_url`.
+      report screen). Ensure it includes: `id`, `title`, `description`, `type`, `status`,
+      `created_at`, `screenshot_url`.
 - [ ] Add `listIssues(params: { q?: string; type?: string; status?: string; page?: number;
-  page_size?: number }): Promise<Issue[]>` → `GET /issues` to `src/api/issues.ts`
+page_size?: number }): Promise<Issue[]>` → `GET /issues` to `src/api/issues.ts`
 
 **26b — IssueTrackerScreen**
 
 - [ ] Create `src/screens/IssueTrackerScreen.tsx`
 - [ ] Header section: screen title "Site Updates & Known Issues", subtitle explaining what the tracker
-  is for, and a "Report an Issue" button that navigates to `ReportIssue`.
+      is for, and a "Report an Issue" button that navigates to `ReportIssue`.
 - [ ] Status summary row: four chips showing count of Open / In Progress / Resolved / Won't Fix.
-  Tapping a chip sets the active status filter.
+      Tapping a chip sets the active status filter.
 - [ ] Filter bar: status tab pills (All / Open / In Progress / Resolved / Won't Fix), type dropdown
-  or segmented control (All / Bug / Feature / Content / Other), and a search text input.
+      or segmented control (All / Bug / Feature / Content / Other), and a search text input.
 - [ ] List: `FlatList` of issue rows. Each row shows title (bold), truncated description (2 lines),
-  type chip, status badge (color-coded), and reported date.
+      type chip, status badge (color-coded), and reported date.
 - [ ] Status badge colors: Open = amber, In Progress = blue, Resolved = green, Won't Fix = muted.
 - [ ] Load up to 50 issues per page; show a "Load more" button if `has_more` is true. Refetch when
-  filter inputs change (debounce search by 300 ms).
+      filter inputs change (debounce search by 300 ms).
 - [ ] Empty state when no issues match the filters.
 - [ ] Screenshot link: if `screenshot_url` is set on an issue, show a small camera icon that opens
-  the URL in the in-app browser.
+      the URL in the in-app browser.
 - [ ] Admin status editing: admin-only — skip for mobile (the tracker is read-only on mobile).
 
 **26c — Navigation**
 
 - [ ] Add `IssueTracker: undefined` to `RootStackParamList` in `RootNavigator.tsx` and register
-  `IssueTrackerScreen`.
+      `IssueTrackerScreen`.
 - [ ] Add "Issue Tracker" entry to `MoreScreen` in the Support section, below "Report an Issue".
-  Icon: `list-outline`. Navigate to `IssueTracker`.
+      Icon: `list-outline`. Navigate to `IssueTracker`.
 
 **26d — Emulator test steps**
 
@@ -1572,6 +1574,7 @@ image embedding already available on the web.
 
 The web's `RichReplyEditor` and thread creation modal support image/GIF attachment via
 `POST /forum/media/upload`. On upload, the backend:
+
 1. Validates MIME type (png/jpeg/webp/gif), file size (300 KB for images, 1 MB for GIFs), and
    dimensions (1024×1024 max for images, 512×512 max for GIFs).
 2. Uploads to S3 under `forum/media/`.
@@ -1587,8 +1590,8 @@ images.
 
 **Backend endpoint:**
 
-| Endpoint | Auth | Body | Returns |
-| --- | --- | --- | --- |
+| Endpoint                   | Auth     | Body                                   | Returns                              |
+| -------------------------- | -------- | -------------------------------------- | ------------------------------------ |
 | `POST /forum/media/upload` | Required | `thread_id` (form), `file` (multipart) | `{ url, width, height, media_type }` |
 
 Note: `thread_id` is required by the endpoint. For new threads, image upload must happen after the
@@ -1599,19 +1602,19 @@ thread is created (or a placeholder thread_id must be used — check the endpoin
 **27a — API**
 
 - [ ] Add `uploadForumMedia(threadId: number, fileUri: string, mimeType: string): Promise<{ url:
-  string; width: number; height: number }>` → `POST /forum/media/upload` (multipart form) to
-  `src/api/forum.ts`
+string; width: number; height: number }>` → `POST /forum/media/upload` (multipart form) to
+      `src/api/forum.ts`
 - [ ] Handle the size/dimension validation error from the backend gracefully (show a toast with the
-  reason)
+      reason)
 
 **27b — Image picker and upload flow (thread creation)**
 
 - [ ] In `ForumCreateThreadScreen`, add an "Attach image" button in the editor toolbar area.
-  Tapping it opens `ImagePicker.launchImageLibraryAsync` (or camera). Limit to 1 attachment at a
-  time to start.
+      Tapping it opens `ImagePicker.launchImageLibraryAsync` (or camera). Limit to 1 attachment at a
+      time to start.
 - [ ] On pick: show a thumbnail preview in the compose area with a remove (×) button.
 - [ ] On "Post thread": if an image is attached, upload it first via `uploadForumMedia`, then insert
-  `\n![image](url)\n` at the end of the body before submitting.
+      `\n![image](url)\n` at the end of the body before submitting.
 - [ ] Show an upload progress indicator while the image is uploading.
 
 **27c — Image picker and upload flow (replies)**
@@ -1650,6 +1653,7 @@ flow.
 utility checks for this. Regular members (`GENERAL` role) cannot submit.
 
 **Submission flow on web:**
+
 1. Contributor clicks "Add Series" (via `AddSeriesModal`), fills in: title, type
    (Manhwa/Manga/Manhua), genre, author, artist, and uploads a cover image.
 2. Backend creates the series record in `PENDING` state with `approval_status = PENDING_REVIEW`.
@@ -1662,40 +1666,40 @@ utility checks for this. Regular members (`GENERAL` role) cannot submit.
 
 **Backend endpoints (already live):**
 
-| Endpoint | Auth | Description |
-| --- | --- | --- |
-| `POST /series/` | Contributor+ | Submit a new series (multipart: title, type, genre, author, artist, cover image) |
-| `GET /series/submissions/mine` | Contributor+ | List own submitted series with status |
-| `PUT /series/{series_id}` | Contributor (own) / Admin | Edit a pending submission's metadata |
+| Endpoint                       | Auth                      | Description                                                                      |
+| ------------------------------ | ------------------------- | -------------------------------------------------------------------------------- |
+| `POST /series/`                | Contributor+              | Submit a new series (multipart: title, type, genre, author, artist, cover image) |
+| `GET /series/submissions/mine` | Contributor+              | List own submitted series with status                                            |
+| `PUT /series/{series_id}`      | Contributor (own) / Admin | Edit a pending submission's metadata                                             |
 
 **28a — Series submission form**
 
 - [ ] Create `src/screens/SubmitSeriesScreen.tsx` (Contributor/Admin only — show
-  `AccountRequiredCard` or a "Contributor access required" card if the signed-in user is `GENERAL`
-  role).
+      `AccountRequiredCard` or a "Contributor access required" card if the signed-in user is `GENERAL`
+      role).
 - [ ] Form fields: Title (required), Type selector (Manhwa/Manga/Manhua), Genre (required), Author
-  (optional), Artist (optional), Cover image (required — use `ImagePicker`, then upload as
-  multipart to `POST /series/`).
+      (optional), Artist (optional), Cover image (required — use `ImagePicker`, then upload as
+      multipart to `POST /series/`).
 - [ ] On submit, show progress while uploading the cover image. On success, navigate to
-  `MySubmissionsScreen` and show a success toast.
+      `MySubmissionsScreen` and show a success toast.
 - [ ] On failure, show the backend error (e.g., duplicate title, invalid type).
 
 **28b — My Submissions screen**
 
 - [ ] Create `src/screens/MySubmissionsScreen.tsx`
 - [ ] Fetch `GET /series/submissions/mine`. Show a card per submission with: cover thumbnail, title,
-  type badge, status badge (`Awaiting approval` / `Approved`), and `detail_ready` readiness chip.
+      type badge, status badge (`Awaiting approval` / `Approved`), and `detail_ready` readiness chip.
 - [ ] If `detail_ready` is false and not yet approved, show a prompt: "Open the title page to add
-  synopsis and secondary cover before admin review."
+      synopsis and secondary cover before admin review."
 - [ ] Tapping a submission navigates to `SeriesDetailScreen` for that series.
 - [ ] Empty state: "You haven't submitted any titles yet."
 
 **28c — Navigation**
 
 - [ ] Add `SubmitSeries: undefined` and `MySubmissions: undefined` to `RootStackParamList` and
-  register both screens.
+      register both screens.
 - [ ] Add a "My Submissions" entry to `MoreScreen` (only visible when `user.role === "CONTRIBUTOR"`
-  or `"ADMIN"`), with a "Submit a Title" button inside `MySubmissionsScreen`.
+      or `"ADMIN"`), with a "Submit a Title" button inside `MySubmissionsScreen`.
 
 **28d — Emulator test steps**
 
@@ -1722,11 +1726,12 @@ pencil-icon modal added to the web account page.
 
 **Backend endpoint (already live, no further backend work needed):**
 
-| Endpoint | Auth | Body | Returns |
-| --- | --- | --- | --- |
+| Endpoint                  | Auth           | Body                       | Returns                                                                       |
+| ------------------------- | -------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | `PATCH /auth/me/username` | Required (JWT) | `{ new_username: string }` | `UsernameUpdateOut` (`id`, `username`, `role`, `avatar_url`, `avatar_preset`) |
 
 Rules enforced by the backend:
+
 - Username must match `^[A-Za-z0-9_-]{3,20}$` — validated server-side via Pydantic
 - Uniqueness checked against existing users; returns 409 if already taken
 - No password required — JWT is sufficient proof of identity, works for Google OAuth accounts too
@@ -1797,22 +1802,24 @@ Purpose: bring three interrelated forum list improvements to mobile — pinned t
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
+| Endpoint                                                  | Description                                                                                                                      |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /forum/threads-paged?sort=activity\|newest\|replies` | Sort param already accepted; `is_pinned` returned on every thread; pinned threads always sort first regardless of sort selection |
-| `GET /forum/threads-paged?category_slug=general` | Filter threads by category slug; also accepts `category_id` |
-| `PATCH /forum/threads/{id}/pin` | Admin-only; body `{ pinned: bool }`; returns `{ id, is_pinned }` |
-| `GET /forum/categories` | Returns all visible categories ordered by position, each with `thread_count` |
-| `POST /forum/categories` | Admin-only; create a new category |
-| `PATCH /forum/categories/{id}` | Admin-only; update name, slug, description, position, visibility |
-| `DELETE /forum/categories/{id}` | Admin-only; fails with 409 if threads still assigned |
+| `GET /forum/threads-paged?category_slug=general`          | Filter threads by category slug; also accepts `category_id`                                                                      |
+| `PATCH /forum/threads/{id}/pin`                           | Admin-only; body `{ pinned: bool }`; returns `{ id, is_pinned }`                                                                 |
+| `GET /forum/categories`                                   | Returns all visible categories ordered by position, each with `thread_count`                                                     |
+| `POST /forum/categories`                                  | Admin-only; create a new category                                                                                                |
+| `PATCH /forum/categories/{id}`                            | Admin-only; update name, slug, description, position, visibility                                                                 |
+| `DELETE /forum/categories/{id}`                           | Admin-only; fails with 409 if threads still assigned                                                                             |
 
 **Fields now returned on `ForumThread`:**
+
 - `is_pinned: boolean` — whether the thread is pinned to the top
 - `category_id: number | null` — the category this thread belongs to
 - `category_name: string | null` — the category name (denormalized for display)
 
 **`ForumCategory` type:**
+
 ```ts
 {
   id: number;
@@ -1825,9 +1832,11 @@ Purpose: bring three interrelated forum list improvements to mobile — pinned t
 ```
 
 **`CreateThreadIn` payload now accepts:**
+
 - `category_id?: number | null` — assign a category at thread creation time
 
 **`UpdateThreadIn` payload now accepts:**
+
 - `category_id?: number | null` — pass `0` to unset, any valid id to re-assign
 
 ### Work items
@@ -1900,17 +1909,19 @@ Purpose: let users follow threads to receive notifications on new replies, and b
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
-| `POST /forum/threads/{thread_id}/follow` | Toggle follow; returns `{ following: bool, follower_count: int }` |
-| `GET /forum/me/following` | Paginated list of threads the signed-in user follows (`PageOut` — same shape as thread list) |
-| `POST /forum/threads/{thread_id}/posts/{post_id}/bookmark` | Toggle bookmark; returns `{ bookmarked: bool }` |
-| `GET /forum/me/bookmarks` | Paginated list of bookmarked posts (`PostsPageOut`) |
+| Endpoint                                                   | Description                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /forum/threads/{thread_id}/follow`                   | Toggle follow; returns `{ following: bool, follower_count: int }`                            |
+| `GET /forum/me/following`                                  | Paginated list of threads the signed-in user follows (`PageOut` — same shape as thread list) |
+| `POST /forum/threads/{thread_id}/posts/{post_id}/bookmark` | Toggle bookmark; returns `{ bookmarked: bool }`                                              |
+| `GET /forum/me/bookmarks`                                  | Paginated list of bookmarked posts (`PostsPageOut`)                                          |
 
 **Fields now returned on `ForumThread`:**
+
 - `viewer_is_following: boolean` — true when the authenticated viewer follows this thread
 
 **Fields now returned on `ForumPost`:**
+
 - `viewer_has_bookmarked: boolean` — true when the authenticated viewer has bookmarked this post
 
 ### Work items
@@ -1973,14 +1984,15 @@ Purpose: let signed-in users flag individual forum posts for admin review — ma
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
+| Endpoint                                                 | Description                                                                                              |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `POST /forum/threads/{thread_id}/posts/{post_id}/report` | Rate-limited 5/hour; blocks self-reporting (403); blocks duplicate reports (409); returns 201 on success |
-| `GET /forum/reports?status=OPEN&page=1&page_size=20` | Admin-only; paginated report queue with `post_excerpt` and `thread_title` |
-| `PATCH /forum/reports/{report_id}` | Admin-only; body `{ status: "REVIEWED" \| "DISMISSED" }` |
-| `DELETE /forum/reports/{report_id}` | Admin-only; permanently removes the report record |
+| `GET /forum/reports?status=OPEN&page=1&page_size=20`     | Admin-only; paginated report queue with `post_excerpt` and `thread_title`                                |
+| `PATCH /forum/reports/{report_id}`                       | Admin-only; body `{ status: "REVIEWED" \| "DISMISSED" }`                                                 |
+| `DELETE /forum/reports/{report_id}`                      | Admin-only; permanently removes the report record                                                        |
 
 **`ForumReport` response shape:**
+
 ```ts
 {
   id: number;
@@ -2054,19 +2066,21 @@ Purpose: bring in-app notifications to mobile — @-mentions, thread replies, an
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
+| Endpoint                                                   | Description                                                                |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `GET /notifications?page=1&page_size=20&unread_only=false` | Paginated notifications, newest first; includes `unread_count` in envelope |
-| `GET /notifications/unread-count` | Returns `{ count: int }` for badge polling |
-| `PATCH /notifications/{id}/read` | Mark single notification read; sets `read_at` |
-| `POST /notifications/read-all` | Mark all user notifications read |
+| `GET /notifications/unread-count`                          | Returns `{ count: int }` for badge polling                                 |
+| `PATCH /notifications/{id}/read`                           | Mark single notification read; sets `read_at`                              |
+| `POST /notifications/read-all`                             | Mark all user notifications read                                           |
 
 **Notification kinds:**
+
 - `THREAD_REPLY` — someone replied to your thread
 - `THREAD_FOLLOW_REPLY` — someone posted in a thread you follow
 - `POST_MENTION` — someone `@mentioned` you in a post
 
 **`NotificationOut` type:**
+
 ```ts
 {
   id: number;
@@ -2143,11 +2157,12 @@ Purpose: show "new posts" indicators on threads the user hasn't fully read, and 
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
+| Endpoint                                    | Description                                                                                                                                                     |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /forum/threads/{thread_id}/mark-read` | Body: `{ last_seen_post_id: int }`; upserts read cursor; cursor only advances (never moves backwards); returns `{ thread_id, last_seen_post_id, last_seen_at }` |
 
 **Fields now returned on `ForumThread` when viewer is authenticated:**
+
 - `has_unread: boolean` — true if there are posts after the viewer's last read position
 - `unread_count: number` — how many posts since last mark-read (0 if no read state or fully read)
 
@@ -2197,11 +2212,11 @@ Purpose: extend the existing thread search (Phase 13) with post-content search a
 
 **Backend (all live, no further backend work needed):**
 
-| Endpoint | Description |
-| --- | --- |
-| `GET /forum/threads-paged?q=keyword&search_posts=true` | When `search_posts=true`, also matches threads where any post body contains the keyword |
-| `GET /forum/threads/{thread_id}/posts/search?q=keyword&page=1&page_size=20` | Search post content within a single thread; returns `PostsPageOut` |
-| `GET /users/search?q=partial&limit=8` | Prefix username search for @-mention autocomplete; returns `[{ username, avatar_url, avatar_preset }]` |
+| Endpoint                                                                    | Description                                                                                            |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `GET /forum/threads-paged?q=keyword&search_posts=true`                      | When `search_posts=true`, also matches threads where any post body contains the keyword                |
+| `GET /forum/threads/{thread_id}/posts/search?q=keyword&page=1&page_size=20` | Search post content within a single thread; returns `PostsPageOut`                                     |
+| `GET /users/search?q=partial&limit=8`                                       | Prefix username search for @-mention autocomplete; returns `[{ username, avatar_url, avatar_preset }]` |
 
 ### Work items
 
@@ -2250,6 +2265,7 @@ Purpose: give admins complete forum moderation capability from mobile — the re
 ### Background — what was built on the web
 
 The web ships a dedicated `/admin/reports` page with:
+
 - Filter tabs: Open / Reviewed / Dismissed / All
 - Each report card: status badge, reporter, timestamp, thread link, reason, post excerpt
 - "✓ Reviewed", "Dismiss", and "Delete" actions per report
@@ -2294,6 +2310,7 @@ Purpose: cover the public informational routes that exist on the website but do 
 ### Background - what exists on the web
 
 The website currently exposes public routes for:
+
 - `/about`
 - `/contact`
 - `/terms`
@@ -2339,6 +2356,7 @@ Purpose: close smaller browsing gaps between the website discovery flow and the 
 ### Background - what exists on the web
 
 The website has:
+
 - Home rankings
 - `/type/:seriesType` filtered ranking pages
 - Global header search
@@ -2387,6 +2405,7 @@ Purpose: bring smaller web composer conveniences to mobile once posting, replies
 ### Background - what exists on the web
 
 The web forum composer supports:
+
 - Markdown shortcuts
 - Series autocomplete
 - User mention autocomplete

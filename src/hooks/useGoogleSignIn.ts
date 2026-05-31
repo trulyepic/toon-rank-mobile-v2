@@ -1,12 +1,10 @@
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from "@react-native-google-signin/google-signin";
 import { useMutation } from "@tanstack/react-query";
 
-import { loginWithGoogle } from "../api/auth";
 import type { AuthSession } from "../types/account";
+import {
+  isGoogleSignInCancellation,
+  signInWithGoogle,
+} from "../utils/googleSignInNative";
 
 /**
  * Handles the full Google Sign-In flow:
@@ -19,23 +17,10 @@ import type { AuthSession } from "../types/account";
  */
 export function useGoogleSignIn() {
   return useMutation<AuthSession | null, Error>({
-    mutationFn: async () => {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      // Always sign out of any cached Google session first so the account picker
-      // appears every time the user explicitly taps "Continue with Google".
-      await GoogleSignin.signOut().catch(() => undefined);
-      const result = await GoogleSignin.signIn();
-      const idToken = result.data?.idToken;
-
-      if (!idToken) {
-        throw new Error("Google sign-in did not return an ID token.");
-      }
-
-      return loginWithGoogle({ token: idToken, signup_platform: "mobile" });
-    },
+    mutationFn: signInWithGoogle,
     onError: (error) => {
       // Surface cancellation as a no-op so callers don't need to special-case it.
-      if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (isGoogleSignInCancellation(error)) {
         return;
       }
     },
