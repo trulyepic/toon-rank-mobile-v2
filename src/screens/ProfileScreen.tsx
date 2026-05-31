@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
 
@@ -16,6 +16,7 @@ import {
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { resetMyAvatar, setAvatarPreset, uploadAvatar } from "../api/auth";
+import { getPublicProfile } from "../api/users";
 import type { AvatarPreset } from "../types/account";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -57,6 +58,13 @@ export function ProfileScreen() {
   const { isSignedIn, user, updateUser } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentPreset = normalizeAvatarPreset(user?.avatar_preset);
+  const publicProfileQuery = useQuery({
+    queryKey: ["users", "public-profile", user?.username],
+    queryFn: () => getPublicProfile(user?.username ?? ""),
+    enabled: isSignedIn && Boolean(user?.username),
+    staleTime: 60 * 1000,
+  });
+  const publicProfile = publicProfileQuery.data;
 
   const presetMutation = useMutation({
     mutationFn: (preset: string) => setAvatarPreset(preset),
@@ -118,6 +126,27 @@ export function ProfileScreen() {
               : "This preview shows where your shared Toon Ranks identity appears after login."
           }
         />
+        {isSignedIn && publicProfile ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open Rankers leaderboard"
+            onPress={() => navigation.navigate("Leaderboard")}
+            style={({ pressed }) => [styles.statChips, pressed ? styles.pressed : null]}
+          >
+            <View style={styles.statChip}>
+              <Ionicons name="diamond-outline" size={14} color={colors.accentStrong} />
+              <AppText variant="caption">
+                {publicProfile.cred_score.toLocaleString()} CP
+              </AppText>
+            </View>
+            {publicProfile.rank ? (
+              <View style={styles.statChip}>
+                <Ionicons name="trophy-outline" size={14} color={colors.accentStrong} />
+                <AppText variant="caption">#{publicProfile.rank} Ranker</AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
       </Surface>
 
       {isSignedIn ? (
@@ -338,5 +367,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  statChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
+  statChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
 });

@@ -41,6 +41,7 @@ import {
   ForumMarkdown,
   ForumSeriesStrip,
   LoadingState,
+  RankerBadge,
   RoleNameText,
   ScreenShell,
   SectionHeader,
@@ -63,6 +64,7 @@ import {
   getActiveForumMention,
   insertForumMention,
 } from "../utils/forumMentions";
+import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -94,6 +96,7 @@ function PostCard({
   isSavingEdit,
   onDelete,
   onRegisterRef,
+  rank,
 }: {
   post: ForumPost;
   depth?: number;
@@ -113,6 +116,7 @@ function PostCard({
   isSavingEdit: boolean;
   onDelete: (post: ForumPost) => void;
   onRegisterRef?: (ref: View | null) => void;
+  rank?: number;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -144,6 +148,7 @@ function PostCard({
             <RoleNameText variant="cardTitle" role={post.author_role}>
               {post.author_username || "Unknown reader"}
             </RoleNameText>
+            <RankerBadge rank={rank} />
             <View style={styles.replyLabel}>
               <AppText variant="caption">{label}</AppText>
             </View>
@@ -386,6 +391,7 @@ function ReplyTree({
   renderInlineComposer,
   parentPost,
   registerPostRef,
+  topRankMap,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -408,6 +414,7 @@ function ReplyTree({
   renderInlineComposer: (post: ForumPost) => ReactNode;
   parentPost?: ForumPost;
   registerPostRef?: (id: number, ref: View | null) => void;
+  topRankMap: Record<string, number>;
 }) {
   const children = byParent[post.id] || [];
   const label = parentPost
@@ -438,6 +445,7 @@ function ReplyTree({
         isSavingEdit={isSavingEdit}
         onDelete={onDelete}
         onRegisterRef={(r) => registerPostRef?.(post.id, r)}
+        rank={rankForUsername(topRankMap, post.author_username)}
       />
       {renderInlineComposer(post)}
       {children.map((child) => (
@@ -464,6 +472,7 @@ function ReplyTree({
           renderInlineComposer={renderInlineComposer}
           parentPost={post}
           registerPostRef={registerPostRef}
+          topRankMap={topRankMap}
         />
       ))}
     </View>
@@ -475,6 +484,7 @@ export function ForumThreadScreen() {
   const navigation = useNavigation<ForumThreadNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn, user } = useAuth();
+  const topRankMap = useTopRankMap();
   const isAdmin = user?.role === "ADMIN";
   const [replyText, setReplyText] = useState("");
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
@@ -1020,6 +1030,7 @@ export function ForumThreadScreen() {
               <RoleNameText variant="caption" role={thread.author_role}>
                 {thread.author_username || "Unknown"}
               </RoleNameText>
+              <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
               <AppText tone="muted">
                 / {formatForumCount(thread.post_count, "post")} / Last active{" "}
                 {formatForumDate(thread.last_post_at || thread.updated_at)}
@@ -1250,6 +1261,7 @@ export function ForumThreadScreen() {
             isSavingEdit={editMutation.isPending}
             onDelete={handleDelete}
             onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
+            rank={rankForUsername(topRankMap, originalPost.author_username)}
           />
           {renderInlineComposer(originalPost)}
         </View>
@@ -1295,6 +1307,7 @@ export function ForumThreadScreen() {
                 renderInlineComposer={renderInlineComposer}
                 parentPost={originalPost}
                 registerPostRef={registerPostRef}
+                topRankMap={topRankMap}
               />
             ))}
           </View>
