@@ -10,7 +10,7 @@ import { login } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { useGoogleSignIn } from "../hooks/useGoogleSignIn";
 import { AppButton, AppText, ScreenShell, Surface } from "../components";
-import { WEB_AUTH_URLS } from "../config/site";
+import { SITE_ORIGIN, WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { openInAppBrowser } from "../utils/externalLinks";
@@ -208,7 +208,7 @@ export function LoginScreen() {
       <Recaptcha
         ref={recaptchaRef}
         siteKey={RECAPTCHA_SITE_KEY}
-        baseUrl="https://toonranks.com"
+        baseUrl={SITE_ORIGIN}
         size="normal"
         onVerify={handleVerify}
         onError={handleCaptchaError}

@@ -116,7 +116,7 @@ export function SettingsScreen() {
           <View style={styles.rowText}>
             <AppText variant="cardTitle">Appearance</AppText>
             <AppText tone="muted">
-              Dark theme — light theme coming in a future update.
+              Dark theme is active. Light theme will be added after core app parity.
             </AppText>
           </View>
         </Surface>
@@ -136,7 +136,7 @@ export function SettingsScreen() {
             />
             <View style={styles.divider} />
             <AppButton
-              label={deleteMutation.isPending ? "Deleting account…" : "Delete account"}
+              label={deleteMutation.isPending ? "Deleting account..." : "Delete account"}
               variant="ghost"
               disabled={deleteMutation.isPending}
               onPress={handleDeleteAccount}

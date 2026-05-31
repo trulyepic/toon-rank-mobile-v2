@@ -115,8 +115,8 @@ export function ForumCreateThreadScreen() {
             <View style={styles.heroText}>
               <AppText variant="sectionTitle">Start a discussion</AppText>
               <AppText tone="muted">
-                Markdown is supported. Series references and image uploads are coming in
-                the next forum slices.
+                Markdown and series references are supported. Image and GIF uploads are
+                tracked for a later composer pass.
               </AppText>
             </View>
           </Surface>
