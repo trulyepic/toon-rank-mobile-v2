@@ -20,6 +20,44 @@ import type { LeaderboardUser } from "../types/account";
 
 const PAGE_SIZE = 25;
 
+const RANK_THEMES = {
+  first: {
+    background: "rgba(232, 162, 58, 0.17)",
+    border: "#f0b84d",
+    soft: "rgba(240, 184, 77, 0.24)",
+    text: "#f8d77d",
+    icon: "trophy-outline" as const,
+  },
+  second: {
+    background: "rgba(174, 184, 202, 0.15)",
+    border: "#aeb8ca",
+    soft: "rgba(174, 184, 202, 0.2)",
+    text: "#d7deea",
+    icon: "medal-outline" as const,
+  },
+  third: {
+    background: "rgba(218, 137, 83, 0.16)",
+    border: "#d88953",
+    soft: "rgba(218, 137, 83, 0.22)",
+    text: "#f0b184",
+    icon: "ribbon-outline" as const,
+  },
+  default: {
+    background: "rgba(49, 95, 220, 0.11)",
+    border: colors.borderSoft,
+    soft: colors.backgroundSoft,
+    text: colors.text,
+    icon: "diamond-outline" as const,
+  },
+};
+
+function getRankTheme(rank: number) {
+  if (rank === 1) return RANK_THEMES.first;
+  if (rank === 2) return RANK_THEMES.second;
+  if (rank === 3) return RANK_THEMES.third;
+  return RANK_THEMES.default;
+}
+
 function formatCp(value: number) {
   return `${value.toLocaleString()} CP`;
 }
@@ -31,21 +69,43 @@ function PodiumCard({
   user: LeaderboardUser;
   featured?: boolean;
 }) {
+  const rankTheme = getRankTheme(user.rank);
+
   return (
     <Surface
       variant={featured ? "accent" : "raised"}
       radius="xl"
-      style={[styles.podiumCard, featured ? styles.featuredPodium : null]}
+      style={[
+        styles.podiumCard,
+        {
+          backgroundColor: rankTheme.background,
+          borderColor: rankTheme.border,
+        },
+        featured ? styles.featuredPodium : null,
+      ]}
     >
-      <View style={[styles.rankPill, featured ? styles.featuredRankPill : null]}>
-        <AppText variant="caption">#{user.rank}</AppText>
+      <View
+        style={[
+          styles.rankPill,
+          {
+            backgroundColor: rankTheme.soft,
+            borderColor: rankTheme.border,
+          },
+        ]}
+      >
+        <Ionicons name={rankTheme.icon} size={13} color={rankTheme.text} />
+        <AppText variant="caption" style={{ color: rankTheme.text }}>
+          #{user.rank}
+        </AppText>
       </View>
-      <UserAvatar
-        username={user.username}
-        avatarUrl={user.avatar_url}
-        avatarPreset={user.avatar_preset}
-        size={featured ? "xl" : "lg"}
-      />
+      <View style={[styles.avatarRing, { borderColor: rankTheme.border }]}>
+        <UserAvatar
+          username={user.username}
+          avatarUrl={user.avatar_url}
+          avatarPreset={user.avatar_preset}
+          size={featured ? "xl" : "lg"}
+        />
+      </View>
       <RoleNameText
         variant={featured ? "sectionTitle" : "cardTitle"}
         role={user.role}
@@ -53,7 +113,7 @@ function PodiumCard({
       >
         {user.username}
       </RoleNameText>
-      <AppText tone="muted" align="center">
+      <AppText align="center" style={{ color: rankTheme.text }}>
         {formatCp(user.cred_score)}
       </AppText>
       <AppText variant="caption" tone="subtle" align="center">
@@ -64,10 +124,38 @@ function PodiumCard({
 }
 
 function LeaderboardRow({ user }: { user: LeaderboardUser }) {
+  const rankTheme = getRankTheme(user.rank);
+
   return (
-    <Surface variant="raised" radius="lg" style={styles.row}>
-      <View style={styles.rowRank}>
-        <AppText variant="caption">#{user.rank}</AppText>
+    <Surface
+      variant="raised"
+      radius="lg"
+      style={[
+        styles.row,
+        user.rank <= 10
+          ? {
+              borderColor: rankTheme.border,
+              backgroundColor:
+                user.rank <= 3 ? rankTheme.background : colors.surfaceRaised,
+            }
+          : null,
+      ]}
+    >
+      <View
+        style={[
+          styles.rowRank,
+          {
+            backgroundColor: user.rank <= 10 ? rankTheme.soft : colors.backgroundSoft,
+            borderColor: user.rank <= 10 ? rankTheme.border : colors.borderSoft,
+          },
+        ]}
+      >
+        <AppText
+          variant="caption"
+          style={{ color: user.rank <= 10 ? rankTheme.text : colors.text }}
+        >
+          #{user.rank}
+        </AppText>
       </View>
       <UserAvatar
         username={user.username}
@@ -84,8 +172,10 @@ function LeaderboardRow({ user }: { user: LeaderboardUser }) {
         </AppText>
       </View>
       <View style={styles.cpPill}>
-        <Ionicons name="diamond-outline" size={13} color={colors.accentStrong} />
-        <AppText variant="caption">{formatCp(user.cred_score)}</AppText>
+        <Ionicons name="diamond-outline" size={13} color={colors.credText} />
+        <AppText variant="caption" style={{ color: colors.credText }}>
+          {formatCp(user.cred_score)}
+        </AppText>
       </View>
     </Surface>
   );
@@ -199,11 +289,12 @@ const styles = StyleSheet.create({
   },
   podiumRow: {
     flexDirection: "row",
-    alignItems: "stretch",
+    alignItems: "flex-end",
     gap: spacing.sm,
   },
   podiumColumn: {
     flex: 1,
+    justifyContent: "flex-end",
   },
   firstColumn: {
     flex: 1.12,
@@ -212,12 +303,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     minHeight: 204,
+    borderWidth: 1,
     paddingHorizontal: spacing.sm,
   },
   featuredPodium: {
     minHeight: 226,
   },
   rankPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     borderRadius: radii.pill,
     backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
@@ -225,8 +320,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  featuredRankPill: {
-    borderColor: colors.accentBorder,
+  avatarRing: {
+    padding: 3,
+    borderRadius: radii.pill,
+    borderWidth: 2,
+    backgroundColor: "rgba(10, 13, 20, 0.42)",
   },
   stack: {
     gap: spacing.sm,
@@ -235,6 +333,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    borderWidth: 1,
   },
   rowRank: {
     width: 42,
@@ -257,8 +356,8 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
+    borderColor: colors.credBorder,
+    backgroundColor: colors.credSurface,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
