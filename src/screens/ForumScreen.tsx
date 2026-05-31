@@ -37,6 +37,11 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
           .filter(Boolean)
           .join(" / ")
       : "General discussion";
+  const authorUsername = thread.author_username || "Unknown";
+  const openAuthorProfile = () => {
+    if (!thread.author_username) return;
+    navigation.navigate("PublicProfile", { username: thread.author_username });
+  };
 
   return (
     <Pressable
@@ -57,9 +62,22 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </View>
 
-        <View style={styles.metaRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${authorUsername}'s profile`}
+          disabled={!thread.author_username}
+          onPress={(event) => {
+            event.stopPropagation();
+            openAuthorProfile();
+          }}
+          style={({ pressed }) => [
+            styles.metaRow,
+            pressed ? styles.pressedLight : null,
+            !thread.author_username ? styles.disabledPressable : null,
+          ]}
+        >
           <UserAvatar
-            username={thread.author_username || "Unknown"}
+            username={authorUsername}
             avatarUrl={thread.author_avatar_url}
             avatarPreset={thread.author_avatar_preset}
             size="sm"
@@ -67,7 +85,7 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
           <View style={styles.metaText}>
             <View style={styles.authorNameRow}>
               <RoleNameText variant="caption" role={thread.author_role}>
-                {thread.author_username || "Unknown"}
+                {authorUsername}
               </RoleNameText>
               <RankerBadge rank={rank} />
             </View>
@@ -75,7 +93,7 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
               {formatForumDate(thread.last_post_at || thread.updated_at)}
             </AppText>
           </View>
-        </View>
+        </Pressable>
 
         <ForumSeriesStrip seriesRefs={thread.series_refs} />
 
@@ -278,6 +296,12 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.86,
     transform: [{ scale: 0.99 }],
+  },
+  pressedLight: {
+    opacity: 0.78,
+  },
+  disabledPressable: {
+    opacity: 1,
   },
   threadCard: {
     gap: spacing.sm,

@@ -82,6 +82,8 @@ npm run web
 
 ## Implementation Priorities
 
+Current priority update: Phases 1-23 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete. Phase 24 is in progress for public profiles and pinned favorites. After Phase 24, continue with Phase 25 reading-list filtering. The older Phase 10 notes below are historical and should not be treated as current work.
+
 Phases 1–9 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete. The active priority is Phase 10.
 
 1. **Forum activity screen (Phase 10b)** — wire `ForumActivityScreen` to the three `/forum/me/*` endpoints (threads, posts, votes) replacing the current static placeholder.
