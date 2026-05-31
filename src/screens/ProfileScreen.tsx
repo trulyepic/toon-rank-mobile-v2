@@ -133,9 +133,9 @@ export function ProfileScreen() {
             onPress={() => navigation.navigate("Leaderboard")}
             style={({ pressed }) => [styles.statChips, pressed ? styles.pressed : null]}
           >
-            <View style={styles.statChip}>
-              <Ionicons name="diamond-outline" size={14} color={colors.accentStrong} />
-              <AppText variant="caption">
+            <View style={[styles.statChip, styles.cpChip]}>
+              <Ionicons name="diamond-outline" size={14} color={colors.credText} />
+              <AppText variant="caption" style={{ color: colors.credText }}>
                 {publicProfile.cred_score.toLocaleString()} CP
               </AppText>
             </View>
@@ -384,5 +384,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+  },
+  cpChip: {
+    borderColor: colors.credBorder,
+    backgroundColor: colors.credSurface,
   },
 });

@@ -1166,6 +1166,8 @@ the features shipped to the production website in May 2026.
 - [x] Show avatar, role-colored username, CP, post count, and series rated on podium cards.
 - [x] Add ranked list rows for #4+ using `useInfiniteQuery` and a `Load more` button.
 - [x] Add loading, error, and empty states.
+- [x] Follow-up polish: add mobile-native gold/silver/bronze podium styling, warmer CP chips,
+      and more colorful rank badges inspired by the website leaderboard.
 - [ ] Add podium/list card taps to native public profiles after Phase 24 adds `PublicProfileScreen`.
 
 **23c - Add Leaderboard to navigation**
