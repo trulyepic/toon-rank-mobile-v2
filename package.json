@@ -10,8 +10,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier . --check",
-    "format:write": "prettier . --write",
+    "format": "prettier \"*.{js,ts,json,md,mjs}\" \"App.tsx\" \"src/**/*.{ts,tsx}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" --check",
+    "format:write": "prettier \"*.{js,ts,json,md,mjs}\" \"App.tsx\" \"src/**/*.{ts,tsx}\" \"docs/**/*.md\" \".github/**/*.{yml,yaml}\" --write",
     "test": "vitest run",
     "verify": "npm run typecheck && npm run lint && npm run format && npm run test"
   },
