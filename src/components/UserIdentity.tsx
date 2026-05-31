@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { spacing } from "../theme/tokens";
@@ -12,6 +13,7 @@ type Props = {
   subtitle?: string;
   avatarSize?: "sm" | "md" | "lg" | "xl";
   avatarVariant?: "circle" | "portrait";
+  avatarAccessory?: ReactNode;
   centered?: boolean;
 };
 
@@ -21,6 +23,7 @@ export function UserIdentity({
   subtitle,
   avatarSize = "md",
   avatarVariant = "circle",
+  avatarAccessory,
   centered = false,
 }: Props) {
   const username = user?.username || titleFallback;
@@ -36,6 +39,11 @@ export function UserIdentity({
           size={avatarSize}
           variant={avatarVariant}
         />
+        {avatarAccessory ? (
+          <View pointerEvents="box-none" style={styles.avatarAccessory}>
+            {avatarAccessory}
+          </View>
+        ) : null}
       </View>
       <View style={[styles.text, centered ? styles.centeredText : null]}>
         <RoleNameText
@@ -69,6 +77,12 @@ const styles = StyleSheet.create({
   },
   avatarWrap: {
     padding: 0,
+    position: "relative",
+  },
+  avatarAccessory: {
+    bottom: -2,
+    position: "absolute",
+    right: -2,
   },
   text: {
     flex: 1,

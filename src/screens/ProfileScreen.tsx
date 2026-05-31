@@ -1,14 +1,27 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  type AlertButton,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 
 import {
   AccountRequiredCard,
   AppButton,
   AppText,
+  CoverImage,
+  EmptyState,
   ScreenShell,
   SectionHeader,
   Surface,
@@ -16,14 +29,21 @@ import {
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { resetMyAvatar, setAvatarPreset, uploadAvatar } from "../api/auth";
-import { getPublicProfile } from "../api/users";
-import type { AvatarPreset } from "../types/account";
+import { searchSeries } from "../api/series";
+import {
+  getMyFavorites,
+  getPublicProfile,
+  removeMyFavorite,
+  replaceMyFavorites,
+} from "../api/users";
+import type { AvatarPreset, FavoriteSeries } from "../types/account";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { avatarPresetColors, normalizeAvatarPreset } from "../utils/avatar";
 import { SeriesRatingsSection } from "./SeriesRatingsSection";
 
 const PRESETS: AvatarPreset[] = ["blue", "emerald", "amber"];
+const MAX_FAVORITES = 15;
 
 const PRESET_LABELS: Record<AvatarPreset, string> = {
   blue: "Blue",
@@ -54,10 +74,63 @@ async function pickAvatarImage() {
   return result.assets[0];
 }
 
+function FavoriteCard({
+  favorite,
+  removing,
+  onOpen,
+  onRemove,
+}: {
+  favorite: FavoriteSeries;
+  removing: boolean;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${favorite.title}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.favoriteCard, pressed ? styles.pressed : null]}
+    >
+      <CoverImage uri={favorite.cover_url} style={styles.favoriteCover} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${favorite.title} from favorites`}
+        onPress={(event) => {
+          event.stopPropagation();
+          onRemove();
+        }}
+        disabled={removing}
+        style={styles.removeFavoriteButton}
+      >
+        {removing ? (
+          <ActivityIndicator size="small" color={colors.text} />
+        ) : (
+          <Ionicons name="close" size={16} color={colors.text} />
+        )}
+      </Pressable>
+      <View style={styles.favoriteText}>
+        <AppText variant="caption" numberOfLines={2}>
+          {favorite.title}
+        </AppText>
+        {favorite.type ? (
+          <AppText variant="caption" tone="subtle">
+            {favorite.type}
+          </AppText>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
 export function ProfileScreen() {
   const { isSignedIn, user, updateUser } = useAuth();
+  const queryClient = useQueryClient();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const currentPreset = normalizeAvatarPreset(user?.avatar_preset);
+  const [favoriteSearchOpen, setFavoriteSearchOpen] = useState(false);
+  const [favoriteQuery, setFavoriteQuery] = useState("");
+  const [debouncedFavoriteQuery, setDebouncedFavoriteQuery] = useState("");
   const publicProfileQuery = useQuery({
     queryKey: ["users", "public-profile", user?.username],
     queryFn: () => getPublicProfile(user?.username ?? ""),
@@ -65,6 +138,26 @@ export function ProfileScreen() {
     staleTime: 60 * 1000,
   });
   const publicProfile = publicProfileQuery.data;
+  const favoritesQuery = useQuery({
+    queryKey: ["users", "me", "favorites"],
+    queryFn: getMyFavorites,
+    enabled: isSignedIn,
+  });
+  const favorites = favoritesQuery.data ?? [];
+  const favoriteIds = new Set(favorites.map((favorite) => favorite.series_id));
+  const favoriteSearchQuery = useQuery({
+    queryKey: ["series-search", "favorite-picker", debouncedFavoriteQuery],
+    queryFn: () => searchSeries(debouncedFavoriteQuery),
+    enabled: favoriteSearchOpen && debouncedFavoriteQuery.length >= 2,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFavoriteQuery(favoriteQuery.trim());
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [favoriteQuery]);
 
   const presetMutation = useMutation({
     mutationFn: (preset: string) => setAvatarPreset(preset),
@@ -102,6 +195,84 @@ export function ProfileScreen() {
     },
   });
 
+  const replaceFavoritesMutation = useMutation({
+    mutationFn: (seriesIds: number[]) => replaceMyFavorites(seriesIds),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["users", "me", "favorites"], data);
+      void queryClient.invalidateQueries({
+        queryKey: ["users", "public-profile", user?.username],
+      });
+      setFavoriteSearchOpen(false);
+      setFavoriteQuery("");
+    },
+    onError: () => {
+      Alert.alert("Favorite not saved", "Could not update favorite series. Try again.");
+    },
+  });
+
+  const removeFavoriteMutation = useMutation({
+    mutationFn: removeMyFavorite,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["users", "me", "favorites"], data);
+      void queryClient.invalidateQueries({
+        queryKey: ["users", "public-profile", user?.username],
+      });
+    },
+    onError: () => {
+      Alert.alert("Favorite not removed", "Could not remove this favorite. Try again.");
+    },
+  });
+
+  const addFavorite = (seriesId: number) => {
+    if (favorites.length >= MAX_FAVORITES) {
+      Alert.alert("Favorite limit reached", "You can pin up to 15 favorite series.");
+      return;
+    }
+
+    if (favoriteIds.has(seriesId)) {
+      Alert.alert("Already pinned", "This series is already in your favorites.");
+      return;
+    }
+
+    replaceFavoritesMutation.mutate([
+      ...favorites.map((favorite) => favorite.series_id),
+      seriesId,
+    ]);
+  };
+
+  const openAvatarActions = () => {
+    const actions: AlertButton[] = [
+      {
+        text: "Choose photo",
+        onPress: () => uploadMutation.mutate(),
+      },
+    ];
+
+    if (user?.avatar_url) {
+      actions.push({
+        text: "Remove photo",
+        onPress: () =>
+          Alert.alert(
+            "Remove photo",
+            "Your avatar will revert to your selected color preset.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Remove",
+                style: "destructive",
+                onPress: () => resetMutation.mutate(),
+              },
+            ],
+          ),
+      });
+    }
+
+    Alert.alert("Edit avatar", "Choose how you want to update your profile image.", [
+      ...actions,
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   return (
     <ScreenShell
       title="Profile"
@@ -120,6 +291,26 @@ export function ProfileScreen() {
           titleFallback="Guest reader"
           avatarSize="xl"
           centered
+          avatarAccessory={
+            isSignedIn ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit avatar"
+                disabled={uploadMutation.isPending || resetMutation.isPending}
+                onPress={openAvatarActions}
+                style={({ pressed }) => [
+                  styles.avatarEditButton,
+                  pressed ? styles.pressed : null,
+                ]}
+              >
+                {uploadMutation.isPending || resetMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : (
+                  <Ionicons name="pencil" size={16} color={colors.text} />
+                )}
+              </Pressable>
+            ) : null
+          }
           subtitle={
             isSignedIn
               ? "Avatar and role data are synced from your Toon Ranks account."
@@ -151,6 +342,90 @@ export function ProfileScreen() {
 
       {isSignedIn ? (
         <>
+          <View style={styles.section}>
+            <SectionHeader
+              title="Favorite Series"
+              body="Pin up to 15 series to your public profile."
+            />
+            {favoritesQuery.isLoading ? (
+              <Surface variant="raised" radius="xl" style={styles.loadingCard}>
+                <ActivityIndicator size="small" color={colors.accentStrong} />
+                <AppText tone="muted">Loading favorites...</AppText>
+              </Surface>
+            ) : null}
+            {favoritesQuery.isError ? (
+              <Surface variant="warning" radius="xl" style={styles.loadingCard}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={20}
+                  color={colors.warningText}
+                />
+                <AppText tone="warning">Favorites could not load.</AppText>
+                <AppButton
+                  label="Retry"
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => favoritesQuery.refetch()}
+                />
+              </Surface>
+            ) : null}
+            {!favoritesQuery.isLoading && !favoritesQuery.isError ? (
+              <>
+                {favorites.length > 0 ? (
+                  <View style={styles.favoritesGrid}>
+                    {favorites.map((favorite) => (
+                      <FavoriteCard
+                        key={`${favorite.series_id}-${favorite.position}`}
+                        favorite={favorite}
+                        removing={
+                          removeFavoriteMutation.isPending &&
+                          removeFavoriteMutation.variables === favorite.series_id
+                        }
+                        onOpen={() =>
+                          navigation.navigate("SeriesDetail", {
+                            seriesId: favorite.series_id,
+                          })
+                        }
+                        onRemove={() =>
+                          Alert.alert(
+                            "Remove favorite?",
+                            `Remove "${favorite.title}" from your public profile?`,
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Remove",
+                                style: "destructive",
+                                onPress: () =>
+                                  removeFavoriteMutation.mutate(favorite.series_id),
+                              },
+                            ],
+                          )
+                        }
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <EmptyState
+                    title="No favorites pinned"
+                    message="Add series here to show them on your public profile."
+                  />
+                )}
+                {favorites.length < MAX_FAVORITES ? (
+                  <AppButton
+                    label="Add Series"
+                    variant="secondary"
+                    onPress={() => setFavoriteSearchOpen(true)}
+                    iconLeft={<Ionicons name="add" size={16} color={colors.text} />}
+                  />
+                ) : (
+                  <AppText variant="caption" tone="muted">
+                    Favorite limit reached.
+                  </AppText>
+                )}
+              </>
+            ) : null}
+          </View>
+
           <View style={styles.section}>
             <SectionHeader title="Avatar preset" />
             {user?.avatar_url ? (
@@ -214,70 +489,20 @@ export function ProfileScreen() {
                 Could not update preset. Please try again.
               </AppText>
             ) : null}
-          </View>
-
-          <View style={styles.section}>
-            <SectionHeader title="Custom photo" />
-            <Surface variant="raised" radius="xl" style={styles.uploadCard}>
-              <View style={styles.uploadIcon}>
-                <Ionicons name="image-outline" size={22} color={colors.accentStrong} />
-              </View>
-              <View style={styles.uploadText}>
-                <AppText variant="cardTitle">Upload a photo</AppText>
-                <AppText tone="muted">
-                  Choose a square photo from your library. It will be cropped and stored
-                  as your Toon Ranks avatar.
-                </AppText>
-              </View>
-              <AppButton
-                label={uploadMutation.isPending ? "Uploading…" : "Choose photo"}
-                variant="secondary"
-                disabled={uploadMutation.isPending}
-                onPress={() => uploadMutation.mutate()}
-                iconLeft={
-                  uploadMutation.isPending ? (
-                    <ActivityIndicator size="small" color={colors.text} />
-                  ) : (
-                    <Ionicons name="cloud-upload-outline" size={15} color={colors.text} />
-                  )
-                }
-              />
-              {uploadMutation.isError ? (
-                <AppText tone="danger">
-                  Upload failed. Check your connection and try again.
-                </AppText>
-              ) : null}
-            </Surface>
+            {uploadMutation.isError ? (
+              <AppText tone="danger" style={styles.presetNote}>
+                Upload failed. Check your connection and try again.
+              </AppText>
+            ) : null}
+            {resetMutation.isError ? (
+              <AppText tone="danger" style={styles.presetNote}>
+                Could not remove photo. Try again.
+              </AppText>
+            ) : null}
             {user?.avatar_url ? (
-              <>
-                <AppButton
-                  label={resetMutation.isPending ? "Removing…" : "Remove photo"}
-                  variant="ghost"
-                  disabled={resetMutation.isPending}
-                  onPress={() =>
-                    Alert.alert(
-                      "Remove photo",
-                      "Your avatar will revert to your selected color preset.",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Remove",
-                          style: "destructive",
-                          onPress: () => resetMutation.mutate(),
-                        },
-                      ],
-                    )
-                  }
-                  iconLeft={
-                    <Ionicons name="trash-outline" size={15} color={colors.danger} />
-                  }
-                />
-                {resetMutation.isError ? (
-                  <AppText tone="danger" style={styles.presetNote}>
-                    Could not remove photo. Try again.
-                  </AppText>
-                ) : null}
-              </>
+              <AppText variant="caption" tone="muted" style={styles.presetNote}>
+                Tap the pencil on your avatar to change or remove your photo.
+              </AppText>
             ) : null}
           </View>
         </>
@@ -309,6 +534,95 @@ export function ProfileScreen() {
           />
         </View>
       </View>
+
+      <Modal transparent visible={favoriteSearchOpen} animationType="fade">
+        <View style={styles.modalBackdrop}>
+          <Surface radius="xl" style={styles.favoriteModal}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitle}>
+                <AppText variant="sectionTitle">Add favorite</AppText>
+                <AppText variant="caption" tone="muted">
+                  {favorites.length}/{MAX_FAVORITES} pinned
+                </AppText>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close favorite search"
+                onPress={() => setFavoriteSearchOpen(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+              <TextInput
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Search series to pin..."
+                placeholderTextColor={colors.textMuted}
+                style={styles.searchInput}
+                value={favoriteQuery}
+                onChangeText={setFavoriteQuery}
+              />
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.favoriteSearchResults}
+            >
+              {favoriteQuery.trim() && debouncedFavoriteQuery.length < 2 ? (
+                <AppText tone="muted">Type at least 2 characters.</AppText>
+              ) : null}
+              {favoriteSearchQuery.isLoading ? (
+                <View style={styles.loadingCard}>
+                  <ActivityIndicator size="small" color={colors.accentStrong} />
+                  <AppText tone="muted">Searching...</AppText>
+                </View>
+              ) : null}
+              {favoriteSearchQuery.isError ? (
+                <AppText tone="danger">Search failed. Try again.</AppText>
+              ) : null}
+              {(favoriteSearchQuery.data ?? []).map((series) => {
+                const alreadyPinned = favoriteIds.has(series.id);
+                return (
+                  <Pressable
+                    key={series.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Pin ${series.title}`}
+                    disabled={alreadyPinned || replaceFavoritesMutation.isPending}
+                    onPress={() => addFavorite(series.id)}
+                    style={({ pressed }) => [
+                      styles.searchResultRow,
+                      alreadyPinned ? styles.searchResultDisabled : null,
+                      pressed ? styles.pressed : null,
+                    ]}
+                  >
+                    <CoverImage uri={series.cover_url} style={styles.searchResultCover} />
+                    <View style={styles.searchResultText}>
+                      <AppText variant="cardTitle" numberOfLines={1}>
+                        {series.title}
+                      </AppText>
+                      <AppText variant="caption" tone="muted">
+                        {series.type}
+                        {alreadyPinned ? " / Already pinned" : ""}
+                      </AppText>
+                    </View>
+                    {replaceFavoritesMutation.isPending &&
+                    replaceFavoritesMutation.variables?.includes(series.id) ? (
+                      <ActivityIndicator size="small" color={colors.accentStrong} />
+                    ) : (
+                      <Ionicons
+                        name={alreadyPinned ? "checkmark-circle" : "add-circle-outline"}
+                        size={22}
+                        color={alreadyPinned ? colors.success : colors.accentStrong}
+                      />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Surface>
+        </View>
+      </Modal>
     </ScreenShell>
   );
 }
@@ -347,26 +661,122 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.8,
   },
-  uploadCard: {
-    gap: spacing.md,
-  },
-  uploadIcon: {
-    width: 42,
-    height: 42,
+  avatarEditButton: {
+    width: 34,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSoft,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
     borderColor: colors.accent,
-  },
-  uploadText: {
-    gap: spacing.xs,
   },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  loadingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  favoritesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  favoriteCard: {
+    width: "48%",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
+    overflow: "hidden",
+  },
+  favoriteCover: {
+    width: "100%",
+    aspectRatio: 2 / 3,
+  },
+  favoriteText: {
+    gap: 2,
+    padding: spacing.sm,
+  },
+  removeFavoriteButton: {
+    position: "absolute",
+    right: spacing.xs,
+    top: spacing.xs,
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.overlayBorder,
+    backgroundColor: colors.overlay,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.72)",
+    padding: spacing.lg,
+  },
+  favoriteModal: {
+    maxHeight: "82%",
+    gap: spacing.md,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  modalTitle: {
+    flex: 1,
+    gap: 2,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    paddingVertical: 0,
+  },
+  favoriteSearchResults: {
+    gap: spacing.sm,
+  },
+  searchResultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    padding: spacing.sm,
+  },
+  searchResultDisabled: {
+    opacity: 0.62,
+  },
+  searchResultCover: {
+    width: 48,
+    aspectRatio: 2 / 3,
+    borderRadius: radii.sm,
+  },
+  searchResultText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   statChips: {
     flexDirection: "row",

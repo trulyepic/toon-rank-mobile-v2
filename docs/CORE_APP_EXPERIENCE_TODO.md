@@ -1218,12 +1218,12 @@ the production website.
 
 **Backend (already live, no further backend work needed):**
 
-| Endpoint                            | Auth     | Description                                                                                                                                                                                              |
-| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /users/{username}`             | None     | Public profile. Returns `username`, `role`, `avatar_url`, `avatar_preset`, `registered_at`, `cred_score`, `rank`, `post_count`, `favourites` (pinned series array), `reading_lists` (public-only array). |
-| `GET /me/favourites`                | Required | Returns the signed-in user's pinned series in position order.                                                                                                                                            |
-| `PUT /me/favourites`                | Required | Atomically replaces pinned series with the provided ordered `series_ids` array. Max 15.                                                                                                                  |
-| `DELETE /me/favourites/{series_id}` | Required | Removes a single pinned series and re-compacts positions.                                                                                                                                                |
+| Endpoint                                 | Auth     | Description                                                                                                                                                                                              |
+| ---------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /users/{username}`                  | None     | Public profile. Returns `username`, `role`, `avatar_url`, `avatar_preset`, `registered_at`, `cred_score`, `rank`, `post_count`, `favourites` (pinned series array), `reading_lists` (public-only array). |
+| `GET /auth/me/favourites`                | Required | Returns the signed-in user's pinned series in position order.                                                                                                                                            |
+| `PUT /auth/me/favourites`                | Required | Atomically replaces pinned series with the provided ordered `series_ids` array. Max 15.                                                                                                                  |
+| `DELETE /auth/me/favourites/{series_id}` | Required | Removes a single pinned series and re-compacts positions.                                                                                                                                                |
 
 **Frontend features on web:**
 
@@ -1239,7 +1239,7 @@ the production website.
 - **Own account favorites management** (`/account` → Pinned Favorites section):
   - Shows current pinned series with reorder handles and remove (×) buttons.
   - "+" button opens a series search modal; selecting a series appends it to the end.
-  - Uses `PUT /me/favourites` for both add (append) and `DELETE /me/favourites/{series_id}` for
+  - Uses `PUT /auth/me/favourites` for both add (append) and `DELETE /auth/me/favourites/{series_id}` for
     removal. Max 15 pins.
 
 ### Work items
@@ -1279,15 +1279,15 @@ the production website.
 
 - [ ] In `src/api/users.ts` (create if it doesn't exist), add:
   - [x] `getPublicProfile(username: string): Promise<PublicProfile>`
-  - [ ] `getMyFavorites(): Promise<FavoriteSeries[]>`
-  - [ ] `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>`
-  - [ ] `removeMyFavorite(seriesId: number): Promise<FavoriteSeries[]>`
+  - [x] `getMyFavorites(): Promise<FavoriteSeries[]>`
+  - [x] `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>`
+  - [x] `removeMyFavorite(seriesId: number): Promise<FavoriteSeries[]>`
   - `getPublicProfile(username: string): Promise<PublicProfile>` → `GET /users/{username}`
-  - `getMyFavorites(): Promise<FavoriteSeries[]>` → `GET /me/favourites`
-  - `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>` → `PUT /me/favourites`
+  - `getMyFavorites(): Promise<FavoriteSeries[]>` → `GET /auth/me/favourites`
+  - `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>` → `PUT /auth/me/favourites`
     with body `{ series_ids: seriesIds }`
   - `removeMyFavorite(seriesId: number): Promise<FavoriteSeries[]>` →
-    `DELETE /me/favourites/{seriesId}`
+    `DELETE /auth/me/favourites/{seriesId}`
 - [ ] In Phase 23's `src/api/users.ts` (or `auth.ts`), `getPublicProfile` may already exist — check
       and consolidate into one file before adding duplicates.
 
@@ -1333,18 +1333,18 @@ the production website.
 
 **24d — Own profile: pinned favorites management**
 
-- [ ] On `ProfileScreen`, below the role/stats row, add a "Favorite Series" section (auth-gated —
+- [x] On `ProfileScreen`, below the role/stats row, add a "Favorite Series" section (auth-gated —
       only visible when signed in).
-- [ ] Fetch `getMyFavorites()` with `useQuery` on mount. Display the same 2-column cover grid as
+- [x] Fetch `getMyFavorites()` with `useQuery` on mount. Display the same 2-column cover grid as
       `PublicProfileScreen`.
-- [ ] Each cover card shows a small `×` remove button in the corner. Tapping it calls
+- [x] Each cover card shows a small `×` remove button in the corner. Tapping it calls
       `removeMyFavorite(series_id)`, then invalidates the query to refresh the list.
-- [ ] Show a "＋ Add Series" button (or an empty-slot card) when fewer than 15 series are pinned.
+- [x] Show a "＋ Add Series" button (or an empty-slot card) when fewer than 15 series are pinned.
       Tapping it opens a series search modal (can reuse or adapt the search logic from `SearchScreen`
       or the series search already wired in Series Detail) where the user can pick a series to pin.
       On selection, call `replaceMyFavorites([...currentIds, newId])` and refresh.
-- [ ] Show a loading/saving indicator while any mutation is in flight; show an error toast on failure.
-- [ ] Note: the backend enforces max 15 pins and rejects duplicate IDs — handle the error response
+- [x] Show a loading/saving indicator while any mutation is in flight; show an error toast on failure.
+- [x] Note: the backend enforces max 15 pins and rejects duplicate IDs — handle the error response
       gracefully.
 
 **24e — Emulator test steps**
