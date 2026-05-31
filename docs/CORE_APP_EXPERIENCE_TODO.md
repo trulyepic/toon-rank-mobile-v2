@@ -22,6 +22,28 @@ The current mobile app already has a usable public browsing shell:
 The biggest remaining product blockers are long-lived mobile sessions, native avatar management,
 forum creation/editing parity, and app-store readiness.
 
+## Web-To-Mobile Parity Index
+
+Use this index before adding new phases. It maps major website features to the mobile roadmap so
+future work does not miss or duplicate large feature areas.
+
+| Website feature area | Mobile status | TODO phase |
+| --- | --- | --- |
+| Auth, signup, and longer mobile sessions | Mostly implemented; refresh/session hardening tracked | Phases 1, 2, 2.5 |
+| Series ratings and category voting | Implemented | Phase 3 |
+| Reading lists and public list sharing | Mostly implemented; list detail filter/sort still tracked | Phases 4, 14, 25 |
+| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked | Phases 5, 6, 27 |
+| Forum thread sort, pinned threads, categories, category management | Missing on mobile | Phase 30 |
+| Forum follow, post bookmarks, saved/following activity tabs | Missing on mobile | Phase 31 |
+| Forum post reporting and admin report queue | Missing on mobile | Phases 32, 36 |
+| Forum notifications, unread counts, read-state badges | Missing on mobile | Phases 33, 34 |
+| Forum post-content search and user mention autocomplete | Missing on mobile | Phase 35 |
+| Rankers leaderboard, Cred Points, rank chips, ranker badges | Missing on mobile | Phase 23 |
+| Public user profiles and pinned favorite series | Missing on mobile | Phase 24 |
+| My submissions, pending titles, contributor/admin title review | Missing on mobile | Phases 28, 36 where relevant |
+| Public issue tracker view and optional admin issue triage | Missing on mobile; report submission exists | Phases 21, 26, 40 |
+| Public info pages, route/deep-link parity, fallback screens | Partially implemented; Terms/Privacy and public list deep link exist | Phases 37, 41 |
+
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
 Suggested branch: `mobile-core-auth-contract`
@@ -1760,6 +1782,723 @@ is updated immediately and a toast confirms the change.
 
 Done means signed-in users can change their username from mobile with the same rules and
 behavior as the web account page, including Google OAuth accounts.
+
+---
+
+---
+
+## Phase 30: Forum Enhancements I — Thread Pinning, Sorting, And Categories
+
+Suggested branch: `mobile-forum-enhancements-1`
+
+Purpose: bring three interrelated forum list improvements to mobile — pinned thread visual treatment, sort controls, and category/subforum filtering — matching the features live on the production website.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /forum/threads-paged?sort=activity\|newest\|replies` | Sort param already accepted; `is_pinned` returned on every thread; pinned threads always sort first regardless of sort selection |
+| `GET /forum/threads-paged?category_slug=general` | Filter threads by category slug; also accepts `category_id` |
+| `PATCH /forum/threads/{id}/pin` | Admin-only; body `{ pinned: bool }`; returns `{ id, is_pinned }` |
+| `GET /forum/categories` | Returns all visible categories ordered by position, each with `thread_count` |
+| `POST /forum/categories` | Admin-only; create a new category |
+| `PATCH /forum/categories/{id}` | Admin-only; update name, slug, description, position, visibility |
+| `DELETE /forum/categories/{id}` | Admin-only; fails with 409 if threads still assigned |
+
+**Fields now returned on `ForumThread`:**
+- `is_pinned: boolean` — whether the thread is pinned to the top
+- `category_id: number | null` — the category this thread belongs to
+- `category_name: string | null` — the category name (denormalized for display)
+
+**`ForumCategory` type:**
+```ts
+{
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  position: number;
+  thread_count: number;
+}
+```
+
+**`CreateThreadIn` payload now accepts:**
+- `category_id?: number | null` — assign a category at thread creation time
+
+**`UpdateThreadIn` payload now accepts:**
+- `category_id?: number | null` — pass `0` to unset, any valid id to re-assign
+
+### Work items
+
+**30a — Thread pinning display**
+
+- [ ] Add `is_pinned?: boolean`, `category_id?: number | null`, and `category_name?: string | null` to the `ForumThread` type in `src/types/forum.ts`
+- [ ] In `ForumScreen` thread list rows: when `thread.is_pinned` is true, show a 📌 pin icon before the thread title and apply a subtle amber tint to the row background (or an amber left border on the card)
+- [ ] Show a small "Pinned" badge in the thread row meta row alongside the existing locked badge
+- [ ] Admin users: add a Pin/Unpin action to the thread management actions (alongside the existing Lock/Edit/Delete actions already added in Phase 12). Call `PATCH /forum/threads/{id}/pin` with `{ pinned: !thread.is_pinned }`. Optimistic update with revert on error.
+
+**30b — Thread sort controls**
+
+- [ ] Add a sort state to `ForumScreen`: `"activity" | "newest" | "replies"` (default `"activity"`)
+- [ ] Persist sort choice in `AsyncStorage` so it survives app restarts
+- [ ] Add a sort control above the thread list — three pill buttons (Active / Newest / Most replies) styled to match the existing type-rail pills
+- [ ] When sort changes, reset to page 1 and refetch
+
+**30c — Category filter strip**
+
+- [ ] Add `getForumCategories(): Promise<ForumCategory[]>` → `GET /forum/categories` to `src/api/forum.ts`
+- [ ] Add `ForumCategory` type to `src/types/forum.ts`
+- [ ] On `ForumScreen` mount, fetch categories once and cache in state
+- [ ] Render a horizontal scrollable pill strip below the sort controls: "All" pill + one pill per category (name + thread count)
+- [ ] Selecting a category passes `category_slug` to `getForumThreads`; selecting "All" clears it; resets to page 1 on change
+- [ ] When a category is active, show its description as a muted subtitle below the pills (if set)
+- [ ] Show a category badge on each thread row when "All" is selected (so users can see which category each thread belongs to)
+
+**30d — Category in thread creation**
+
+- [ ] Pass the available categories to `ForumCreateThreadScreen` (or fetch them there if not already cached)
+- [ ] Add a category picker above the title field: pill buttons, one per category; optional (user can post without a category)
+- [ ] Pre-select the currently active category filter if one is set
+- [ ] Pass `category_id` in the create thread payload
+
+**30e — Category in thread edit (Phase 12 extension)**
+
+- [ ] In the inline edit form (Phase 12, edit thread UI), add category pill selector showing current category pre-selected
+- [ ] On save, include `category_id` in the `updateForumThread` payload (pass `0` to unset)
+
+**30f — Admin category management**
+
+- [ ] Admin-only: add a "Manage Categories" option accessible from `ForumScreen` (e.g., a gear icon in the header, visible only when `isAdmin`)
+- [ ] Opens a modal/bottom sheet listing all categories with Edit and Delete actions per row
+- [ ] Edit: inline name, slug, description, position fields; calls `PATCH /forum/categories/{id}`
+- [ ] Delete: confirmation alert; calls `DELETE /forum/categories/{id}`; shows error if 409 (threads still assigned)
+- [ ] Add category: form at the bottom of the modal; slug auto-generated from name; calls `POST /forum/categories`
+
+**30g — Emulator test steps**
+
+1. Open `ForumScreen` — confirm sort pills (Active / Newest / Most replies) appear and switching sort reloads the list in the correct order
+2. Confirm category pills appear (General Discussion, Series Talk, Recommendations, Off-Topic)
+3. Tap a category — confirm only threads in that category are shown; description appears below
+4. Open a pinned thread's row — confirm 📌 icon and amber styling are visible
+5. As admin, tap the pin toggle on an unpinned thread — confirm it moves to the top with amber styling; tap again — confirm it un-pins
+6. Create a new thread — confirm the category picker is shown; select a category; confirm the thread appears in that category's filtered view
+7. Edit a thread (admin) — confirm the category picker shows the current category and allows changing it
+
+Done means the mobile forum list matches the web in pinned thread treatment, sort options, and category browsing, and thread creation/editing includes category assignment.
+
+---
+
+## Phase 31: Forum Enhancements II — Thread Following And Post Bookmarking
+
+Suggested branch: `mobile-forum-enhancements-2`
+
+Purpose: let users follow threads to receive notifications on new replies, and bookmark individual posts to revisit later — matching the follow/bookmark features live on the production website.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /forum/threads/{thread_id}/follow` | Toggle follow; returns `{ following: bool, follower_count: int }` |
+| `GET /forum/me/following` | Paginated list of threads the signed-in user follows (`PageOut` — same shape as thread list) |
+| `POST /forum/threads/{thread_id}/posts/{post_id}/bookmark` | Toggle bookmark; returns `{ bookmarked: bool }` |
+| `GET /forum/me/bookmarks` | Paginated list of bookmarked posts (`PostsPageOut`) |
+
+**Fields now returned on `ForumThread`:**
+- `viewer_is_following: boolean` — true when the authenticated viewer follows this thread
+
+**Fields now returned on `ForumPost`:**
+- `viewer_has_bookmarked: boolean` — true when the authenticated viewer has bookmarked this post
+
+### Work items
+
+**31a — API layer**
+
+- [ ] Add `toggleThreadFollow(threadId: number): Promise<{ following: boolean; follower_count: number }>` → `POST /forum/threads/{id}/follow` to `src/api/forum.ts`
+- [ ] Add `getMyFollowedThreads(page: number, pageSize: number): Promise<ForumThreadPage>` → `GET /forum/me/following` to `src/api/forum.ts`
+- [ ] Add `togglePostBookmark(threadId: number, postId: number): Promise<{ bookmarked: boolean }>` → `POST /forum/threads/{id}/posts/{postId}/bookmark` to `src/api/forum.ts`
+- [ ] Add `getMyBookmarkedPosts(page: number, pageSize: number): Promise<ForumPostPage>` → `GET /forum/me/bookmarks` to `src/api/forum.ts`
+- [ ] Add `viewer_is_following?: boolean` to `ForumThread` type in `src/types/forum.ts`
+- [ ] Add `viewer_has_bookmarked?: boolean` to `ForumPost` type in `src/types/forum.ts`
+
+**31b — Follow button on thread view**
+
+- [ ] In `ForumThreadScreen`, add a Follow/Following button in the thread header (visible to signed-in users only)
+- [ ] Button label: "Follow" when not following; "✓ Following" when following
+- [ ] On tap: optimistically toggle `viewer_is_following`, call `toggleThreadFollow`; revert on error with an alert
+- [ ] Show follower count next to the button as muted text
+
+**31c — Bookmark button on posts**
+
+- [ ] In `ForumThreadScreen`, add a bookmark (🔖) button to each post/reply action row (visible to signed-in users only)
+- [ ] Show filled/amber bookmark when `viewer_has_bookmarked` is true; outline when false
+- [ ] On tap: optimistically toggle `viewer_has_bookmarked`, call `togglePostBookmark`; revert on error
+- [ ] Apply to the original post and all reply cards
+
+**31d — Following and Saved tabs in ForumActivityScreen**
+
+- [ ] Add a "Following" tab to `ForumActivityScreen` alongside Threads / Replies / Votes
+  - Fetches `getMyFollowedThreads` using `useInfiniteQuery`
+  - Each row: thread title (tappable → `ForumThread`), post count, updated date, ✕ unfollow button
+  - Tapping ✕ calls `toggleThreadFollow` and removes the row optimistically
+- [ ] Add a "Saved" tab to `ForumActivityScreen`
+  - Fetches `getMyBookmarkedPosts` using `useInfiniteQuery`
+  - Each row: post excerpt (first 140 chars of plain text), author, date, (edited) if applicable, "View →" link to `ForumThread` with `postId`, ✕ remove bookmark button
+  - Tapping ✕ calls `togglePostBookmark` and removes the row optimistically
+- [ ] Lazy-load: only fetch Following/Saved data when the user first taps that tab (not on mount like the other three tabs)
+
+**31e — Emulator test steps**
+
+1. Open a thread as a signed-in user — confirm a Follow button appears in the thread header
+2. Tap Follow — button turns to "✓ Following"; navigate away and back — confirm button still shows Following (persisted via backend)
+3. In `ForumActivityScreen`, tap the Following tab — confirm the followed thread appears; tap ✕ — it disappears
+4. On a reply, tap the 🔖 bookmark icon — it turns amber; tap again — reverts
+5. In `ForumActivityScreen`, tap Saved — confirm bookmarked post appears with excerpt and View → link; tap ✕ — removed instantly
+6. Sign out — confirm Follow and Bookmark buttons are hidden
+
+Done means users can subscribe to threads for notifications and save posts to revisit, with a dedicated Following and Saved section in their forum activity.
+
+---
+
+## Phase 32: Post Reporting
+
+Suggested branch: `mobile-forum-post-reporting`
+
+Purpose: let signed-in users flag individual forum posts for admin review — matching the post reporting feature live on the production website.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /forum/threads/{thread_id}/posts/{post_id}/report` | Rate-limited 5/hour; blocks self-reporting (403); blocks duplicate reports (409); returns 201 on success |
+| `GET /forum/reports?status=OPEN&page=1&page_size=20` | Admin-only; paginated report queue with `post_excerpt` and `thread_title` |
+| `PATCH /forum/reports/{report_id}` | Admin-only; body `{ status: "REVIEWED" \| "DISMISSED" }` |
+| `DELETE /forum/reports/{report_id}` | Admin-only; permanently removes the report record |
+
+**`ForumReport` response shape:**
+```ts
+{
+  id: number;
+  post_id: number;
+  thread_id: number;
+  reporter_username: string | null;
+  reason: string | null;
+  status: "OPEN" | "REVIEWED" | "DISMISSED";
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by_username: string | null;
+  post_excerpt: string | null;
+  thread_title: string | null;
+}
+```
+
+### Work items
+
+**32a — API layer**
+
+- [ ] Add `reportPost(threadId: number, postId: number, reason?: string): Promise<void>` → `POST /forum/threads/{id}/posts/{postId}/report` with body `{ reason }` to `src/api/forum.ts`
+- [ ] Add `ForumReport` type to `src/types/forum.ts`
+- [ ] Add `getForumReports(page: number, status?: "OPEN" | "REVIEWED" | "DISMISSED"): Promise<Paginated<ForumReport>>` → `GET /forum/reports` to `src/api/forum.ts`
+- [ ] Add `reviewForumReport(id: number, status: "REVIEWED" | "DISMISSED"): Promise<void>` → `PATCH /forum/reports/{id}` to `src/api/forum.ts`
+- [ ] Add `deleteForumReport(id: number): Promise<void>` → `DELETE /forum/reports/{id}` to `src/api/forum.ts`
+
+**32b — Report button on posts**
+
+- [ ] In `ForumThreadScreen`, add a "⚑ Report" action to each post/reply action row
+- [ ] Visible only to signed-in users who are not the post author (block self-reporting client-side to match backend)
+- [ ] Tapping opens an `Alert` or a bottom sheet with:
+  - Header: "Report this post"
+  - Optional text input for reason (max 500 chars)
+  - "Submit Report" button and Cancel
+- [ ] On 201 success: show a success alert ("Report submitted. Our team will review it.") and hide the Report button for that post in the current session
+- [ ] On 409: show alert "You have already reported this post."
+- [ ] On 429: show alert "You've reported too many posts recently. Try again later."
+
+**32c — Admin report queue screen**
+
+- [ ] Create `src/screens/AdminReportQueueScreen.tsx` (admin-only)
+- [ ] Filter tabs: Open / Reviewed / Dismissed / All
+- [ ] Each report card shows: status badge, reporter username, timestamp, thread link (navigates to `ForumThreadScreen` scrolled to `post_id`), reason (if any), post excerpt
+- [ ] "✓ Reviewed" button and "Dismiss" button on Open reports — call `reviewForumReport`; update row status in-place
+- [ ] "Delete" button on all reports — calls `deleteForumReport`; removes row optimistically
+- [ ] Paginated with load-more; loading and empty states per tab
+- [ ] Add to `RootStackParamList` as `AdminReportQueue: undefined`
+- [ ] Add "Report Queue" entry to the admin section of `MoreScreen` (visible only when `isAdmin`)
+
+**32d — Emulator test steps**
+
+1. As a regular user, open a thread and tap "⚑ Report" on someone else's post — confirm the report form appears
+2. Submit without a reason — confirm it succeeds (reason is optional)
+3. Try to report the same post again — confirm 409 alert appears
+4. Try to report your own post — confirm the Report button does not appear
+5. As admin, open More → Report Queue — confirm Open reports appear
+6. Tap "✓ Reviewed" — confirm status badge changes to green Reviewed
+7. Tap "Delete" — confirm report row disappears immediately
+
+Done means users can flag problematic posts from mobile, and admins can action the report queue without needing the web admin panel.
+
+---
+
+## Phase 33: Notifications
+
+Suggested branch: `mobile-forum-notifications`
+
+Purpose: bring in-app notifications to mobile — @-mentions, thread replies, and follower notifications — with a notification bell, unread badge count, and mark-as-read capability.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /notifications?page=1&page_size=20&unread_only=false` | Paginated notifications, newest first; includes `unread_count` in envelope |
+| `GET /notifications/unread-count` | Returns `{ count: int }` for badge polling |
+| `PATCH /notifications/{id}/read` | Mark single notification read; sets `read_at` |
+| `POST /notifications/read-all` | Mark all user notifications read |
+
+**Notification kinds:**
+- `THREAD_REPLY` — someone replied to your thread
+- `THREAD_FOLLOW_REPLY` — someone posted in a thread you follow
+- `POST_MENTION` — someone `@mentioned` you in a post
+
+**`NotificationOut` type:**
+```ts
+{
+  id: number;
+  kind: "THREAD_REPLY" | "THREAD_FOLLOW_REPLY" | "POST_MENTION";
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+  thread_id: number | null;
+  post_id: number | null;
+  actor_username: string | null;
+  summary: string | null;
+}
+```
+
+### Work items
+
+**33a — API layer**
+
+- [ ] Add `NotificationOut` type to a new `src/types/notification.ts`
+- [ ] Add `NotificationsPage` type (items, total, page, page_size, total_pages, has_prev, has_next, unread_count)
+- [ ] Add `getNotifications(page: number): Promise<NotificationsPage>` → `GET /notifications` to a new `src/api/notifications.ts`
+- [ ] Add `getUnreadCount(): Promise<{ count: number }>` → `GET /notifications/unread-count`
+- [ ] Add `markNotificationRead(id: number): Promise<void>` → `PATCH /notifications/{id}/read`
+- [ ] Add `markAllNotificationsRead(): Promise<void>` → `POST /notifications/read-all`
+
+**33b — Unread count polling**
+
+- [ ] Create a `useNotificationCount()` hook in `src/hooks/` that:
+  - Fetches `getUnreadCount()` on mount when signed in
+  - Polls every 60 seconds while the app is in the foreground (`AppState` listener)
+  - Re-fetches on app coming to foreground from background (`AppState` change to `"active"`)
+  - Returns `{ count: number }` — 0 when signed out
+
+**33c — Notification bell in navigation**
+
+- [ ] Add a bell icon button to the header of a primary screen (e.g., top-right of `ForumScreen` or the app's main tab header area). Show only when signed in.
+- [ ] When `unreadCount > 0`, overlay a red badge with the count (cap display at "99+")
+- [ ] Tapping the bell navigates to `NotificationsScreen`
+
+**33d — NotificationsScreen**
+
+- [ ] Create `src/screens/NotificationsScreen.tsx`
+- [ ] Fetch notifications with `useInfiniteQuery`; newest first; load-more pagination
+- [ ] Each notification row shows:
+  - Actor username (if any) + summary text (e.g. "replied to your thread")
+  - Relative timestamp ("3h ago", "2d ago")
+  - Unread rows have a distinct blue tint background; a small blue dot on the left
+- [ ] Tapping a row: calls `markNotificationRead(id)`, marks row as read in local state, navigates to `ForumThreadScreen` for the relevant `thread_id` (with `postId` for scroll-to-post if `post_id` is set)
+- [ ] "Mark all as read" button at the top — calls `markAllNotificationsRead()`; clears all tints and badge
+- [ ] Empty state: "No notifications yet."
+- [ ] Add `Notifications: undefined` to `RootStackParamList` and register the screen
+
+**33e — Emulator test steps**
+
+1. As User A, reply to a thread owned by User B
+2. Sign in as User B — confirm a red badge appears on the bell icon
+3. Tap the bell — `NotificationsScreen` opens; the reply notification appears with a blue tint
+4. Tap the notification — navigates to the thread scrolled to the reply; the notification loses its blue tint
+5. Tap "Mark all as read" — badge disappears; all rows lose blue tint
+6. Put the app in the background, have another user post a mention; bring app to foreground — badge should update within 60 seconds
+7. Sign out — bell icon is hidden
+
+Done means mobile users receive and act on in-app notifications for replies, follows, and @-mentions without needing the website.
+
+---
+
+## Phase 34: Read State Tracking — Unread Badges
+
+Suggested branch: `mobile-forum-read-tracking`
+
+Purpose: show "new posts" indicators on threads the user hasn't fully read, and automatically mark threads as read when the user views them — matching the read-tracking feature on the production website.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `POST /forum/threads/{thread_id}/mark-read` | Body: `{ last_seen_post_id: int }`; upserts read cursor; cursor only advances (never moves backwards); returns `{ thread_id, last_seen_post_id, last_seen_at }` |
+
+**Fields now returned on `ForumThread` when viewer is authenticated:**
+- `has_unread: boolean` — true if there are posts after the viewer's last read position
+- `unread_count: number` — how many posts since last mark-read (0 if no read state or fully read)
+
+The backend only populates `has_unread` / `unread_count` when the request includes a valid JWT. Unauthenticated requests always return `has_unread: false`.
+
+### Work items
+
+**34a — API layer**
+
+- [ ] Add `markThreadRead(threadId: number, lastSeenPostId: number): Promise<void>` → `POST /forum/threads/{id}/mark-read` to `src/api/forum.ts`
+- [ ] Add `has_unread?: boolean` and `unread_count?: number` to the `ForumThread` type in `src/types/forum.ts`
+
+**34b — Unread badge on thread list**
+
+- [ ] In `ForumScreen` thread rows, when the signed-in viewer has `thread.has_unread === true`:
+  - Show a green "N new" pill chip next to the thread title (where N is `thread.unread_count`)
+  - Render the thread title in bold font weight (vs normal for fully-read threads)
+- [ ] When signed out, never show unread indicators
+
+**34c — Mark thread as read**
+
+- [ ] In `ForumThreadScreen`, after each page of posts finishes loading, call `markThreadRead(threadId, lastPostId)` where `lastPostId` is the `id` of the last post in the current loaded set
+- [ ] Silent fail — never show an error to the user if this call fails; it is a background signal
+- [ ] Call again when the user loads more posts (the cursor only advances, so calling with an earlier post id is a no-op on the backend)
+- [ ] Only call when signed in (`isSignedIn` check before the call)
+
+**34d — Emulator test steps**
+
+1. Sign in as User A; note thread list — threads you haven't read should show no badges
+2. Sign in as User B on another device/browser; post a reply in a thread User A follows or created
+3. Open app as User A — the thread should show a green "1 new" chip and a bold title
+4. Tap into the thread — after posts load, the mark-read call fires silently
+5. Navigate back to thread list — the "new" chip should be gone on next refresh
+6. Sign out — confirm no unread indicators are shown
+
+Done means the mobile forum list communicates unread activity clearly, and viewing a thread automatically clears the unread state.
+
+---
+
+## Phase 35: Forum Search Enhancements
+
+Suggested branch: `mobile-forum-search-enhancements`
+
+Purpose: extend the existing thread search (Phase 13) with post-content search and user @-mention autocomplete in the reply composer — matching enhancements shipped to the production website.
+
+### Background — what was built on the web and backend
+
+**Backend (all live, no further backend work needed):**
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /forum/threads-paged?q=keyword&search_posts=true` | When `search_posts=true`, also matches threads where any post body contains the keyword |
+| `GET /forum/threads/{thread_id}/posts/search?q=keyword&page=1&page_size=20` | Search post content within a single thread; returns `PostsPageOut` |
+| `GET /users/search?q=partial&limit=8` | Prefix username search for @-mention autocomplete; returns `[{ username, avatar_url, avatar_preset }]` |
+
+### Work items
+
+**35a — "Search inside posts" toggle**
+
+- [ ] Add `searchPosts: boolean` state (default `false`) to `ForumScreen`
+- [ ] Add a "Search inside posts" toggle switch or checkbox next to the existing search input — only visible when the search field is non-empty
+- [ ] When enabled, pass `search_posts=true` to `getForumThreads`; when disabled, omit it (default behavior)
+- [ ] Reset to page 1 when toggle changes
+
+**35b — Post search within a thread**
+
+- [ ] Add `searchPostsInThread(threadId: number, q: string, page: number): Promise<ForumPostPage>` → `GET /forum/threads/{id}/posts/search` to `src/api/forum.ts`
+- [ ] In `ForumThreadScreen`, add a search icon button in the thread header that toggles a search input
+- [ ] Typing in the search input fetches matching posts from that thread; shows results in a separate list below the search bar (not mixed with the normal post list)
+- [ ] Tapping a search result navigates (scrolls) to that post; the search input can be dismissed to return to the normal view
+
+**35c — User @-mention autocomplete in reply composer**
+
+- [ ] Add `searchUsers(q: string, limit: number): Promise<Array<{ username: string; avatar_url: string | null; avatar_preset: string | null }>>` → `GET /users/search` to `src/api/users.ts` (create if it doesn't exist)
+- [ ] The mobile reply composer already supports `@` to mention series (via `/forum/series-search`). Extend the `@` detection to also search users in parallel:
+  - When `@token` is typed, fire both `forumSeriesSearch(token)` and `searchUsers(token, 5)` concurrently
+  - Show results in the existing autocomplete dropdown in two labeled sections: "Series" (existing behavior) and "Users" (new)
+  - Selecting a series inserts `[Title](series:id)` as before
+  - Selecting a user inserts `@username` as plain text (the backend's `extract_mentions` function will pick it up and fire a POST_MENTION notification)
+- [ ] Apply to both the thread-view reply composer and the thread creation first-post textarea
+
+**35d — Emulator test steps**
+
+1. In `ForumScreen` search bar, type a keyword — confirm thread list filters by title as before
+2. Enable "Search inside posts" toggle — confirm threads where any post body matches also appear
+3. Open a thread with many posts, tap the search icon, type a keyword — confirm matching posts appear in a separate results list; tap one — confirm it scrolls to that post
+4. In the reply composer, type `@go` — confirm a dropdown appears with two sections: Series (if any match) and Users (matching usernames); select a user — `@username` is inserted
+5. Post the reply — confirm the mentioned user receives a POST_MENTION notification (check their notification bell)
+
+Done means thread search covers post content in addition to titles, users can search within a thread, and the @-mention composer surfaces both series and user autocomplete.
+
+---
+
+## Phase 36: Admin Forum Tools
+
+Suggested branch: `mobile-admin-forum-tools`
+
+Purpose: give admins complete forum moderation capability from mobile — the report queue and any remaining admin-only forum actions not covered in earlier phases.
+
+### Background — what was built on the web
+
+The web ships a dedicated `/admin/reports` page with:
+- Filter tabs: Open / Reviewed / Dismissed / All
+- Each report card: status badge, reporter, timestamp, thread link, reason, post excerpt
+- "✓ Reviewed", "Dismiss", and "Delete" actions per report
+
+This is separate from the report button and form (covered in Phase 32). Phase 32 adds the report queue screen as part of the reporting feature. This phase covers any **remaining** admin-only forum tools not already captured.
+
+### Work items
+
+**36a — Confirm report queue (from Phase 32) is admin-accessible from More screen**
+
+- [ ] Verify `AdminReportQueueScreen` from Phase 32 is wired into `MoreScreen` under an admin-only section
+- [ ] Confirm the "Report Queue" entry only appears when `isAdmin === true`
+
+**36b — Admin thread pin toggle (from Phase 30) — verify complete**
+
+- [ ] Verify the pin/unpin action added in Phase 30d is accessible and working from the thread view
+- [ ] Confirm it is hidden for non-admin users
+
+**36c — Admin category management (from Phase 30f) — verify complete**
+
+- [ ] Verify the category management modal from Phase 30f is accessible from `ForumScreen` admin gear icon
+- [ ] Confirm create / edit / delete all work end-to-end
+
+**36d — Emulator test steps**
+
+1. Sign in as admin — open `MoreScreen` — confirm "Report Queue" appears in the admin section
+2. Open Report Queue — confirm it mirrors Phase 32 behavior (filter tabs, review/dismiss/delete)
+3. In `ForumThreadScreen` as admin — confirm pin toggle is visible; tap it — confirm thread pins/unpins
+4. In `ForumScreen` as admin — confirm gear icon is visible; tap it — confirm category manager opens
+5. Sign in as a non-admin user — confirm all the above admin-only controls are hidden
+
+Done means mobile admins have the same moderation tools as the web — report queue, thread pinning, and category management — in a single branch.
+
+---
+
+## Phase 37: Public Info, Help, And Legal Page Parity
+
+Suggested branch: `mobile-public-info-pages`
+
+Purpose: cover the public informational routes that exist on the website but do not yet have a clear mobile home.
+
+### Background - what exists on the web
+
+The website currently exposes public routes for:
+- `/about`
+- `/contact`
+- `/terms`
+- `/privacy`
+- `/how-rankings-work`
+- `NotFoundPage`
+
+The mobile app should not blindly copy website layout, but users still need easy access to the same product, support, legal, and ranking-explanation information.
+
+### Current mobile status
+
+- [x] `MoreScreen` already links to Terms and Privacy through the production web legal pages.
+- [x] `MoreScreen` already has Support email and Report an Issue entries.
+- [ ] Mobile does not yet have native About, Contact/help copy, or How rankings work screens.
+- [ ] Mobile does not yet have a native unknown-route/fallback screen for unsupported app links.
+
+### Work items
+
+- [ ] Add a Help/About area in `MoreScreen` with entries for About, Contact/help, How rankings work, and Open website.
+- [ ] Use native screens for short product/help content where it improves the mobile experience: About, Contact, and How rankings work are good native candidates.
+- [ ] Keep Terms and Privacy pointed at the production web pages unless/until the legal copy is duplicated natively. If opened in a browser, use in-app browser behavior and make it obvious the user is viewing Toon Ranks legal pages.
+- [ ] Add a native not-found/fallback screen for unsupported deep links and broken internal navigation.
+- [ ] Make sure support/contact copy uses `support@toonranks.com` and stays aligned with the backend/frontend email alias docs.
+- [ ] Add tests for the More screen entries and any native info screens.
+
+### Emulator test steps
+
+1. Open More while signed out and signed in.
+2. Confirm About, Contact/help, How rankings work, Terms, Privacy, Support, Report an Issue, and Open website are visible in a sensible help/support section.
+3. Tap each item and confirm it opens the right native screen or production web URL.
+4. Trigger an unknown app route/deep link and confirm the fallback screen is friendly and gives a way back home.
+
+Done means mobile users can reach the same public trust/help/legal surfaces that website users can, without needing to guess that those pages only exist on the web.
+
+---
+
+## Phase 38: Discovery, Type Pages, And Compare Parity Sweep
+
+Suggested branch: `mobile-discovery-compare-parity`
+
+Purpose: close smaller browsing gaps between the website discovery flow and the native app after the core ranking, search, and detail screens are stable.
+
+### Background - what exists on the web
+
+The website has:
+- Home rankings
+- `/type/:seriesType` filtered ranking pages
+- Global header search
+- Dedicated `/compare` route
+- Add-to-reading-list actions directly on ranking cards for signed-in users
+
+Mobile already has Home, Search, Compare, and Reading Lists, but this phase should audit whether the experience matches the website's current behavior and feedback.
+
+### Current mobile status
+
+- [x] Home already has All/Manga/Manhwa/Manhua filters.
+- [x] Home already has genre filtering from loaded rankings.
+- [x] Search already has text search, type filters, and compare buttons.
+- [x] Compare already has a dedicated tab, max-four selection rule, remove actions, clear action, and overflow-safe comparison rows.
+- [x] Series detail already supports signed-in reading-list saves.
+- [ ] Ranking/search cards do not yet have a full reading-list action flow like the website cards.
+- [ ] Deep-linkable type pages are not implemented; Home filter state currently covers this behavior inside the app.
+
+### Work items
+
+- [ ] Audit web `Home`, `FilteredSeriesPage`, header search, `ComparePage`, and reading-list card actions before changing mobile.
+- [ ] Confirm Manga, Manhwa, and Manhua filters behave consistently with web type pages, including loading, empty, and error states.
+- [ ] Decide whether mobile needs deep-linkable type screens, or whether Home filter state is enough for app-store MVP. Document the decision in this file.
+- [ ] Confirm max-limit feedback is visible everywhere users can add a title to Compare, including Home, Search, and Series detail. It should never fail silently.
+- [ ] Confirm signed-in users can add titles to reading lists from ranking/search/detail surfaces in a way that feels native, not web-like.
+- [ ] Add regression tests around compare max count, type filter switching, and ranking-card reading-list actions.
+
+### Emulator test steps
+
+1. Open Home and switch All/Manga/Manhwa/Manhua repeatedly.
+2. Confirm each filter keeps the card layout stable and communicates loading/empty/error states.
+3. Add titles to Compare until the max is reached; confirm the app explains the limit.
+4. Remove compared titles and confirm the board updates without stale rows.
+5. Sign in and add a ranking card to a reading list from mobile; confirm the website sees the same list update.
+
+Done means mobile discovery and compare flows feel like first-class app experiences while still matching the website's data behavior.
+
+---
+
+## Phase 39: Forum Composer Convenience Parity
+
+Suggested branch: `mobile-forum-composer-convenience`
+
+Purpose: bring smaller web composer conveniences to mobile once posting, replies, markdown, votes, and media are already working.
+
+### Background - what exists on the web
+
+The web forum composer supports:
+- Markdown shortcuts
+- Series autocomplete
+- User mention autocomplete
+- Image/GIF upload
+- Reading-list insertion
+- Draft persistence for new threads and replies
+
+Mobile already has or has TODO coverage for the major pieces. This phase is for the remaining convenience and recovery features that make composing on a phone less fragile.
+
+### Current mobile status
+
+- [x] Thread replies and new-thread creation already support series `@` autocomplete.
+- [x] Forum markdown rendering exists and is used on thread posts.
+- [x] Forum image/GIF rendering exists for posts after the media rendering pass.
+- [x] Posting, nested replies, and up/down votes exist when signed in.
+- [ ] Draft persistence is not implemented for new threads or replies.
+- [ ] Reading-list insertion is not implemented in mobile forum composers.
+- [ ] A compact markdown toolbar is not implemented in mobile forum composers.
+- [ ] User mention autocomplete is tracked separately in Phase 35 and should not be duplicated here.
+
+### Work items
+
+- [ ] Re-audit web `RichReplyEditor` before implementing this phase.
+- [ ] Persist unsent new-thread drafts locally by forum context.
+- [ ] Persist unsent reply drafts locally by thread and parent post, so accidental navigation or app backgrounding does not erase a reply.
+- [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
+- [ ] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
+- [ ] Keep the keyboard visible and the text box in view while using autocomplete, toolbar actions, and image/list pickers.
+- [ ] Add tests for draft restore/clear behavior and reading-list insertion formatting.
+
+### Emulator test steps
+
+1. Start a thread draft, leave the screen, return, and confirm the draft remains.
+2. Submit the draft and confirm it clears.
+3. Start a reply draft to a top-level post and a nested reply, leave the thread, return, and confirm both restore in the right composer.
+4. Insert a public reading list into a post and confirm the website renders it correctly.
+5. Open the keyboard and use toolbar/autocomplete actions; confirm the input stays visible.
+
+Done means mobile forum writing has the same recovery and insertion affordances as the website, adapted for phone ergonomics.
+
+---
+
+## Phase 40: Mobile Issue Tracker Admin Triage Follow-Up
+
+Suggested branch: `mobile-admin-issue-triage`
+
+Purpose: revisit the earlier decision to keep the mobile issue tracker read-only and decide whether admin triage belongs in the app.
+
+### Background - what exists on the web
+
+The website `/issues` page is public for viewing, and admins can update issue status or delete reports. Existing mobile Phase 26 already tracks the mobile Issue Tracker View and intentionally scoped it as read-only.
+
+### Current mobile status
+
+- [x] Mobile already has `ReportIssueScreen` and issue submission API coverage.
+- [ ] Mobile does not yet have the public issue tracker screen from Phase 26.
+- [ ] Mobile does not yet have admin issue triage controls.
+- [ ] This phase should not start until Phase 26 exists, unless the product decision changes.
+
+### Work items
+
+- [ ] Re-audit web `IssuesPage` and backend issue endpoints before changing mobile.
+- [ ] After Phase 26 is implemented, decide whether mobile admins should be able to triage issues in-app or whether this remains a desktop-only admin workflow.
+- [ ] If enabled, add admin-only controls for status update and delete.
+- [ ] If deferred, document the reason clearly in Phase 26 and this phase so future agents do not rediscover the same gap.
+- [ ] Add tests for role-gated visibility if admin controls are implemented.
+
+### Emulator test steps
+
+1. Open Issues while signed out and confirm public read-only behavior still works.
+2. Sign in as a general user and confirm admin controls are hidden.
+3. Sign in as admin and confirm the chosen behavior: either triage controls are available, or the screen clearly remains read-only by design.
+
+Done means mobile has an explicit decision for website issue-admin parity, instead of an accidental gap.
+
+---
+
+## Phase 41: Deep Link And Route Parity Sweep
+
+Suggested branch: `mobile-route-parity-polish`
+
+Purpose: map every current website route to a mobile behavior so shared links, emails, and future notifications land somewhere intentional.
+
+### Background - current website route set
+
+The website currently has public and account routes for home, auth, verification, reset password, type pages, series detail, compare, account, public user profiles, leaderboard, reading lists, public lists, submissions, pending titles, admin reports, issues, report issue, forum, forum threads, public info pages, and not found.
+
+### Current mobile status
+
+- [x] Mobile linking currently handles `toonranks://lists/:token` for public reading lists.
+- [x] Native routes already exist for series detail, login, signup, check email, reading lists, public reading list, forum threads, forum activity, profile, report issue, and settings.
+- [ ] Native routes do not yet exist for verify email, reset password, leaderboard, public user profile, issue tracker, admin reports, public info pages, or not-found fallback.
+- [ ] Deep linking is not yet mapped for most native routes.
+
+### Work items
+
+- [ ] Create a route parity table in this document or a dedicated mobile docs file with columns: Web route, Mobile behavior, Auth required, Status.
+- [ ] Support deep links for high-value user-facing routes: series detail, forum thread, forum post anchor, public list, public profile, leaderboard, login, signup, verify email, reset password, and report issue.
+- [ ] Open low-value or desktop-heavy routes in the production website when native parity is not worth building yet.
+- [ ] Add a native fallback screen for unsupported or expired links.
+- [ ] Verify email templates and notification payloads point to links that mobile can either handle directly or gracefully hand off to the website.
+- [ ] Add tests for deep-link parsing where practical.
+
+### Emulator test steps
+
+1. Open a series deep link and confirm it lands on `SeriesDetailScreen`.
+2. Open a forum thread link and confirm it lands on `ForumThreadScreen`.
+3. Open a public reading list link and confirm it lands on the public list screen.
+4. Open a public user profile link and confirm it lands on the profile screen.
+5. Open an unsupported route and confirm the fallback screen gives a clear way back.
+
+Done means frontend route additions are less likely to quietly leave the mobile app behind.
 
 ---
 
