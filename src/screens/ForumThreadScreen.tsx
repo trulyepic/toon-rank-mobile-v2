@@ -97,6 +97,7 @@ function PostCard({
   onDelete,
   onRegisterRef,
   rank,
+  onAuthorPress,
 }: {
   post: ForumPost;
   depth?: number;
@@ -117,6 +118,7 @@ function PostCard({
   onDelete: (post: ForumPost) => void;
   onRegisterRef?: (ref: View | null) => void;
   rank?: number;
+  onAuthorPress?: (username: string) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -136,7 +138,19 @@ function PostCard({
         depth > 0 ? { marginLeft: Math.min(depth, 4) * 14 } : null,
       ]}
     >
-      <View style={styles.postHeader}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
+        disabled={!post.author_username}
+        onPress={() => {
+          if (post.author_username) onAuthorPress?.(post.author_username);
+        }}
+        style={({ pressed }) => [
+          styles.postHeader,
+          pressed ? styles.pressedBadge : null,
+          !post.author_username ? styles.disabledBadge : null,
+        ]}
+      >
         <UserAvatar
           username={post.author_username || "Reader"}
           avatarUrl={post.author_avatar_url}
@@ -157,7 +171,7 @@ function PostCard({
             {formatForumDate(post.created_at)}
           </AppText>
         </View>
-      </View>
+      </Pressable>
 
       {isEditing ? (
         <View style={styles.editBlock}>
@@ -392,6 +406,7 @@ function ReplyTree({
   parentPost,
   registerPostRef,
   topRankMap,
+  onAuthorPress,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -415,6 +430,7 @@ function ReplyTree({
   parentPost?: ForumPost;
   registerPostRef?: (id: number, ref: View | null) => void;
   topRankMap: Record<string, number>;
+  onAuthorPress: (username: string) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = parentPost
@@ -446,6 +462,7 @@ function ReplyTree({
         onDelete={onDelete}
         onRegisterRef={(r) => registerPostRef?.(post.id, r)}
         rank={rankForUsername(topRankMap, post.author_username)}
+        onAuthorPress={onAuthorPress}
       />
       {renderInlineComposer(post)}
       {children.map((child) => (
@@ -473,6 +490,7 @@ function ReplyTree({
           parentPost={post}
           registerPostRef={registerPostRef}
           topRankMap={topRankMap}
+          onAuthorPress={onAuthorPress}
         />
       ))}
     </View>
@@ -952,6 +970,10 @@ export function ForumThreadScreen() {
 
     setReplyTarget(post);
   };
+  const openPublicProfile = (username?: string | null) => {
+    if (!username) return;
+    navigation.navigate("PublicProfile", { username });
+  };
   const handleEditStart = (post: ForumPost) => {
     setEditingPostId(post.id);
     setEditText(post.content_markdown);
@@ -1027,10 +1049,21 @@ export function ForumThreadScreen() {
             <AppText variant="sectionTitle">{thread.title}</AppText>
             <View style={styles.startedByLine}>
               <AppText tone="muted">Started by</AppText>
-              <RoleNameText variant="caption" role={thread.author_role}>
-                {thread.author_username || "Unknown"}
-              </RoleNameText>
-              <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${thread.author_username || "author"}'s profile`}
+                disabled={!thread.author_username}
+                onPress={() => openPublicProfile(thread.author_username)}
+                style={({ pressed }) => [
+                  styles.authorChipPressable,
+                  pressed ? styles.pressedBadge : null,
+                ]}
+              >
+                <RoleNameText variant="caption" role={thread.author_role}>
+                  {thread.author_username || "Unknown"}
+                </RoleNameText>
+                <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
+              </Pressable>
               <AppText tone="muted">
                 / {formatForumCount(thread.post_count, "post")} / Last active{" "}
                 {formatForumDate(thread.last_post_at || thread.updated_at)}
@@ -1262,6 +1295,7 @@ export function ForumThreadScreen() {
             onDelete={handleDelete}
             onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
             rank={rankForUsername(topRankMap, originalPost.author_username)}
+            onAuthorPress={openPublicProfile}
           />
           {renderInlineComposer(originalPost)}
         </View>
@@ -1308,6 +1342,7 @@ export function ForumThreadScreen() {
                 parentPost={originalPost}
                 registerPostRef={registerPostRef}
                 topRankMap={topRankMap}
+                onAuthorPress={openPublicProfile}
               />
             ))}
           </View>
@@ -1465,6 +1500,11 @@ const styles = StyleSheet.create({
   startedByLine: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  authorChipPressable: {
+    flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
   },

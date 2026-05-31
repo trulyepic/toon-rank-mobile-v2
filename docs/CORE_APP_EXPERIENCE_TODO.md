@@ -1168,7 +1168,7 @@ the features shipped to the production website in May 2026.
 - [x] Add loading, error, and empty states.
 - [x] Follow-up polish: add mobile-native gold/silver/bronze podium styling, warmer CP chips,
       and more colorful rank badges inspired by the website leaderboard.
-- [ ] Add podium/list card taps to native public profiles after Phase 24 adds `PublicProfileScreen`.
+- [x] Add podium/list card taps to native public profiles after Phase 24 adds `PublicProfileScreen`.
 
 **23c - Add Leaderboard to navigation**
 
@@ -1181,7 +1181,7 @@ the features shipped to the production website in May 2026.
 - [x] On `ProfileScreen` (own account), fetch the public profile by username.
 - [x] Show CP and `#N Ranker` chips under the identity card when data is available.
 - [x] Make the chips navigate to `LeaderboardScreen`.
-- [ ] Add the same chips to native public profile headers after Phase 24 adds public profiles.
+- [x] Add the same chips to native public profile headers after Phase 24 adds public profiles.
 
 **23e - Ranker badges in forum bylines**
 
@@ -1246,7 +1246,7 @@ the production website.
 
 **24a — API layer and types**
 
-- [ ] In `src/types/account.ts`, add the following (if not already present from Phase 23):
+- [x] In `src/types/account.ts`, add the following (if not already present from Phase 23):
 
   ```ts
   export interface FavoriteSeries {
@@ -1278,6 +1278,10 @@ the production website.
   ```
 
 - [ ] In `src/api/users.ts` (create if it doesn't exist), add:
+  - [x] `getPublicProfile(username: string): Promise<PublicProfile>`
+  - [ ] `getMyFavorites(): Promise<FavoriteSeries[]>`
+  - [ ] `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>`
+  - [ ] `removeMyFavorite(seriesId: number): Promise<FavoriteSeries[]>`
   - `getPublicProfile(username: string): Promise<PublicProfile>` → `GET /users/{username}`
   - `getMyFavorites(): Promise<FavoriteSeries[]>` → `GET /me/favourites`
   - `replaceMyFavorites(seriesIds: number[]): Promise<FavoriteSeries[]>` → `PUT /me/favourites`
@@ -1289,16 +1293,16 @@ the production website.
 
 **24b — PublicProfileScreen**
 
-- [ ] Create `src/screens/PublicProfileScreen.tsx`
-- [ ] Fetch `getPublicProfile(username)` with `useQuery`. Show a skeleton while loading; show a
+- [x] Create `src/screens/PublicProfileScreen.tsx`
+- [x] Fetch `getPublicProfile(username)` with `useQuery`. Show a skeleton while loading; show a
       centered "User not found" state with a back button on 404.
-- [ ] **Profile header card:**
+- [x] **Profile header card:**
   - Role-colored accent strip at the top (amber for ADMIN, blue for CONTRIBUTOR, muted for GENERAL).
   - `UserAvatar` (size `xl`), username in role-colored text (match the gradient/color logic from
     `RankerBadge` and forum bylines), role badge pill, CP chip (`◆ N CP`, amber, taps to
     `LeaderboardScreen`), rank chip (`#N Ranker`, slate, taps to `LeaderboardScreen`) — only shown
     when `cred_score > 0` / rank is set, post count, join date (formatted as "Month D, YYYY").
-- [ ] **Pinned Favorites section:**
+- [x] **Pinned Favorites section:**
   - Section heading "Favorite Series". If `favourites` is empty, show muted text
     `"{username} hasn't pinned any series yet."`.
   - Grid: 2 columns (mobile). Each cell is a pressable cover image card with `aspectRatio: 2/3`,
@@ -1306,7 +1310,7 @@ the production website.
     `SeriesDetail` with the `series_id`.
   - Show a title label overlay on long-press (or use a bottom overlay that fades in on press for
     discoverability).
-- [ ] **Public Reading Lists section:**
+- [x] **Public Reading Lists section:**
   - Only render this section when `reading_lists.length > 0`.
   - Section heading "Reading Lists", sub-heading "Shared lists from {username}."
   - Each list renders as a pressable row card: list name (bold), item count (muted), trailing arrow.
@@ -1317,12 +1321,12 @@ the production website.
 
 **24c — Navigation and entry points**
 
-- [ ] Add `PublicProfile: { username: string }` to `RootStackParamList` in `RootNavigator.tsx` and
+- [x] Add `PublicProfile: { username: string }` to `RootStackParamList` in `RootNavigator.tsx` and
       register `PublicProfileScreen` in the stack.
-- [ ] **Forum author bylines** (from Phase 23 forum work or current implementation): tapping the
+- [x] **Forum author bylines** (from Phase 23 forum work or current implementation): tapping the
       author username in a thread row (`ForumScreen`) and in post/reply bylines
-      (`ForumThreadScreen`) should navigate to `PublicProfile: { username: authorUsername }`. - If the author is the signed-in user, navigate to the own `ProfileScreen` instead.
-- [ ] **Leaderboard cards** (Phase 23, 23b): confirm that tapping a leaderboard card already
+      (`ForumThreadScreen`) should navigate to `PublicProfile: { username: authorUsername }`.
+- [x] **Leaderboard cards** (Phase 23, 23b): confirm that tapping a leaderboard card already
       navigates to `PublicProfile: { username }`. If it was left as a placeholder, wire it up here.
 - [ ] Optionally: tapping the username on `ProfileScreen` (own profile) should NOT navigate
       anywhere — it is already the profile view.

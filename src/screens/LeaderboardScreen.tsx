@@ -1,6 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { getLeaderboard } from "../api/users";
 import {
@@ -17,6 +19,7 @@ import {
 } from "../components";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { LeaderboardUser } from "../types/account";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 
 const PAGE_SIZE = 25;
 
@@ -65,123 +68,146 @@ function formatCp(value: number) {
 function PodiumCard({
   user,
   featured = false,
+  onPress,
 }: {
   user: LeaderboardUser;
   featured?: boolean;
+  onPress: () => void;
 }) {
   const rankTheme = getRankTheme(user.rank);
 
   return (
-    <Surface
-      variant={featured ? "accent" : "raised"}
-      radius="xl"
-      style={[
-        styles.podiumCard,
-        {
-          backgroundColor: rankTheme.background,
-          borderColor: rankTheme.border,
-        },
-        featured ? styles.featuredPodium : null,
-      ]}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${user.username}'s profile`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.podiumPressable, pressed ? styles.pressed : null]}
     >
-      <View
+      <Surface
+        variant={featured ? "accent" : "raised"}
+        radius="xl"
         style={[
-          styles.rankPill,
+          styles.podiumCard,
           {
-            backgroundColor: rankTheme.soft,
             borderColor: rankTheme.border,
+            backgroundColor: rankTheme.background,
           },
+          featured ? styles.featuredPodium : null,
         ]}
       >
-        <Ionicons name={rankTheme.icon} size={13} color={rankTheme.text} />
-        <AppText variant="caption" style={{ color: rankTheme.text }}>
-          #{user.rank}
+        <View
+          style={[
+            styles.rankPill,
+            {
+              backgroundColor: rankTheme.soft,
+              borderColor: rankTheme.border,
+            },
+          ]}
+        >
+          <Ionicons name={rankTheme.icon} size={13} color={rankTheme.text} />
+          <AppText variant="caption" style={{ color: rankTheme.text }}>
+            #{user.rank}
+          </AppText>
+        </View>
+        <View style={[styles.avatarRing, { borderColor: rankTheme.border }]}>
+          <UserAvatar
+            username={user.username}
+            avatarUrl={user.avatar_url}
+            avatarPreset={user.avatar_preset}
+            size={featured ? "xl" : "lg"}
+          />
+        </View>
+        <RoleNameText
+          variant={featured ? "sectionTitle" : "cardTitle"}
+          role={user.role}
+          align="center"
+        >
+          {user.username}
+        </RoleNameText>
+        <AppText align="center" style={{ color: rankTheme.text }}>
+          {formatCp(user.cred_score)}
         </AppText>
-      </View>
-      <View style={[styles.avatarRing, { borderColor: rankTheme.border }]}>
+        <AppText variant="caption" tone="subtle" align="center">
+          {user.post_count} posts / {user.series_rated} rated
+        </AppText>
+      </Surface>
+    </Pressable>
+  );
+}
+
+function LeaderboardRow({
+  user,
+  onPress,
+}: {
+  user: LeaderboardUser;
+  onPress: () => void;
+}) {
+  const rankTheme = getRankTheme(user.rank);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${user.username}'s profile`}
+      onPress={onPress}
+      style={({ pressed }) => (pressed ? styles.pressed : null)}
+    >
+      <Surface
+        variant="raised"
+        radius="lg"
+        style={[
+          styles.row,
+          user.rank <= 10
+            ? {
+                borderColor: rankTheme.border,
+                backgroundColor:
+                  user.rank <= 3 ? rankTheme.background : colors.surfaceRaised,
+              }
+            : null,
+        ]}
+      >
+        <View
+          style={[
+            styles.rowRank,
+            {
+              backgroundColor: user.rank <= 10 ? rankTheme.soft : colors.backgroundSoft,
+              borderColor: user.rank <= 10 ? rankTheme.border : colors.borderSoft,
+            },
+          ]}
+        >
+          <AppText
+            variant="caption"
+            style={{ color: user.rank <= 10 ? rankTheme.text : colors.text }}
+          >
+            #{user.rank}
+          </AppText>
+        </View>
         <UserAvatar
           username={user.username}
           avatarUrl={user.avatar_url}
           avatarPreset={user.avatar_preset}
-          size={featured ? "xl" : "lg"}
+          size="md"
         />
-      </View>
-      <RoleNameText
-        variant={featured ? "sectionTitle" : "cardTitle"}
-        role={user.role}
-        align="center"
-      >
-        {user.username}
-      </RoleNameText>
-      <AppText align="center" style={{ color: rankTheme.text }}>
-        {formatCp(user.cred_score)}
-      </AppText>
-      <AppText variant="caption" tone="subtle" align="center">
-        {user.post_count} posts / {user.series_rated} rated
-      </AppText>
-    </Surface>
-  );
-}
-
-function LeaderboardRow({ user }: { user: LeaderboardUser }) {
-  const rankTheme = getRankTheme(user.rank);
-
-  return (
-    <Surface
-      variant="raised"
-      radius="lg"
-      style={[
-        styles.row,
-        user.rank <= 10
-          ? {
-              borderColor: rankTheme.border,
-              backgroundColor:
-                user.rank <= 3 ? rankTheme.background : colors.surfaceRaised,
-            }
-          : null,
-      ]}
-    >
-      <View
-        style={[
-          styles.rowRank,
-          {
-            backgroundColor: user.rank <= 10 ? rankTheme.soft : colors.backgroundSoft,
-            borderColor: user.rank <= 10 ? rankTheme.border : colors.borderSoft,
-          },
-        ]}
-      >
-        <AppText
-          variant="caption"
-          style={{ color: user.rank <= 10 ? rankTheme.text : colors.text }}
-        >
-          #{user.rank}
-        </AppText>
-      </View>
-      <UserAvatar
-        username={user.username}
-        avatarUrl={user.avatar_url}
-        avatarPreset={user.avatar_preset}
-        size="md"
-      />
-      <View style={styles.rowText}>
-        <RoleNameText variant="cardTitle" role={user.role}>
-          {user.username}
-        </RoleNameText>
-        <AppText variant="caption" tone="muted">
-          {user.post_count} posts / {user.series_rated} rated
-        </AppText>
-      </View>
-      <View style={styles.cpPill}>
-        <Ionicons name="diamond-outline" size={13} color={colors.credText} />
-        <AppText variant="caption" style={{ color: colors.credText }}>
-          {formatCp(user.cred_score)}
-        </AppText>
-      </View>
-    </Surface>
+        <View style={styles.rowText}>
+          <RoleNameText variant="cardTitle" role={user.role}>
+            {user.username}
+          </RoleNameText>
+          <AppText variant="caption" tone="muted">
+            {user.post_count} posts / {user.series_rated} rated
+          </AppText>
+        </View>
+        <View style={styles.cpPill}>
+          <Ionicons name="diamond-outline" size={13} color={colors.credText} />
+          <AppText variant="caption" style={{ color: colors.credText }}>
+            {formatCp(user.cred_score)}
+          </AppText>
+        </View>
+      </Surface>
+    </Pressable>
   );
 }
 
 export function LeaderboardScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const leaderboardQuery = useInfiniteQuery({
     queryKey: ["users", "leaderboard"],
     queryFn: ({ pageParam }) => getLeaderboard(pageParam, PAGE_SIZE),
@@ -195,6 +221,8 @@ export function LeaderboardScreen() {
   const topUsers = users.slice(0, 3);
   const orderedPodium = [topUsers[1], topUsers[0], topUsers[2]].filter(Boolean);
   const remainingUsers = users.slice(3);
+  const openProfile = (username: string) =>
+    navigation.navigate("PublicProfile", { username });
 
   return (
     <ScreenShell title="Rankers" subtitle="Cred Points from ratings and forum activity.">
@@ -232,7 +260,11 @@ export function LeaderboardScreen() {
                 key={user.username}
                 style={[styles.podiumColumn, user.rank === 1 ? styles.firstColumn : null]}
               >
-                <PodiumCard user={user} featured={user.rank === 1} />
+                <PodiumCard
+                  user={user}
+                  featured={user.rank === 1}
+                  onPress={() => openProfile(user.username)}
+                />
               </View>
             ))}
           </View>
@@ -244,7 +276,11 @@ export function LeaderboardScreen() {
           <SectionHeader title="Ranker list" body={`${users.length} rankers shown`} />
           <View style={styles.stack}>
             {remainingUsers.map((user) => (
-              <LeaderboardRow key={user.username} user={user} />
+              <LeaderboardRow
+                key={user.username}
+                user={user}
+                onPress={() => openProfile(user.username)}
+              />
             ))}
           </View>
           {leaderboardQuery.hasNextPage ? (
@@ -295,6 +331,9 @@ const styles = StyleSheet.create({
   podiumColumn: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  podiumPressable: {
+    width: "100%",
   },
   firstColumn: {
     flex: 1.12,
@@ -360,5 +399,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.credSurface,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+  },
+  pressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
   },
 });
