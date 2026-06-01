@@ -14,7 +14,7 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { LEGAL_URLS, SUPPORT_EMAIL } from "../config/site";
+import { LEGAL_URLS, SITE_ORIGIN, SUPPORT_EMAIL } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { openInAppBrowser, openSupportEmail } from "../utils/externalLinks";
@@ -23,6 +23,7 @@ type RowTone = "default" | "disabled";
 
 type MenuRowProps = {
   icon: ComponentProps<typeof Ionicons>["name"];
+  iconColor?: string;
   title: string;
   subtitle: string;
   tone?: RowTone;
@@ -32,41 +33,58 @@ type MenuRowProps = {
 const supportRows: MenuRowProps[] = [
   {
     icon: "document-text-outline",
+    iconColor: "#64748b",
     title: "Terms",
     subtitle: "Account, voting, forum, and acceptable-use rules.",
   },
   {
     icon: "shield-checkmark-outline",
+    iconColor: "#64748b",
     title: "Privacy",
     subtitle: "How Toon Ranks handles account and activity data.",
   },
   {
     icon: "bug-outline",
+    iconColor: "#f97316",
     title: "Report an Issue",
     subtitle: "Send bugs, content problems, and suggestions.",
   },
   {
     icon: "list-outline",
+    iconColor: "#3b82f6",
     title: "Issue Tracker",
     subtitle: "View reported bugs, feature requests, and current status.",
   },
   {
     icon: "mail-outline",
+    iconColor: "#22c55e",
     title: "Support",
     subtitle: SUPPORT_EMAIL,
   },
 ];
 
-function MenuRow({ icon, title, subtitle, tone = "default", onPress }: MenuRowProps) {
+function MenuRow({
+  icon,
+  iconColor,
+  title,
+  subtitle,
+  tone = "default",
+  onPress,
+}: MenuRowProps) {
   const disabled = tone === "disabled";
+  const resolvedColor = disabled ? colors.textSubtle : (iconColor ?? colors.accentStrong);
   const content = (
     <>
-      <View style={[styles.rowIcon, disabled ? styles.rowIconDisabled : null]}>
-        <Ionicons
-          name={icon}
-          size={19}
-          color={disabled ? colors.textSubtle : colors.accentStrong}
-        />
+      <View
+        style={[
+          styles.rowIcon,
+          disabled ? styles.rowIconDisabled : null,
+          !disabled && iconColor
+            ? { backgroundColor: `${iconColor}18`, borderColor: `${iconColor}40` }
+            : null,
+        ]}
+      >
+        <Ionicons name={icon} size={19} color={resolvedColor} />
       </View>
       <View style={styles.rowText}>
         <AppText variant="cardTitle" tone={disabled ? "muted" : "primary"}>
@@ -132,30 +150,35 @@ export function MoreScreen() {
   const accountRows: MenuRowProps[] = [
     {
       icon: "trophy-outline",
+      iconColor: "#f59e0b",
       title: "Rankers",
       subtitle: "Cred Points, posts, and series ratings.",
       onPress: () => navigation.navigate("Leaderboard"),
     },
     {
       icon: "bookmark-outline",
+      iconColor: "#3b82f6",
       title: "Reading Lists",
       subtitle: "Saved, planned, reading, and completed titles.",
       onPress: () => navigation.navigate("ReadingLists"),
     },
     {
       icon: "chatbubbles-outline",
+      iconColor: "#a855f7",
       title: "Forum Activity",
       subtitle: "Threads, replies, and discussion history.",
       onPress: () => navigation.navigate("ForumActivity"),
     },
     {
       icon: "person-circle-outline",
+      iconColor: "#22c55e",
       title: "Profile",
       subtitle: "Username, account details, and public identity.",
       onPress: () => navigation.navigate("Profile"),
     },
     {
       icon: "settings-outline",
+      iconColor: "#64748b",
       title: "Settings",
       subtitle: "Preferences, notifications, and app behavior.",
       onPress: () => navigation.navigate("Settings"),
@@ -257,6 +280,7 @@ export function MoreScreen() {
           <View style={styles.rowStack}>
             <MenuRow
               icon="flag-outline"
+              iconColor="#ef4444"
               title="Report Queue"
               subtitle="Review and action flagged forum posts."
               onPress={() => navigation.navigate("AdminReportQueue")}
@@ -266,8 +290,29 @@ export function MoreScreen() {
       ) : null}
 
       <View style={styles.section}>
-        <SectionHeader title="Legal and support" />
+        <SectionHeader title="Help & support" />
         <View style={styles.rowStack}>
+          <MenuRow
+            icon="information-circle-outline"
+            iconColor="#06b6d4"
+            title="About Toon Ranks"
+            subtitle="App version, Instagram, and contact info."
+            onPress={() => navigation.navigate("About")}
+          />
+          <MenuRow
+            icon="bar-chart-outline"
+            iconColor="#f59e0b"
+            title="How Rankings Work"
+            subtitle="Rating categories, scoring, and Cred Points."
+            onPress={() => navigation.navigate("HowRankingsWork")}
+          />
+          <MenuRow
+            icon="globe-outline"
+            iconColor="#3b82f6"
+            title="Open Website"
+            subtitle="Visit the full Toon Ranks site in your browser."
+            onPress={() => openInAppBrowser(SITE_ORIGIN)}
+          />
           {supportRowsWithActions.map((row) => (
             <MenuRow key={row.title} {...row} />
           ))}

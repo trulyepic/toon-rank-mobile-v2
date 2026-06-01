@@ -2378,18 +2378,18 @@ This is separate from the report button and form (covered in Phase 32). Phase 32
 
 **36a — Confirm report queue (from Phase 32) is admin-accessible from More screen**
 
-- [ ] Verify `AdminReportQueueScreen` from Phase 32 is wired into `MoreScreen` under an admin-only section
-- [ ] Confirm the "Report Queue" entry only appears when `isAdmin === true`
+- [x] Verify `AdminReportQueueScreen` from Phase 32 is wired into `MoreScreen` under an admin-only section
+- [x] Confirm the "Report Queue" entry only appears when `isAdmin === true`
 
 **36b — Admin thread pin toggle (from Phase 30) — verify complete**
 
-- [ ] Verify the pin/unpin action added in Phase 30d is accessible and working from the thread view
-- [ ] Confirm it is hidden for non-admin users
+- [x] Verify the pin/unpin action added in Phase 30d is accessible and working from the thread view
+- [x] Confirm it is hidden for non-admin users
 
 **36c — Admin category management (from Phase 30f) — verify complete**
 
-- [ ] Verify the category management modal from Phase 30f is accessible from `ForumScreen` admin gear icon
-- [ ] Confirm create / edit / delete all work end-to-end
+- [x] Verify the category management modal from Phase 30f is accessible from `ForumScreen` admin gear icon
+- [x] Confirm create / edit / delete all work end-to-end
 
 **36d — Emulator test steps**
 
@@ -2437,23 +2437,23 @@ The mobile app should not blindly copy website layout, but users still need easy
 
 - [x] `MoreScreen` already links to Terms and Privacy through the production web legal pages.
 - [x] `MoreScreen` already has Support email and Report an Issue entries.
-- [ ] Mobile does not yet have native About, Contact/help copy, or How rankings work screens.
-- [ ] Mobile does not yet have a native unknown-route/fallback screen for unsupported app links.
+- [x] Mobile does not yet have native About, Contact/help copy, or How rankings work screens.
+- [x] Mobile does not yet have a native unknown-route/fallback screen for unsupported app links.
 
 ### Work items
 
-- [ ] Add a Help/About area in `MoreScreen` with entries for About, Contact/help, How rankings work, and Open website.
-- [ ] Use native screens for short product/help content where it improves the mobile experience: About, Contact, and How rankings work are good native candidates.
-- [ ] Keep Terms and Privacy pointed at the production web pages unless/until the legal copy is duplicated natively. If opened in a browser, use in-app browser behavior and make it obvious the user is viewing Toon Ranks legal pages.
-- [ ] Add a native not-found/fallback screen for unsupported deep links and broken internal navigation.
-- [ ] Make sure support/contact copy uses `support@toonranks.com` and stays aligned with the backend/frontend email alias docs.
-- [ ] **Inline ratings tooltip on `SeriesDetailScreen`:** The web has a `RatingInfoTooltip` component
+- [x] Add a Help/About area in `MoreScreen` with entries for About, Contact/help, How rankings work, and Open website.
+- [x] Use native screens for short product/help content where it improves the mobile experience: About, Contact, and How rankings work are good native candidates.
+- [x] Keep Terms and Privacy pointed at the production web pages unless/until the legal copy is duplicated natively. If opened in a browser, use in-app browser behavior and make it obvious the user is viewing Toon Ranks legal pages.
+- [x] Add a native not-found/fallback screen for unsupported deep links and broken internal navigation.
+- [x] Make sure support/contact copy uses `support@toonranks.com` and stays aligned with the backend/frontend email alias docs.
+- [x] **Inline ratings tooltip on `SeriesDetailScreen`:** The web has a `RatingInfoTooltip` component
       directly on the series detail ratings section, showing a brief "how rankings work" explanation
       inline without requiring navigation. Consider adding a small `ⓘ` info icon or tooltip sheet
       on the `SeriesRatingsSection` so users can understand the rating system without leaving the
       screen. The full "How Rankings Work" native screen (above) handles deep reading; this is a
       quick inline nudge. Decide whether both are needed or if one replaces the other.
-- [ ] Add tests for the More screen entries and any native info screens.
+- [x] Add tests for the More screen entries and any native info screens.
 
 ### Emulator test steps
 
