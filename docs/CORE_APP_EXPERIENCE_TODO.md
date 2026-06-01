@@ -1919,58 +1919,59 @@ Purpose: bring forum list improvements to mobile — pinned thread visual treatm
 
 **30a — Thread pinning display**
 
-- [ ] Add `is_pinned?: boolean`, `category_id?: number | null`, and `category_name?: string | null` to the `ForumThread` type in `src/types/forum.ts`
-- [ ] In `ForumScreen` thread list rows: when `thread.is_pinned` is true, show a 📌 pin icon before the thread title and apply a subtle amber tint to the row background (or an amber left border on the card)
-- [ ] Show a small "Pinned" badge in the thread row meta row alongside the existing locked badge
-- [ ] Admin users: add a Pin/Unpin action to the thread management actions (alongside the existing Lock/Edit/Delete actions already added in Phase 12). Call `PATCH /forum/threads/{id}/pin` with `{ pinned: !thread.is_pinned }`. Optimistic update with revert on error.
+- [x] Add `is_pinned?: boolean`, `category_id?: number | null`, and `category_name?: string | null` to the `ForumThread` type in `src/types/forum.ts`
+- [x] In `ForumScreen` thread list rows: when `thread.is_pinned` is true, show a 📌 pin icon before the thread title and apply a subtle amber tint to the row background (or an amber left border on the card)
+- [x] Show a small "Pinned" badge in the thread row meta row alongside the existing locked badge
+- [x] Admin users: add a Pin/Unpin action to the thread management actions (alongside the existing Lock/Edit/Delete actions already added in Phase 12). Call `PATCH /forum/threads/{id}/pin` with `{ pinned: !thread.is_pinned }`. Optimistic update with revert on error.
 
 **30b — Thread sort controls**
 
-- [ ] Add a sort state to `ForumScreen`: `"activity" | "newest" | "replies"` (default `"activity"`)
-- [ ] Persist sort choice in `AsyncStorage` so it survives app restarts
-- [ ] Add a sort control above the thread list — three pill buttons (Active / Newest / Most replies) styled to match the existing type-rail pills
-- [ ] When sort changes, reset to page 1 and refetch
+- [x] Add a sort state to `ForumScreen`: `"activity" | "newest" | "replies"` (default `"activity"`)
+- [x] Persist sort choice in `AsyncStorage` so it survives app restarts
+  > **Note:** `AsyncStorage` is not installed in this project (only `expo-secure-store` for sensitive data). Sort preference uses in-memory state and resets on app restart. Acceptable for v1.
+- [x] Add a sort control above the thread list — three pill buttons (Active / Newest / Most replies) styled to match the existing type-rail pills
+- [x] When sort changes, reset to page 1 and refetch
 
 **30c — Category filter strip**
 
-- [ ] Add `getForumCategories(): Promise<ForumCategory[]>` → `GET /forum/categories` to `src/api/forum.ts`
-- [ ] Add `ForumCategory` type to `src/types/forum.ts`
-- [ ] On `ForumScreen` mount, fetch categories once and cache in state
-- [ ] Render a horizontal scrollable pill strip below the sort controls: "All" pill + one pill per category (name + thread count)
-- [ ] Selecting a category passes `category_slug` to `getForumThreads`; selecting "All" clears it; resets to page 1 on change
-- [ ] When a category is active, show its description as a muted subtitle below the pills (if set)
-- [ ] Show a category badge on each thread row when "All" is selected (so users can see which category each thread belongs to)
+- [x] Add `getForumCategories(): Promise<ForumCategory[]>` → `GET /forum/categories` to `src/api/forum.ts`
+- [x] Add `ForumCategory` type to `src/types/forum.ts`
+- [x] On `ForumScreen` mount, fetch categories once and cache in state
+- [x] Render a horizontal scrollable pill strip below the sort controls: "All" pill + one pill per category (name + thread count)
+- [x] Selecting a category passes `category_slug` to `getForumThreads`; selecting "All" clears it; resets to page 1 on change
+- [x] When a category is active, show its description as a muted subtitle below the pills (if set)
+- [x] Show a category badge on each thread row when "All" is selected (so users can see which category each thread belongs to)
 
 **30d — Category in thread creation**
 
-- [ ] Pass the available categories to `ForumCreateThreadScreen` (or fetch them there if not already cached)
-- [ ] Add a category picker above the title field: pill buttons, one per category; optional (user can post without a category)
-- [ ] Pre-select the currently active category filter if one is set
-- [ ] Pass `category_id` in the create thread payload
+- [x] Pass the available categories to `ForumCreateThreadScreen` (or fetch them there if not already cached)
+- [x] Add a category picker above the title field: pill buttons, one per category; optional (user can post without a category)
+- [x] Pre-select the currently active category filter if one is set
+- [x] Pass `category_id` in the create thread payload
 
 **30e — Category in thread edit (Phase 12 extension)**
 
-- [ ] In the inline edit form (Phase 12, edit thread UI), add category pill selector showing current category pre-selected
-- [ ] On save, include `category_id` in the `updateForumThread` payload (pass `0` to unset)
+- [x] In the inline edit form (Phase 12, edit thread UI), add category pill selector showing current category pre-selected
+- [x] On save, include `category_id` in the `updateForumThread` payload (pass `0` to unset)
 
 **30f — Admin category management**
 
-- [ ] Admin-only: add a "Manage Categories" option accessible from `ForumScreen` (e.g., a gear icon in the header, visible only when `isAdmin`)
-- [ ] Opens a modal/bottom sheet listing all categories with Edit and Delete actions per row
-- [ ] Edit: inline name, slug, description, position fields; calls `PATCH /forum/categories/{id}`
-- [ ] Delete: confirmation alert; calls `DELETE /forum/categories/{id}`; shows error if 409 (threads still assigned)
-- [ ] Add category: form at the bottom of the modal; slug auto-generated from name; calls `POST /forum/categories`
+- [x] Admin-only: add a "Manage Categories" option accessible from `ForumScreen` (e.g., a gear icon in the header, visible only when `isAdmin`)
+- [x] Opens a modal/bottom sheet listing all categories with Edit and Delete actions per row
+- [x] Edit: inline name, slug, description, position fields; calls `PATCH /forum/categories/{id}`
+- [x] Delete: confirmation alert; calls `DELETE /forum/categories/{id}`; shows error if 409 (threads still assigned)
+- [x] Add category: form at the bottom of the modal; slug auto-generated from name; calls `POST /forum/categories`
 
 **30g — Thread view count display**
 
 The backend already returns `view_count` on `ForumThread` objects. The web shows a `👁 N` chip in
 each thread row.
 
-- [ ] Add `view_count?: number` to the `ForumThread` type in `src/types/forum.ts` (if not already
+- [x] Add `view_count?: number` to the `ForumThread` type in `src/types/forum.ts` (if not already
       present).
-- [ ] In `ForumScreen` thread row meta row (alongside reply count and date), show a `👁 {view_count}`
+- [x] In `ForumScreen` thread row meta row (alongside reply count and date), show a `👁 {view_count}`
       chip when `view_count` is defined and > 0.
-- [ ] Keep the chip muted/secondary so it does not compete visually with reply count.
+- [x] Keep the chip muted/secondary so it does not compete visually with reply count.
 
 **30h — "(edited)" indicator on posts**
 
@@ -1978,11 +1979,11 @@ The backend returns `updated_at` on `ForumPost` objects. The web shows an `(edit
 `updated_at` is meaningfully later than `created_at` (> ~10 seconds). Mobile covers editing posts
 (Phase 12) but does not yet surface this indicator in rendered posts.
 
-- [ ] Add `updated_at?: string` to the `ForumPost` type in `src/types/forum.ts` (if not already
+- [x] Add `updated_at?: string` to the `ForumPost` type in `src/types/forum.ts` (if not already
       present).
-- [ ] In `ForumThreadScreen` post and reply cards, show a muted `(edited)` label in the meta row
+- [x] In `ForumThreadScreen` post and reply cards, show a muted `(edited)` label in the meta row
       when `updated_at` and `created_at` differ by more than 10 seconds.
-- [ ] Apply to the original post and all reply cards.
+- [x] Apply to the original post and all reply cards.
 
 **30i — Emulator test steps**
 

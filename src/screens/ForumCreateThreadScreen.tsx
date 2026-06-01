@@ -1,19 +1,25 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
 import { useRef, useState } from "react";
 
-import { createForumThread, updateForumThread, uploadForumMedia } from "../api/forum";
+import {
+  createForumThread,
+  getForumCategories,
+  updateForumThread,
+  uploadForumMedia,
+} from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AccountRequiredCard,
@@ -55,6 +61,7 @@ export function ForumCreateThreadScreen() {
   const bodyInputRef = useRef<TextInput | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [bodySelection, setBodySelection] = useState<ForumTextSelection>({
     start: 0,
     end: 0,
@@ -62,6 +69,14 @@ export function ForumCreateThreadScreen() {
   const [attachment, setAttachment] = useState<ForumMediaAttachment | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const activeMention = getActiveForumMention(body);
+
+  const categoriesQuery = useQuery({
+    queryKey: ["forum", "categories"],
+    queryFn: getForumCategories,
+    staleTime: 5 * 60 * 1000,
+    enabled: isSignedIn,
+  });
+  const categories = categoriesQuery.data ?? [];
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -75,6 +90,7 @@ export function ForumCreateThreadScreen() {
         title: draft.title,
         first_post_markdown: draft.body,
         series_ids: extractForumSeriesIds(draft.body),
+        category_id: selectedCategoryId,
       });
 
       if (!attachment) {
@@ -100,6 +116,7 @@ export function ForumCreateThreadScreen() {
       setBody("");
       setAttachment(null);
       void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] });
       navigation.replace("ForumThread", { threadId: thread.id });
     },
     onError: (error) => {
@@ -180,6 +197,35 @@ export function ForumCreateThreadScreen() {
           </Surface>
 
           <Surface radius="xl" style={styles.formCard}>
+            {categories.length > 0 ? (
+              <View style={styles.categorySection}>
+                <AppText variant="caption">Category (optional)</AppText>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.pillStrip}
+                >
+                  {categories.map((cat) => {
+                    const active = selectedCategoryId === cat.id;
+                    return (
+                      <Pressable
+                        key={cat.id}
+                        onPress={() => setSelectedCategoryId(active ? null : cat.id)}
+                        style={[styles.pill, active ? styles.pillActive : null]}
+                      >
+                        <AppText
+                          variant="caption"
+                          style={active ? styles.pillTextActive : styles.pillText}
+                        >
+                          {cat.name}
+                        </AppText>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+
             <View style={styles.fieldHeader}>
               <AppText variant="caption">Title</AppText>
               <AppText variant="caption" tone="subtle">
@@ -429,5 +475,31 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     flexWrap: "wrap",
     gap: spacing.sm,
+  },
+  categorySection: {
+    gap: spacing.xs,
+  },
+  pillStrip: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    paddingHorizontal: 2,
+  },
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  pillActive: {
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accent,
+  },
+  pillText: {
+    color: colors.textMuted,
+  },
+  pillTextActive: {
+    color: colors.text,
   },
 });
