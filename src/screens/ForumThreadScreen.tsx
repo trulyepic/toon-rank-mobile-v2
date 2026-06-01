@@ -39,6 +39,7 @@ import {
   AppButton,
   EmptyState,
   ErrorState,
+  ForumComposerToolbar,
   ForumMentionSuggestions,
   ForumMarkdown,
   ForumSeriesStrip,
@@ -71,6 +72,11 @@ import {
   pickForumMediaAttachment,
   type ForumMediaAttachment,
 } from "../utils/forumMedia";
+import {
+  applyForumFormat,
+  type ForumFormatAction,
+  type ForumTextSelection,
+} from "../utils/forumComposerFormatting";
 import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
@@ -327,6 +333,9 @@ function InlineComposer({
   attachment,
   onPickAttachment,
   onRemoveAttachment,
+  selection,
+  onSelectionChange,
+  onFormat,
 }: {
   replyToPost: ForumPost;
   replyText: string;
@@ -339,7 +348,11 @@ function InlineComposer({
   attachment: ForumMediaAttachment | null;
   onPickAttachment: () => void;
   onRemoveAttachment: () => void;
+  selection: ForumTextSelection;
+  onSelectionChange: (selection: ForumTextSelection) => void;
+  onFormat: (action: ForumFormatAction) => void;
 }) {
+  const inputRef = useRef<TextInput | null>(null);
   const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
   const canSubmit =
     (replyText.trim().length > 0 || attachment) && !isOverLimit && !isPending;
@@ -361,13 +374,24 @@ function InlineComposer({
           {replyText.length}/{REPLY_MAX_LENGTH}
         </AppText>
       </View>
+      <ForumComposerToolbar
+        disabled={isPending}
+        onFormat={(action) => {
+          onFormat(action);
+          requestAnimationFrame(() => inputRef.current?.focus());
+        }}
+        onPickAttachment={onPickAttachment}
+      />
       <TextInput
+        ref={inputRef}
         autoCapitalize="sentences"
         autoCorrect
         multiline
         textAlignVertical="top"
         value={replyText}
         onChangeText={onReplyChange}
+        onSelectionChange={(event) => onSelectionChange(event.nativeEvent.selection)}
+        selection={selection}
         placeholder={`Reply to ${replyToPost.author_username || "this post"}...`}
         placeholderTextColor={colors.textSubtle}
         style={styles.replyInput}
@@ -376,7 +400,6 @@ function InlineComposer({
       <ForumAttachmentPicker
         attachment={attachment}
         disabled={isPending}
-        onPick={onPickAttachment}
         onRemove={onRemoveAttachment}
       />
       <View style={styles.inlineComposerActions}>
@@ -406,12 +429,10 @@ function InlineComposer({
 function ForumAttachmentPicker({
   attachment,
   disabled,
-  onPick,
   onRemove,
 }: {
   attachment: ForumMediaAttachment | null;
   disabled: boolean;
-  onPick: () => void;
   onRemove: () => void;
 }) {
   return (
@@ -442,13 +463,6 @@ function ForumAttachmentPicker({
           </Pressable>
         </View>
       ) : null}
-      <AppButton
-        label={attachment ? "Replace image/GIF" : "Attach image/GIF"}
-        variant="ghost"
-        disabled={disabled}
-        onPress={onPick}
-        iconLeft={<Ionicons name="image-outline" size={15} color={colors.text} />}
-      />
     </View>
   );
 }
@@ -575,6 +589,10 @@ export function ForumThreadScreen() {
   const topRankMap = useTopRankMap();
   const isAdmin = user?.role === "ADMIN";
   const [replyText, setReplyText] = useState("");
+  const [replySelection, setReplySelection] = useState<ForumTextSelection>({
+    start: 0,
+    end: 0,
+  });
   const [replyAttachment, setReplyAttachment] = useState<ForumMediaAttachment | null>(
     null,
   );
@@ -586,6 +604,7 @@ export function ForumThreadScreen() {
   const [editThreadBody, setEditThreadBody] = useState("");
   const { threadId, postId } = route.params;
   const scrollViewRef = useRef<ScrollView>(null);
+  const replyInputRef = useRef<TextInput | null>(null);
   const postRefs = useRef<Map<number, View>>(new Map());
   const hasScrolledToPost = useRef(false);
   const queryKey = ["forum", "thread", threadId] as const;
@@ -652,6 +671,7 @@ export function ForumThreadScreen() {
         ),
     onSuccess: async (createdPost) => {
       setReplyText("");
+      setReplySelection({ start: 0, end: 0 });
       setReplyAttachment(null);
       setReplyTarget(null);
       queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
@@ -1058,6 +1078,7 @@ export function ForumThreadScreen() {
 
     setReplyTarget(post);
     setReplyAttachment(null);
+    setReplySelection({ start: 0, end: 0 });
   };
   const openPublicProfile = (username?: string | null) => {
     if (!username) return;
@@ -1092,15 +1113,27 @@ export function ForumThreadScreen() {
     ]);
   };
   const handleMentionSelect = (series: SeriesRef) => {
-    setReplyText((current) =>
-      activeMention
+    setReplyText((current) => {
+      const next = activeMention
         ? insertForumMention(current, activeMention, series).slice(0, REPLY_MAX_LENGTH)
-        : current,
-    );
+        : current;
+      setReplySelection({ start: next.length, end: next.length });
+      return next;
+    });
   };
   const handlePickReplyAttachment = async () => {
     const picked = await pickForumMediaAttachment();
     if (picked) setReplyAttachment(picked);
+  };
+  const handleFormatReply = (action: ForumFormatAction) => {
+    const formatted = applyForumFormat(replyText, replySelection, action);
+    const nextReply = formatted.text.slice(0, REPLY_MAX_LENGTH);
+    setReplyText(nextReply);
+    setReplySelection({
+      start: Math.min(formatted.selection.start, nextReply.length),
+      end: Math.min(formatted.selection.end, nextReply.length),
+    });
+    requestAnimationFrame(() => replyInputRef.current?.focus());
   };
   const renderInlineComposer = (post: ForumPost): ReactNode => {
     if (replyTarget?.id !== post.id) return null;
@@ -1113,6 +1146,7 @@ export function ForumThreadScreen() {
         onCancel={() => {
           setReplyTarget(null);
           setReplyText("");
+          setReplySelection({ start: 0, end: 0 });
           setReplyAttachment(null);
         }}
         isPending={replyMutation.isPending}
@@ -1121,6 +1155,9 @@ export function ForumThreadScreen() {
         attachment={replyAttachment}
         onPickAttachment={handlePickReplyAttachment}
         onRemoveAttachment={() => setReplyAttachment(null)}
+        selection={replySelection}
+        onSelectionChange={setReplySelection}
+        onFormat={handleFormatReply}
       />
     );
   };
@@ -1491,13 +1528,23 @@ export function ForumThreadScreen() {
             </AppText>
           ) : isSignedIn ? (
             <>
+              <ForumComposerToolbar
+                disabled={replyMutation.isPending}
+                onFormat={handleFormatReply}
+                onPickAttachment={handlePickReplyAttachment}
+              />
               <TextInput
+                ref={replyInputRef}
                 autoCapitalize="sentences"
                 autoCorrect
                 multiline
                 textAlignVertical="top"
                 value={replyText}
                 onChangeText={setReplyText}
+                onSelectionChange={(event) =>
+                  setReplySelection(event.nativeEvent.selection)
+                }
+                selection={replySelection}
                 placeholder="Write a reply..."
                 placeholderTextColor={colors.textSubtle}
                 style={styles.replyInput}
@@ -1514,7 +1561,6 @@ export function ForumThreadScreen() {
                 <ForumAttachmentPicker
                   attachment={replyAttachment}
                   disabled={replyMutation.isPending}
-                  onPick={handlePickReplyAttachment}
                   onRemove={() => setReplyAttachment(null)}
                 />
                 <AppButton
