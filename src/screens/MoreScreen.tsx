@@ -251,6 +251,20 @@ export function MoreScreen() {
         </View>
       </View>
 
+      {isSignedIn && user?.role === "ADMIN" ? (
+        <View style={styles.section}>
+          <SectionHeader title="Admin tools" />
+          <View style={styles.rowStack}>
+            <MenuRow
+              icon="flag-outline"
+              title="Report Queue"
+              subtitle="Review and action flagged forum posts."
+              onPress={() => navigation.navigate("AdminReportQueue")}
+            />
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <SectionHeader title="Legal and support" />
         <View style={styles.rowStack}>

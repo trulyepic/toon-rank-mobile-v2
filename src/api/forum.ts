@@ -3,6 +3,7 @@ import type {
   CreateForumCategoryRequest,
   CreateForumPostRequest,
   CreateForumThreadRequest,
+  ForumReportPage,
   EditForumPostRequest,
   ForumCategory,
   ForumThreadDetail,
@@ -239,4 +240,28 @@ export async function searchForumSeries(query: string) {
     params: { q: query },
   });
   return res.data;
+}
+
+export async function reportPost(threadId: number, postId: number, reason?: string) {
+  await api.post(`/forum/threads/${threadId}/posts/${postId}/report`, {
+    reason: reason ?? null,
+  });
+}
+
+export async function getForumReports(
+  page = 1,
+  status?: "OPEN" | "REVIEWED" | "DISMISSED",
+) {
+  const res = await api.get<ForumReportPage>("/forum/reports", {
+    params: { page, page_size: 20, ...(status ? { status } : {}) },
+  });
+  return res.data;
+}
+
+export async function reviewForumReport(id: number, status: "REVIEWED" | "DISMISSED") {
+  await api.patch(`/forum/reports/${id}`, { status });
+}
+
+export async function deleteForumReport(id: number) {
+  await api.delete(`/forum/reports/${id}`);
 }

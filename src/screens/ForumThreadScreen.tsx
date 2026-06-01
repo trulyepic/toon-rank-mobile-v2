@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +33,7 @@ import {
   lockForumThread,
   pinForumThread,
   setForumPostVote,
+  reportPost,
   togglePostBookmark,
   toggleThreadFollow,
   updateForumThread,
@@ -119,6 +121,8 @@ function PostCard({
   onAuthorPress,
   isBookmarked,
   onBookmark,
+  canReport,
+  onReport,
 }: {
   post: ForumPost;
   depth?: number;
@@ -142,6 +146,8 @@ function PostCard({
   onAuthorPress?: (username: string) => void;
   isBookmarked?: boolean;
   onBookmark?: (post: ForumPost) => void;
+  canReport?: boolean;
+  onReport?: (post: ForumPost) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -149,6 +155,9 @@ function PostCard({
   const downvotes = getDownvoteCount(post);
   const canEdit = isOwner || isAdmin;
   const canDelete = isOwner || isAdmin;
+  const hasSecondaryActions =
+    (onBookmark || canReport || canEdit || canDelete) && !isEditing;
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   return (
     <Surface
@@ -302,55 +311,103 @@ function PostCard({
             <AppText variant="caption">Reply</AppText>
           </Pressable>
         ) : null}
-        {onBookmark && !isEditing ? (
+        {hasSecondaryActions ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={isBookmarked ? "Remove bookmark" : "Bookmark post"}
-            onPress={() => onBookmark(post)}
-            style={({ pressed }) => [
-              styles.replyAction,
-              isBookmarked ? styles.activeBookmarkAction : null,
-              pressed ? styles.pressedBadge : null,
-            ]}
-          >
-            <Ionicons
-              name={isBookmarked ? "bookmark" : "bookmark-outline"}
-              size={13}
-              color={isBookmarked ? colors.credText : colors.text}
-            />
-          </Pressable>
-        ) : null}
-        {canEdit && !isEditing ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Edit post"
-            onPress={() => onEditStart(post)}
+            accessibilityLabel="More actions"
+            onPress={() => setSheetVisible(true)}
             style={({ pressed }) => [
               styles.replyAction,
               pressed ? styles.pressedBadge : null,
             ]}
           >
-            <Ionicons name="pencil-outline" size={13} color={colors.text} />
-            <AppText variant="caption">Edit</AppText>
-          </Pressable>
-        ) : null}
-        {canDelete && !isEditing ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Delete post"
-            onPress={() => onDelete(post)}
-            style={({ pressed }) => [
-              styles.deleteAction,
-              pressed ? styles.pressedBadge : null,
-            ]}
-          >
-            <Ionicons name="trash-outline" size={13} color={colors.danger} />
-            <AppText variant="caption" tone="danger">
-              Delete
-            </AppText>
+            <Ionicons name="ellipsis-horizontal" size={15} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
+
+      {/* Secondary actions bottom sheet */}
+      <Modal transparent visible={sheetVisible} animationType="slide">
+        <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)} />
+        <Surface radius="xl" style={styles.actionSheet}>
+          <View style={styles.sheetHandle} />
+          {onBookmark ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.pressedBadge : null,
+              ]}
+              onPress={() => {
+                setSheetVisible(false);
+                onBookmark(post);
+              }}
+            >
+              <Ionicons
+                name={isBookmarked ? "bookmark" : "bookmark-outline"}
+                size={20}
+                color={isBookmarked ? colors.credText : colors.text}
+              />
+              <AppText>{isBookmarked ? "Remove bookmark" : "Save post"}</AppText>
+            </Pressable>
+          ) : null}
+          {canReport ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.pressedBadge : null,
+              ]}
+              onPress={() => {
+                setSheetVisible(false);
+                onReport?.(post);
+              }}
+            >
+              <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
+              <AppText tone="muted">Report post</AppText>
+            </Pressable>
+          ) : null}
+          {canEdit ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.pressedBadge : null,
+              ]}
+              onPress={() => {
+                setSheetVisible(false);
+                onEditStart(post);
+              }}
+            >
+              <Ionicons name="pencil-outline" size={20} color={colors.text} />
+              <AppText>Edit</AppText>
+            </Pressable>
+          ) : null}
+          {canDelete ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.pressedBadge : null,
+              ]}
+              onPress={() => {
+                setSheetVisible(false);
+                onDelete(post);
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.danger} />
+              <AppText tone="danger">Delete</AppText>
+            </Pressable>
+          ) : null}
+          <Pressable
+            style={({ pressed }) => [
+              styles.sheetCancelRow,
+              pressed ? styles.pressedBadge : null,
+            ]}
+            onPress={() => setSheetVisible(false)}
+          >
+            <AppText tone="muted" align="center">
+              Cancel
+            </AppText>
+          </Pressable>
+        </Surface>
+      </Modal>
     </Surface>
   );
 }
@@ -526,6 +583,8 @@ function ReplyTree({
   topRankMap,
   onAuthorPress,
   onBookmark,
+  onReport,
+  reportedPostIds,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -551,6 +610,8 @@ function ReplyTree({
   topRankMap: Record<string, number>;
   onAuthorPress: (username: string) => void;
   onBookmark?: (post: ForumPost) => void;
+  onReport?: (post: ForumPost) => void;
+  reportedPostIds?: Set<number>;
 }) {
   const children = byParent[post.id] || [];
   const label = parentPost
@@ -585,6 +646,13 @@ function ReplyTree({
         onAuthorPress={onAuthorPress}
         isBookmarked={post.viewer_has_bookmarked}
         onBookmark={onBookmark}
+        canReport={
+          !!currentUsername &&
+          !!post.author_username &&
+          post.author_username !== currentUsername &&
+          !reportedPostIds?.has(post.id)
+        }
+        onReport={onReport}
       />
       {renderInlineComposer(post)}
       {children.map((child) => (
@@ -614,6 +682,8 @@ function ReplyTree({
           topRankMap={topRankMap}
           onAuthorPress={onAuthorPress}
           onBookmark={onBookmark}
+          onReport={onReport}
+          reportedPostIds={reportedPostIds}
         />
       ))}
     </View>
@@ -642,6 +712,11 @@ export function ForumThreadScreen() {
   const [editThreadTitle, setEditThreadTitle] = useState("");
   const [editThreadBody, setEditThreadBody] = useState("");
   const [editThreadCategoryId, setEditThreadCategoryId] = useState<number | null>(null);
+  const [reportedPostIds, setReportedPostIds] = useState<Set<number>>(new Set());
+  const [reportModalPost, setReportModalPost] = useState<ForumPost | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportError, setReportError] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const { threadId, postId } = route.params;
   const scrollViewRef = useRef<ScrollView>(null);
   const replyInputRef = useRef<TextInput | null>(null);
@@ -1172,6 +1247,35 @@ export function ForumThreadScreen() {
   const handleToggleLatestFirst = () => {
     if (!thread) return;
     settingsMutation.mutate(!thread.latest_first);
+  };
+
+  const handleReport = (post: ForumPost) => {
+    setReportModalPost(post);
+    setReportReason("");
+    setReportError("");
+  };
+
+  const submitReport = async () => {
+    if (!reportModalPost) return;
+    setIsSubmittingReport(true);
+    setReportError("");
+    try {
+      await reportPost(threadId, reportModalPost.id, reportReason.trim() || undefined);
+      setReportedPostIds((prev) => new Set(prev).add(reportModalPost.id));
+      setReportModalPost(null);
+      Alert.alert("Report submitted", "Our team will review it. Thank you.");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 409) {
+        setReportError("You have already reported this post.");
+      } else if (axiosErr.response?.status === 429) {
+        setReportError("Too many reports recently. Try again later.");
+      } else {
+        setReportError("Could not submit report. Try again.");
+      }
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   const handleVote = (post: ForumPost, vote: ForumVote) => {
@@ -1765,6 +1869,13 @@ export function ForumThreadScreen() {
             onAuthorPress={openPublicProfile}
             isBookmarked={originalPost.viewer_has_bookmarked}
             onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
+            canReport={
+              isSignedIn &&
+              !!originalPost.author_username &&
+              originalPost.author_username !== user?.username &&
+              !reportedPostIds.has(originalPost.id)
+            }
+            onReport={handleReport}
           />
           {renderInlineComposer(originalPost)}
         </View>
@@ -1813,6 +1924,8 @@ export function ForumThreadScreen() {
                 topRankMap={topRankMap}
                 onAuthorPress={openPublicProfile}
                 onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
+                onReport={isSignedIn ? handleReport : undefined}
+                reportedPostIds={reportedPostIds}
               />
             ))}
           </View>
@@ -1929,6 +2042,53 @@ export function ForumThreadScreen() {
           )}
         </Surface>
       ) : null}
+      {/* Report modal */}
+      <Modal transparent visible={!!reportModalPost} animationType="slide">
+        <View style={styles.reportModalBackdrop}>
+          <Surface radius="xl" style={styles.reportModal}>
+            <AppText variant="sectionTitle">Report post</AppText>
+            <AppText tone="muted">
+              Briefly describe the issue (optional). Our team will review it.
+            </AppText>
+            <TextInput
+              value={reportReason}
+              onChangeText={(t) => {
+                setReportReason(t);
+                setReportError("");
+              }}
+              placeholder="Reason (optional)"
+              placeholderTextColor={colors.textMuted}
+              maxLength={500}
+              multiline
+              style={styles.reportInput}
+            />
+            {reportError ? (
+              <AppText tone="danger" variant="caption">
+                {reportError}
+              </AppText>
+            ) : null}
+            <View style={styles.reportActions}>
+              <AppButton
+                label="Cancel"
+                variant="ghost"
+                disabled={isSubmittingReport}
+                onPress={() => setReportModalPost(null)}
+              />
+              <AppButton
+                label={isSubmittingReport ? "Submitting…" : "Submit Report"}
+                selected
+                disabled={isSubmittingReport}
+                iconLeft={
+                  isSubmittingReport ? (
+                    <ActivityIndicator size="small" color={colors.text} />
+                  ) : undefined
+                }
+                onPress={() => void submitReport()}
+              />
+            </View>
+          </Surface>
+        </View>
+      </Modal>
     </ScreenShell>
   );
 }
@@ -2276,6 +2436,64 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  actionSheet: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    gap: 0,
+    paddingBottom: spacing.lg,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.borderSoft,
+    alignSelf: "center",
+    marginBottom: spacing.sm,
+  },
+  sheetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  sheetCancelRow: {
+    marginTop: spacing.xs,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+  },
+  reportModalBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  reportModal: {
+    gap: spacing.md,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  reportInput: {
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text,
+    backgroundColor: colors.backgroundSoft,
+    fontSize: 15,
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  reportActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.sm,
   },
   pressedLight: {
     opacity: 0.6,
