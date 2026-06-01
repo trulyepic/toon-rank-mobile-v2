@@ -9,6 +9,7 @@ import type {
   SignupRequest,
   SignupResponse,
   UserAvatarOut,
+  UsernameUpdateOut,
 } from "../types/account";
 
 export async function login(payload: LoginRequest) {
@@ -71,6 +72,13 @@ export async function resetMyAvatar() {
 
 export async function deleteAccount() {
   const res = await api.delete<MessageResponse>("/auth/me");
+  return res.data;
+}
+
+export async function updateMyUsername(newUsername: string) {
+  const res = await api.patch<UsernameUpdateOut>("/auth/me/username", {
+    new_username: newUsername,
+  });
   return res.data;
 }
 

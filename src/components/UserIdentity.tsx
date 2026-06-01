@@ -14,6 +14,7 @@ type Props = {
   avatarSize?: "sm" | "md" | "lg" | "xl";
   avatarVariant?: "circle" | "portrait";
   avatarAccessory?: ReactNode;
+  nameAccessory?: ReactNode;
   centered?: boolean;
 };
 
@@ -24,6 +25,7 @@ export function UserIdentity({
   avatarSize = "md",
   avatarVariant = "circle",
   avatarAccessory,
+  nameAccessory,
   centered = false,
 }: Props) {
   const username = user?.username || titleFallback;
@@ -46,13 +48,16 @@ export function UserIdentity({
         ) : null}
       </View>
       <View style={[styles.text, centered ? styles.centeredText : null]}>
-        <RoleNameText
-          variant={avatarSize === "xl" ? "sectionTitle" : "cardTitle"}
-          align={centered ? "center" : "left"}
-          role={user?.role}
-        >
-          {username}
-        </RoleNameText>
+        <View style={[styles.nameRow, centered ? styles.nameRowCentered : null]}>
+          <RoleNameText
+            variant={avatarSize === "xl" ? "sectionTitle" : "cardTitle"}
+            align={centered ? "center" : "left"}
+            role={user?.role}
+          >
+            {username}
+          </RoleNameText>
+          {nameAccessory ? nameAccessory : null}
+        </View>
         <AppText variant="label" tone="muted" align={centered ? "center" : "left"}>
           {role}
         </AppText>
@@ -92,5 +97,13 @@ const styles = StyleSheet.create({
   centeredText: {
     alignItems: "center",
     flex: 0,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  nameRowCentered: {
+    justifyContent: "center",
   },
 });

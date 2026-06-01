@@ -105,3 +105,11 @@ export interface PublicProfile {
   favourites: FavoriteSeries[];
   reading_lists: PublicReadingListPreview[];
 }
+
+export interface UsernameUpdateOut {
+  id: number;
+  username: string;
+  role: string;
+  avatar_url: string | null;
+  avatar_preset: string | null;
+}
