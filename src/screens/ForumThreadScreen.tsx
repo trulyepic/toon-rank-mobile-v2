@@ -153,6 +153,7 @@ function PostCard({
   canReport?: boolean;
   onReport?: (post: ForumPost) => void;
 }) {
+  const styles = getStyles();
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
   const upvotes = getUpvoteCount(post);
@@ -462,6 +463,7 @@ function InlineComposer({
   onSelectionChange: (selection: ForumTextSelection) => void;
   onFormat: (action: ForumFormatAction) => void;
 }) {
+  const styles = getStyles();
   const inputRef = useRef<TextInput | null>(null);
   const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
   const canSubmit =
@@ -545,6 +547,7 @@ function ForumAttachmentPicker({
   disabled: boolean;
   onRemove: () => void;
 }) {
+  const styles = getStyles();
   return (
     <View style={styles.attachmentBlock}>
       {attachment ? (
@@ -632,6 +635,7 @@ function ReplyTree({
   onReport?: (post: ForumPost) => void;
   reportedPostIds?: Set<number>;
 }) {
+  const styles = getStyles();
   const children = byParent[post.id] || [];
   const label = parentPost
     ? depth === 0
@@ -710,6 +714,7 @@ function ReplyTree({
 }
 
 export function ForumThreadScreen() {
+  const styles = getStyles();
   const route = useRoute<ForumThreadRoute>();
   const navigation = useNavigation<ForumThreadNavigation>();
   const queryClient = useQueryClient();
@@ -2365,478 +2370,480 @@ function getDownvoteCount(post: ForumPost) {
   return post.downvote_count ?? 0;
 }
 
-const styles = StyleSheet.create({
-  hero: {
-    gap: spacing.sm,
-  },
-  heroAuthorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  heroStats: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  heroActionsRow: {
-    gap: spacing.sm,
-  },
-  heroDivider: {
-    height: 1,
-    backgroundColor: colors.accentBorder,
-    marginVertical: spacing.xs,
-  },
-  threadFlag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  pinnedFlag: {
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
-  },
-  lockedFlag: {
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
-  },
-  warningText: {
-    color: colors.warningText,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  stack: {
-    gap: spacing.sm,
-  },
-  replyComposer: {
-    gap: spacing.md,
-  },
-  composerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  composerTitle: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  replyTargetCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  replyTargetText: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  clearReplyTarget: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  replyInput: {
-    minHeight: 132,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  composerActions: {
-    gap: spacing.sm,
-  },
-  composerHint: {
-    flexShrink: 1,
-  },
-  attachmentBlock: {
-    gap: spacing.sm,
-  },
-  attachmentPreview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  attachmentImage: {
-    width: 58,
-    height: 58,
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceRaised,
-  },
-  attachmentInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  removeAttachmentButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  signInPrompt: {
-    gap: spacing.sm,
-  },
-  signInPromptText: {
-    flexShrink: 1,
-  },
-  postCard: {
-    gap: spacing.sm,
-  },
-  replyCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accentBorder,
-  },
-  replyBranch: {
-    gap: spacing.sm,
-  },
-  postHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  postAuthor: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  authorLine: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  replyLabel: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  postFooter: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  voteGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    overflow: "hidden",
-  },
-  voteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  activeUpvoteButton: {
-    backgroundColor: "rgba(14, 167, 106, 0.16)",
-  },
-  activeDownvoteButton: {
-    backgroundColor: "rgba(235, 106, 90, 0.14)",
-  },
-  voteDivider: {
-    width: 1,
-    alignSelf: "stretch",
-    backgroundColor: colors.borderSoft,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  replyAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  disabledBadge: {
-    opacity: 0.65,
-  },
-  pressedBadge: {
-    opacity: 0.82,
-    transform: [{ scale: 0.98 }],
-  },
-  deleteAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  editBlock: {
-    gap: spacing.sm,
-  },
-  editActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  inlineComposer: {
-    gap: spacing.md,
-  },
-  inlineComposerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  threadActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    paddingTop: spacing.xs,
-  },
-  activeThreadAction: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accentBorder,
-  },
-  threadEditCard: {
-    gap: spacing.md,
-  },
-  fieldHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  titleInput: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  reportLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-end",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  threadSearchButton: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  postSearchContainer: {
-    gap: spacing.sm,
-  },
-  postSearchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  postSearchInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  postSearchResults: {
-    gap: spacing.xs,
-  },
-  postSearchRow: {
-    gap: 2,
-    padding: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-  },
-  postSearchEmpty: {
-    paddingHorizontal: spacing.xs,
-  },
-  sheetBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  actionSheet: {
-    backgroundColor: colors.surfaceRaised,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: colors.borderSoft,
-    overflow: "hidden",
-    paddingBottom: spacing.lg,
-  },
-  sheetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 11,
-  },
-  sheetRowPressed: {
-    backgroundColor: colors.backgroundSoft,
-  },
-  sheetDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.borderSoft,
-    marginHorizontal: spacing.md,
-  },
-  reportModalBackdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  reportModal: {
-    gap: spacing.md,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  reportInput: {
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 15,
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  reportActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.sm,
-  },
-  pressedLight: {
-    opacity: 0.6,
-  },
-  followButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-  },
-  followButtonActive: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accentSoft,
-  },
-  followButtonTextActive: {
-    color: colors.accentStrong,
-  },
-  activeBookmarkAction: {
-    borderColor: colors.credBorder,
-    backgroundColor: colors.credSurface,
-  },
-  postDateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  editedLabel: {
-    fontStyle: "italic",
-  },
-  editCategorySection: {
-    gap: spacing.xs,
-  },
-  pillStrip: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    paddingHorizontal: 2,
-  },
-  categoryPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-  },
-  categoryPillActive: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accent,
-  },
-  pillText: {
-    color: colors.textMuted,
-  },
-  pillTextActive: {
-    color: colors.text,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    hero: {
+      gap: spacing.sm,
+    },
+    heroAuthorRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    heroStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    heroActionsRow: {
+      gap: spacing.sm,
+    },
+    heroDivider: {
+      height: 1,
+      backgroundColor: colors.accentBorder,
+      marginVertical: spacing.xs,
+    },
+    threadFlag: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      alignSelf: "flex-start",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    pinnedFlag: {
+      backgroundColor: colors.warningSurface,
+      borderColor: colors.warningBorder,
+    },
+    lockedFlag: {
+      backgroundColor: colors.warningSurface,
+      borderColor: colors.warningBorder,
+    },
+    warningText: {
+      color: colors.warningText,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    stack: {
+      gap: spacing.sm,
+    },
+    replyComposer: {
+      gap: spacing.md,
+    },
+    composerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
+    composerTitle: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    replyTargetCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radii.lg,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    replyTargetText: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    clearReplyTarget: {
+      width: 34,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    replyInput: {
+      minHeight: 132,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: 16,
+      lineHeight: 22,
+    },
+    composerActions: {
+      gap: spacing.sm,
+    },
+    composerHint: {
+      flexShrink: 1,
+    },
+    attachmentBlock: {
+      gap: spacing.sm,
+    },
+    attachmentPreview: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.sm,
+      borderRadius: radii.lg,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    attachmentImage: {
+      width: 58,
+      height: 58,
+      borderRadius: radii.md,
+      backgroundColor: colors.surfaceRaised,
+    },
+    attachmentInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    removeAttachmentButton: {
+      width: 36,
+      height: 36,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    signInPrompt: {
+      gap: spacing.sm,
+    },
+    signInPromptText: {
+      flexShrink: 1,
+    },
+    postCard: {
+      gap: spacing.sm,
+    },
+    replyCard: {
+      borderLeftWidth: 4,
+      borderLeftColor: colors.accentBorder,
+    },
+    replyBranch: {
+      gap: spacing.sm,
+    },
+    postHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    postAuthor: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    authorLine: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    replyLabel: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    postFooter: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    voteGroup: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      overflow: "hidden",
+    },
+    voteButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    activeUpvoteButton: {
+      backgroundColor: "rgba(14, 167, 106, 0.16)",
+    },
+    activeDownvoteButton: {
+      backgroundColor: "rgba(235, 106, 90, 0.14)",
+    },
+    voteDivider: {
+      width: 1,
+      alignSelf: "stretch",
+      backgroundColor: colors.borderSoft,
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    replyAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    disabledBadge: {
+      opacity: 0.65,
+    },
+    pressedBadge: {
+      opacity: 0.82,
+      transform: [{ scale: 0.98 }],
+    },
+    deleteAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    editBlock: {
+      gap: spacing.sm,
+    },
+    editActions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    inlineComposer: {
+      gap: spacing.md,
+    },
+    inlineComposerActions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    threadActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+      paddingTop: spacing.xs,
+    },
+    activeThreadAction: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accentBorder,
+    },
+    threadEditCard: {
+      gap: spacing.md,
+    },
+    fieldHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
+    titleInput: {
+      minHeight: 52,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 16,
+      fontWeight: "800",
+    },
+    reportLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-end",
+      gap: spacing.xs,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    threadSearchButton: {
+      width: 36,
+      height: 36,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    postSearchContainer: {
+      gap: spacing.sm,
+    },
+    postSearchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    postSearchInput: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 15,
+      paddingVertical: 0,
+    },
+    postSearchResults: {
+      gap: spacing.xs,
+    },
+    postSearchRow: {
+      gap: 2,
+      padding: spacing.sm,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+    },
+    postSearchEmpty: {
+      paddingHorizontal: spacing.xs,
+    },
+    sheetBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.35)",
+    },
+    actionSheet: {
+      backgroundColor: colors.surfaceRaised,
+      borderTopLeftRadius: radii.xl,
+      borderTopRightRadius: radii.xl,
+      borderWidth: 1,
+      borderBottomWidth: 0,
+      borderColor: colors.borderSoft,
+      overflow: "hidden",
+      paddingBottom: spacing.lg,
+    },
+    sheetRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 11,
+    },
+    sheetRowPressed: {
+      backgroundColor: colors.backgroundSoft,
+    },
+    sheetDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.borderSoft,
+      marginHorizontal: spacing.md,
+    },
+    reportModalBackdrop: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(0,0,0,0.6)",
+    },
+    reportModal: {
+      gap: spacing.md,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+    reportInput: {
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 15,
+      minHeight: 80,
+      textAlignVertical: "top",
+    },
+    reportActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: spacing.sm,
+    },
+    pressedLight: {
+      opacity: 0.6,
+    },
+    followButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      alignSelf: "flex-start",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+    },
+    followButtonActive: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    followButtonTextActive: {
+      color: colors.accentStrong,
+    },
+    activeBookmarkAction: {
+      borderColor: colors.credBorder,
+      backgroundColor: colors.credSurface,
+    },
+    postDateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    editedLabel: {
+      fontStyle: "italic",
+    },
+    editCategorySection: {
+      gap: spacing.xs,
+    },
+    pillStrip: {
+      flexDirection: "row",
+      gap: spacing.xs,
+      paddingHorizontal: 2,
+    },
+    categoryPill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+    },
+    categoryPillActive: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accent,
+    },
+    pillText: {
+      color: colors.textMuted,
+    },
+    pillTextActive: {
+      color: colors.text,
+    },
+  });
+}

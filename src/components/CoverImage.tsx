@@ -17,6 +17,7 @@ type Props = {
  * Pass `uri={null | undefined}` to render the no-cover fallback icon.
  */
 export function CoverImage({ uri, style, fallbackIconSize = 24 }: Props) {
+  const styles = getStyles();
   if (!uri) {
     return (
       <View style={[styles.fallback, style]}>
@@ -40,13 +41,15 @@ export function CoverImage({ uri, style, fallbackIconSize = 24 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  image: {
-    backgroundColor: colors.surface,
-  },
-  fallback: {
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    image: {
+      backgroundColor: colors.surface,
+    },
+    fallback: {
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });
+}

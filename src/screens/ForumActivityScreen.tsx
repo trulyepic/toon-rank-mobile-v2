@@ -53,6 +53,7 @@ function truncate(text: string, max = 120): string {
 // ─── Row components ──────────────────────────────────────────────────────────
 
 function ThreadRow({ thread }: { thread: ForumThread }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   return (
     <Pressable
@@ -88,6 +89,7 @@ function FollowingRow({
   onUnfollow: () => void;
   isUnfollowing: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   return (
     <Surface variant="raised" radius="xl" style={styles.followingCard}>
@@ -123,6 +125,7 @@ function FollowingRow({
 }
 
 function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boolean }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   const threadId = post.thread_id;
 
@@ -183,6 +186,7 @@ function SavedRow({
   onRemove: () => void;
   isRemoving: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   const threadId = post.thread_id;
   const isEdited =
@@ -230,6 +234,7 @@ function SavedRow({
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function ForumActivityScreen() {
+  const styles = getStyles();
   const { isSignedIn, user } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("threads");
@@ -597,163 +602,165 @@ export function ForumActivityScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  activityTitleLine: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "baseline",
-  },
-  tabSection: {
-    gap: spacing.md,
-  },
-  tabRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  tabContent: {
-    gap: spacing.sm,
-  },
-  list: {
-    gap: spacing.sm,
-  },
-  // Thread row
-  threadRow: {
-    padding: 0,
-    overflow: "hidden",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  rowPressed: {
-    opacity: 0.75,
-  },
-  rowBody: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  threadTitle: {
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  rowMeta: {
-    fontSize: 12,
-  },
-  lockedBadge: {
-    backgroundColor: colors.warningSurface,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: colors.warningBorder,
-  },
-  lockedText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.warningText,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  // Following row
-  followingCard: {
-    gap: 0,
-    overflow: "hidden",
-  },
-  followingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  unfollowButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSoft,
-  },
-  // Post / vote rows
-  postCard: {
-    gap: spacing.sm,
-  },
-  postCardTop: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  postContent: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  postCardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  savedMeta: {
-    flex: 1,
-    minWidth: 0,
-  },
-  savedActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  viewThreadLink: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.accentStrong,
-  },
-  // Vote badge
-  voteBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    borderRadius: radii.pill,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderWidth: 1,
-  },
-  voteBadgeUp: {
-    backgroundColor: "rgba(14, 167, 106, 0.12)",
-    borderColor: "rgba(14, 167, 106, 0.3)",
-  },
-  voteBadgeDown: {
-    backgroundColor: "rgba(235, 106, 90, 0.12)",
-    borderColor: "rgba(235, 106, 90, 0.3)",
-  },
-  voteBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  voteTextUp: {
-    color: colors.success,
-  },
-  voteTextDown: {
-    color: colors.danger,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    heroIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    activityTitleLine: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "baseline",
+    },
+    tabSection: {
+      gap: spacing.md,
+    },
+    tabRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    tabContent: {
+      gap: spacing.sm,
+    },
+    list: {
+      gap: spacing.sm,
+    },
+    // Thread row
+    threadRow: {
+      padding: 0,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    rowPressed: {
+      opacity: 0.75,
+    },
+    rowBody: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    threadTitle: {
+      fontSize: 15,
+      lineHeight: 21,
+    },
+    rowMeta: {
+      fontSize: 12,
+    },
+    lockedBadge: {
+      backgroundColor: colors.warningSurface,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+    },
+    lockedText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.warningText,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    // Following row
+    followingCard: {
+      gap: 0,
+      overflow: "hidden",
+    },
+    followingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.md,
+    },
+    unfollowButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSoft,
+    },
+    // Post / vote rows
+    postCard: {
+      gap: spacing.sm,
+    },
+    postCardTop: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      alignItems: "flex-start",
+    },
+    postContent: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    postCardFooter: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    savedMeta: {
+      flex: 1,
+      minWidth: 0,
+    },
+    savedActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    viewThreadLink: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.accentStrong,
+    },
+    // Vote badge
+    voteBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      borderRadius: radii.pill,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderWidth: 1,
+    },
+    voteBadgeUp: {
+      backgroundColor: "rgba(14, 167, 106, 0.12)",
+      borderColor: "rgba(14, 167, 106, 0.3)",
+    },
+    voteBadgeDown: {
+      backgroundColor: "rgba(235, 106, 90, 0.12)",
+      borderColor: "rgba(235, 106, 90, 0.3)",
+    },
+    voteBadgeText: {
+      fontSize: 10,
+      fontWeight: "700",
+    },
+    voteTextUp: {
+      color: colors.success,
+    },
+    voteTextDown: {
+      color: colors.danger,
+    },
+  });
+}

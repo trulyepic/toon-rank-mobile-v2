@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function AccountRequiredCard({ title, body }: Props) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
@@ -43,26 +44,28 @@ export function AccountRequiredCard({ title, body }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing.md,
-  },
-  icon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  text: {
-    gap: spacing.xs,
-  },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    card: {
+      gap: spacing.md,
+    },
+    icon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    text: {
+      gap: spacing.xs,
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+  });
+}

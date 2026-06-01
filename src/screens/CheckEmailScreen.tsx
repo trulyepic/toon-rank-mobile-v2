@@ -10,6 +10,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function CheckEmailScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<Navigation>();
 
   return (
@@ -35,19 +36,21 @@ export function CheckEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  iconWrap: {
-    width: 58,
-    height: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    card: {
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    iconWrap: {
+      width: 58,
+      height: 58,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+  });
+}

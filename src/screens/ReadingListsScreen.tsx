@@ -39,6 +39,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 type ReadingListsNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function ReadingListsScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<ReadingListsNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn, status } = useAuth();
@@ -351,90 +352,92 @@ export function ReadingListsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  stack: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  rowIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  rowText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  rowActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  shareBtn: {
-    padding: spacing.xs,
-  },
-  deleteBtn: {
-    padding: spacing.xs,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    padding: spacing.lg,
-    backgroundColor: "rgba(0,0,0,0.62)",
-  },
-  modalCard: {
-    gap: spacing.md,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  input: {
-    minHeight: 54,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    heroIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    stack: {
+      gap: spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    rowIcon: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    rowText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    rowActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    shareBtn: {
+      padding: spacing.xs,
+    },
+    deleteBtn: {
+      padding: spacing.xs,
+    },
+    modalBackdrop: {
+      flex: 1,
+      justifyContent: "center",
+      padding: spacing.lg,
+      backgroundColor: "rgba(0,0,0,0.62)",
+    },
+    modalCard: {
+      gap: spacing.md,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
+    input: {
+      minHeight: 54,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    modalActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+  });
+}

@@ -14,6 +14,7 @@ const rankColors: Record<number, string> = {
 };
 
 export function RankerBadge({ rank }: Props) {
+  const styles = getStyles();
   if (!rank || rank > 10) return null;
 
   const isPodium = rank <= 3;
@@ -30,20 +31,22 @@ export function RankerBadge({ rank }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    backgroundColor: colors.backgroundSoft,
-  },
-  podiumBadge: {
-    backgroundColor: "rgba(250, 204, 21, 0.09)",
-  },
-  badgeText: {
-    fontSize: 11,
-    lineHeight: 14,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    badge: {
+      alignSelf: "flex-start",
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      backgroundColor: colors.backgroundSoft,
+    },
+    podiumBadge: {
+      backgroundColor: "rgba(250, 204, 21, 0.09)",
+    },
+    badgeText: {
+      fontSize: 11,
+      lineHeight: 14,
+    },
+  });
+}

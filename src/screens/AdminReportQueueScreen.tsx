@@ -50,6 +50,7 @@ function ReportCard({
   onDelete: () => void;
   isActioning: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<AdminReportNav>();
 
   return (
@@ -144,6 +145,7 @@ function ReportCard({
 }
 
 export function AdminReportQueueScreen() {
+  const styles = getStyles();
   const { isSignedIn, user } = useAuth();
   const queryClient = useQueryClient();
   const isAdmin = user?.role === "ADMIN";
@@ -288,43 +290,45 @@ export function AdminReportQueueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  list: {
-    gap: spacing.sm,
-  },
-  card: {
-    gap: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexWrap: "wrap",
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-  },
-  threadLink: {
-    color: colors.accentStrong,
-    textDecorationLine: "underline",
-  },
-  excerpt: {
-    padding: spacing.sm,
-  },
-  cardActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    tabRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    list: {
+      gap: spacing.sm,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      flexWrap: "wrap",
+    },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+    },
+    threadLink: {
+      color: colors.accentStrong,
+      textDecorationLine: "underline",
+    },
+    excerpt: {
+      padding: spacing.sm,
+    },
+    cardActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

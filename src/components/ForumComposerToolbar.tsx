@@ -35,6 +35,7 @@ export function ForumComposerToolbar({
   onFormat,
   onPickAttachment,
 }: Props) {
+  const styles = getStyles();
   return (
     <View style={styles.toolbarWrap}>
       <ScrollView
@@ -96,48 +97,50 @@ export function ForumComposerToolbar({
   );
 }
 
-const styles = StyleSheet.create({
-  toolbarWrap: {
-    marginVertical: spacing.sm,
-  },
-  toolbarContent: {
-    gap: spacing.xs,
-    paddingRight: spacing.md,
-  },
-  toolButton: {
-    minHeight: 38,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  mediaButton: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accentSoft,
-  },
-  toolLabel: {
-    fontWeight: "900",
-  },
-  boldLabel: {
-    fontWeight: "900",
-  },
-  italicLabel: {
-    fontStyle: "italic",
-  },
-  strikeLabel: {
-    textDecorationLine: "line-through",
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.98 }],
-  },
-  disabled: {
-    opacity: 0.48,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    toolbarWrap: {
+      marginVertical: spacing.sm,
+    },
+    toolbarContent: {
+      gap: spacing.xs,
+      paddingRight: spacing.md,
+    },
+    toolButton: {
+      minHeight: 38,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    mediaButton: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    toolLabel: {
+      fontWeight: "900",
+    },
+    boldLabel: {
+      fontWeight: "900",
+    },
+    italicLabel: {
+      fontStyle: "italic",
+    },
+    strikeLabel: {
+      textDecorationLine: "line-through",
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.98 }],
+    },
+    disabled: {
+      opacity: 0.48,
+    },
+  });
+}

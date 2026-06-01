@@ -19,6 +19,7 @@ function LinkRow({
   color: string;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -31,6 +32,7 @@ function LinkRow({
 }
 
 export function AboutScreen() {
+  const styles = getStyles();
   return (
     <ScreenShell title="About" subtitle="Toon Ranks — the community rankings app.">
       {/* Hero */}
@@ -89,44 +91,46 @@ export function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "center",
-  },
-  logoWrap: {
-    width: 64,
-    height: 64,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.xl,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  logoEmoji: {
-    fontSize: 30,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  card: {
-    gap: spacing.sm,
-  },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  link: {
-    textDecorationLine: "underline",
-  },
-  subtle: {
-    fontSize: 12,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+      alignItems: "center",
+    },
+    logoWrap: {
+      width: 64,
+      height: 64,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.xl,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    logoEmoji: {
+      fontSize: 30,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    linkRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    link: {
+      textDecorationLine: "underline",
+    },
+    subtle: {
+      fontSize: 12,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
+}

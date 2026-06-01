@@ -28,6 +28,32 @@ export const Surface = forwardRef<View, Props>(function Surface(
   }: Props,
   ref,
 ) {
+  const styles = StyleSheet.create({
+    base: {
+      borderWidth: 1,
+    },
+    default: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    raised: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderSoft,
+    },
+    accent: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accent,
+    },
+    warning: {
+      backgroundColor: colors.warningSurface,
+      borderColor: colors.warningBorder,
+    },
+    transparent: {
+      backgroundColor: "transparent",
+      borderColor: "transparent",
+    },
+  });
+
   return (
     <View
       ref={ref}
@@ -58,30 +84,4 @@ const paddingStyles = StyleSheet.create({
   sm: { padding: spacing.sm },
   md: { padding: spacing.md },
   lg: { padding: spacing.lg },
-});
-
-const styles = StyleSheet.create({
-  base: {
-    borderWidth: 1,
-  },
-  default: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  raised: {
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.borderSoft,
-  },
-  accent: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-  },
-  warning: {
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
-  },
-  transparent: {
-    backgroundColor: "transparent",
-    borderColor: "transparent",
-  },
 });

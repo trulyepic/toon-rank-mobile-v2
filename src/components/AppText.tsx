@@ -21,15 +21,6 @@ type Props = PropsWithChildren<
   }
 >;
 
-const toneStyles: Record<AppTextTone, TextStyle> = {
-  primary: { color: colors.text },
-  muted: { color: colors.textMuted },
-  subtle: { color: colors.textSubtle },
-  accent: { color: colors.accentStrong },
-  danger: { color: colors.danger },
-  warning: { color: colors.warningText },
-};
-
 export function AppText({
   variant = "body",
   tone = "primary",
@@ -38,6 +29,15 @@ export function AppText({
   children,
   ...props
 }: Props) {
+  const toneStyles: Record<AppTextTone, TextStyle> = {
+    primary: { color: colors.text },
+    muted: { color: colors.textMuted },
+    subtle: { color: colors.textSubtle },
+    accent: { color: colors.accentStrong },
+    danger: { color: colors.danger },
+    warning: { color: colors.warningText },
+  };
+
   return (
     <Text
       {...props}

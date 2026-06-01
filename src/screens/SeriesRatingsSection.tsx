@@ -43,6 +43,7 @@ function scoreBg(score: number): string {
 }
 
 function ScorePill({ vote }: { vote: CategoryVote }) {
+  const styles = getStyles();
   const label = SHORT_LABEL[vote.category] ?? vote.category;
   const fg = scoreColor(vote.score);
   const bg = scoreBg(vote.score);
@@ -55,6 +56,7 @@ function ScorePill({ vote }: { vote: CategoryVote }) {
 }
 
 function SeriesRatingCard({ item }: { item: MySeriesVote }) {
+  const styles = getStyles();
   const navigation = useNavigation<SeriesRatingsNav>();
   const title = item.title ?? `Series #${item.series_id}`;
 
@@ -106,6 +108,7 @@ function SeriesRatingCard({ item }: { item: MySeriesVote }) {
 // ─── Main section ─────────────────────────────────────────────────────────────
 
 export function SeriesRatingsSection() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useInfiniteQuery({
     queryKey: ["series", "me", "votes"],
@@ -161,101 +164,103 @@ export function SeriesRatingsSection() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  root: {
-    gap: spacing.sm,
-  },
-  list: {
-    gap: spacing.sm,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-  // Card
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  cover: {
-    width: 48,
-    height: 66,
-    borderRadius: radii.sm,
-    overflow: "hidden",
-    flexShrink: 0,
-  },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
-  coverFallback: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  info: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    flexWrap: "wrap",
-  },
-  typeBadge: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.pill,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: colors.accentBorder + "55",
-  },
-  typeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.accentStrong,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  statusText: {
-    fontSize: 11,
-  },
-  pills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  pillLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  pillScore: {
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  infoRowPressed: {
-    opacity: 0.7,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    root: {
+      gap: spacing.sm,
+    },
+    list: {
+      gap: spacing.sm,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+    // Card
+    card: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    cover: {
+      width: 48,
+      height: 66,
+      borderRadius: radii.sm,
+      overflow: "hidden",
+      flexShrink: 0,
+    },
+    coverImage: {
+      width: "100%",
+      height: "100%",
+    },
+    coverFallback: {
+      width: "100%",
+      height: "100%",
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    info: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    title: {
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      flexWrap: "wrap",
+    },
+    typeBadge: {
+      backgroundColor: colors.accentSoft,
+      borderRadius: radii.pill,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderWidth: 1,
+      borderColor: colors.accentBorder + "55",
+    },
+    typeText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.accentStrong,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    statusText: {
+      fontSize: 11,
+    },
+    pills: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    pill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+    },
+    pillLabel: {
+      fontSize: 10,
+      fontWeight: "600",
+    },
+    pillScore: {
+      fontSize: 11,
+      fontWeight: "800",
+    },
+    infoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingVertical: spacing.xs,
+    },
+    infoRowPressed: {
+      opacity: 0.7,
+    },
+  });
+}

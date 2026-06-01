@@ -36,6 +36,25 @@ export function AppButton({
 }: Props) {
   const resolvedVariant = selected ? "primary" : variant;
 
+  const variantStyles = StyleSheet.create({
+    primary: {
+      backgroundColor: colors.accent,
+      borderColor: colors.accentBorder,
+    },
+    secondary: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderSoft,
+    },
+    ghost: {
+      backgroundColor: "transparent",
+      borderColor: colors.borderSoft,
+    },
+    danger: {
+      backgroundColor: colors.danger,
+      borderColor: colors.danger,
+    },
+  });
+
   return (
     <Pressable
       {...props}
@@ -84,24 +103,5 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.48,
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  primary: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accentBorder,
-  },
-  secondary: {
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.borderSoft,
-  },
-  ghost: {
-    backgroundColor: "transparent",
-    borderColor: colors.borderSoft,
-  },
-  danger: {
-    backgroundColor: colors.danger,
-    borderColor: colors.danger,
   },
 });

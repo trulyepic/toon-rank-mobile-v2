@@ -13,6 +13,7 @@ type Props = {
 };
 
 export function ForumSeriesStrip({ seriesRefs }: Props) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const visibleSeriesRefs = getVisibleSeriesRefs(seriesRefs);
 
@@ -71,40 +72,42 @@ function getVisibleSeriesRefs(seriesRefs: SeriesRef[]) {
     .slice(0, 3);
 }
 
-const styles = StyleSheet.create({
-  strip: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    maxWidth: "100%",
-    gap: spacing.xs,
-    padding: spacing.xs,
-    paddingRight: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-  cover: {
-    width: 34,
-    height: 46,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surface,
-  },
-  coverFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemText: {
-    maxWidth: 148,
-    gap: 1,
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    strip: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    item: {
+      flexDirection: "row",
+      alignItems: "center",
+      maxWidth: "100%",
+      gap: spacing.xs,
+      padding: spacing.xs,
+      paddingRight: spacing.sm,
+      borderRadius: radii.lg,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.99 }],
+    },
+    cover: {
+      width: 34,
+      height: 46,
+      borderRadius: radii.sm,
+      backgroundColor: colors.surface,
+    },
+    coverFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    itemText: {
+      maxWidth: 148,
+      gap: 1,
+    },
+  });
+}

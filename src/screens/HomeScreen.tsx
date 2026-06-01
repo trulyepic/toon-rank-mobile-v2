@@ -69,6 +69,7 @@ function HomeCard({
   canAddMore: boolean;
   onToggleCompare: () => void;
 }) {
+  const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
   const compareDisabled = !selectedForCompare && !canAddMore;
 
@@ -131,6 +132,7 @@ function HomeCard({
 }
 
 export function HomeScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
@@ -299,187 +301,189 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  listContent: {
-    gap: spacing.md,
-  },
-  listFooter: {
-    paddingTop: spacing.sm,
-  },
-  columnWrap: {
-    gap: spacing.md,
-  },
-  typeRail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  genreRail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  genrePill: {
-    minHeight: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.backgroundSoft,
-    borderColor: colors.borderSoft,
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.sm,
-  },
-  genrePillActive: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accentBorder,
-  },
-  segmentButton: {
-    minHeight: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: spacing.xs,
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.borderSoft,
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-  },
-  segmentButtonActive: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accentBorder,
-  },
-  segmentButtonPressed: {
-    opacity: 0.88,
-  },
-  typeButtonText: {
-    fontWeight: "800",
-  },
-  typeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.accentStrong,
-  },
-  posterCard: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.sm,
-    padding: 6,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-  },
-  posterWrap: {
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: radii.xl,
-    backgroundColor: "transparent",
-    ...shadows.card,
-  },
-  posterImage: {
-    width: "100%",
-    aspectRatio: 2 / 3,
-    backgroundColor: colors.surface,
-  },
-  posterFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.md,
-    backgroundColor: colors.accentSoft,
-  },
-  posterFallbackText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  rankBadge: {
-    position: "absolute",
-    left: spacing.sm,
-    top: spacing.sm,
-    borderRadius: radii.pill,
-    backgroundColor: colors.overlay,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  rankBadgeText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  scoreBadge: {
-    position: "absolute",
-    right: spacing.sm,
-    top: spacing.sm,
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  scoreBadgeText: {
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  compareButton: {
-    marginTop: spacing.xs,
-    alignSelf: "flex-start",
-  },
-  posterCardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.992 }],
-  },
-  posterMeta: {
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  posterTitle: {
-    color: colors.text,
-    ...typography.cardTitle,
-  },
-  posterMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.xs,
-  },
-  posterType: {
-    color: colors.accentStrong,
-    fontSize: 11,
-    lineHeight: 16,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-    fontWeight: "800",
-  },
-  posterVotes: {
-    color: colors.textMuted,
-    fontSize: 11,
-    lineHeight: 16,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-    fontWeight: "600",
-  },
-  headerCounter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  headerCounterText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-});
+function getStyles() {
+  return StyleSheet.create({
+    listContent: {
+      gap: spacing.md,
+    },
+    listFooter: {
+      paddingTop: spacing.sm,
+    },
+    columnWrap: {
+      gap: spacing.md,
+    },
+    typeRail: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingRight: spacing.md,
+    },
+    genreRail: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingRight: spacing.md,
+    },
+    genrePill: {
+      minHeight: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.backgroundSoft,
+      borderColor: colors.borderSoft,
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.sm,
+    },
+    genrePillActive: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accentBorder,
+    },
+    segmentButton: {
+      minHeight: 38,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: spacing.xs,
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderSoft,
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.md,
+    },
+    segmentButtonActive: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accentBorder,
+    },
+    segmentButtonPressed: {
+      opacity: 0.88,
+    },
+    typeButtonText: {
+      fontWeight: "800",
+    },
+    typeDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accentStrong,
+    },
+    posterCard: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.sm,
+      padding: 6,
+      borderRadius: radii.xl,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+    },
+    posterWrap: {
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: radii.xl,
+      backgroundColor: "transparent",
+      ...shadows.card,
+    },
+    posterImage: {
+      width: "100%",
+      aspectRatio: 2 / 3,
+      backgroundColor: colors.surface,
+    },
+    posterFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+      padding: spacing.md,
+      backgroundColor: colors.accentSoft,
+    },
+    posterFallbackText: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    rankBadge: {
+      position: "absolute",
+      left: spacing.sm,
+      top: spacing.sm,
+      borderRadius: radii.pill,
+      backgroundColor: colors.overlay,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    rankBadgeText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    scoreBadge: {
+      position: "absolute",
+      right: spacing.sm,
+      top: spacing.sm,
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    scoreBadgeText: {
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    compareButton: {
+      marginTop: spacing.xs,
+      alignSelf: "flex-start",
+    },
+    posterCardPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.992 }],
+    },
+    posterMeta: {
+      gap: spacing.xs,
+      paddingHorizontal: spacing.xs,
+    },
+    posterTitle: {
+      color: colors.text,
+      ...typography.cardTitle,
+    },
+    posterMetaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.xs,
+    },
+    posterType: {
+      color: colors.accentStrong,
+      fontSize: 11,
+      lineHeight: 16,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      fontWeight: "800",
+    },
+    posterVotes: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      fontWeight: "600",
+    },
+    headerCounter: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    headerCounterText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+  });
+}
