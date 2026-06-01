@@ -58,6 +58,7 @@ async function pickScreenshot(): Promise<ImageAsset | null> {
 }
 
 export function ReportIssueScreen() {
+  const styles = getStyles();
   const route = useRoute<ReportIssueRoute>();
   const initialType = (route.params?.issueType as IssueType | undefined) ?? "BUG";
   const [type, setType] = useState<IssueType>(initialType);
@@ -298,7 +299,8 @@ export function ReportIssueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   feedback: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -403,3 +405,4 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
 });
+}

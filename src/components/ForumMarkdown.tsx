@@ -231,6 +231,7 @@ function preprocessHtml(src: string): string {
 // ─── @mention chip ──────────────────────────────────────────────────────────
 
 function MentionChip({ username }: { username: string }) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return (
     <Text
@@ -280,6 +281,7 @@ function parseInline(src: string): InlineToken[] {
 }
 
 function InlineText({ text, extra }: { text: string; extra?: object }) {
+  const styles = getStyles();
   const tokens = parseInline(text);
 
   return (
@@ -425,6 +427,7 @@ function parseMdBlocks(src: string): MdBlock[] {
 }
 
 function MarkdownText({ text }: { text: string }) {
+  const styles = getStyles();
   const clean = preprocessHtml(text);
   const blocks = parseMdBlocks(clean);
   if (!blocks.length) return null;
@@ -484,6 +487,7 @@ function MarkdownText({ text }: { text: string }) {
 // ─── Spoiler ─────────────────────────────────────────────────────────────────
 
 function SpoilerBlock({ summary, body }: { summary: string; body: string }) {
+  const styles = getStyles();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -515,6 +519,7 @@ function SpoilerBlock({ summary, body }: { summary: string; body: string }) {
 // ─── Main export ─────────────────────────────────────────────────────────────
 
 export function ForumMarkdown({ markdown }: Props) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const segments = parseMarkdown(markdown);
 
@@ -588,7 +593,8 @@ export function ForumMarkdown({ markdown }: Props) {
 
 const MONOSPACE = Platform.OS === "ios" ? "Menlo" : "monospace";
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   root: {
     gap: spacing.sm,
   },
@@ -729,3 +735,4 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 });
+}

@@ -50,6 +50,7 @@ function getScoreTone(score?: number | null) {
 }
 
 function RowLabel({ text }: { text: string }) {
+  const styles = getStyles();
   return (
     <View style={[styles.labelCell, { width: LABEL_COLUMN_WIDTH }]}>
       <Text style={styles.labelCellText}>{text}</Text>
@@ -68,6 +69,7 @@ function ValueCell({
   muted?: boolean;
   accent?: boolean;
 }) {
+  const styles = getStyles();
   return (
     <View style={[styles.valueCell, { width }]}>
       <Text
@@ -84,6 +86,7 @@ function ValueCell({
 }
 
 export function CompareScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width: screenWidth } = useWindowDimensions();
   const { compareItems, clearCompare, toggleCompare } = useCompare();
@@ -340,7 +343,8 @@ export function CompareScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   boardShell: {
     gap: spacing.md,
   },
@@ -549,3 +553,4 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 });
+}

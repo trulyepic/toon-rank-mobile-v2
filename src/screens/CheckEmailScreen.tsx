@@ -10,6 +10,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function CheckEmailScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<Navigation>();
 
   return (
@@ -35,7 +36,8 @@ export function CheckEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   card: {
     alignItems: "center",
     gap: spacing.md,
@@ -51,3 +53,4 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBorder,
   },
 });
+}

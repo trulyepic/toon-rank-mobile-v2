@@ -15,6 +15,8 @@ import {
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { LEGAL_URLS, SITE_ORIGIN, SUPPORT_EMAIL } from "../config/site";
+import { THEME_META, type ThemeName } from "../theme/tokens";
+import { useTheme } from "../theme/ThemeContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { openInAppBrowser, openSupportEmail } from "../utils/externalLinks";
@@ -71,6 +73,7 @@ function MenuRow({
   tone = "default",
   onPress,
 }: MenuRowProps) {
+  const styles = getStyles();
   const disabled = tone === "disabled";
   const resolvedColor = disabled ? colors.textSubtle : (iconColor ?? colors.accentStrong);
   const content = (
@@ -125,8 +128,10 @@ function MenuRow({
 }
 
 export function MoreScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn, logout, status, user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isLoadingAuth = status === "loading";
   const supportRowsWithActions: MenuRowProps[] = supportRows.map((row) => {
     if (row.title === "Terms") {
@@ -319,6 +324,50 @@ export function MoreScreen() {
         </View>
       </View>
 
+      {/* Theme picker */}
+      <View style={styles.section}>
+        <SectionHeader title="Appearance" />
+        <Surface variant="raised" radius="xl" style={styles.themePicker}>
+          <AppText variant="caption" tone="muted">
+            Choose your colour theme
+          </AppText>
+          <View style={styles.themeOptions}>
+            {(Object.keys(THEME_META) as ThemeName[]).map((name) => {
+              const meta = THEME_META[name];
+              const active = theme === name;
+              return (
+                <Pressable
+                  key={name}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${meta.label} theme`}
+                  onPress={() => void setTheme(name)}
+                  style={({ pressed }) => [
+                    styles.themeOption,
+                    active ? styles.themeOptionActive : null,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <View style={[styles.themeSwatch, { backgroundColor: meta.swatch }]} />
+                  <AppText
+                    variant="caption"
+                    style={active ? { color: meta.swatch, fontWeight: "700" } : undefined}
+                  >
+                    {meta.label}
+                  </AppText>
+                  {active ? (
+                    <Ionicons name="checkmark-circle" size={14} color={meta.swatch} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+          <AppText variant="caption" tone="subtle">
+            Accent colours update instantly. Restart the app to fully apply background
+            changes.
+          </AppText>
+        </Surface>
+      </View>
+
       <View style={styles.footer}>
         <AppText tone="subtle" align="center">
           Toon Ranks is operated by Nofara LLC.
@@ -331,7 +380,8 @@ export function MoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   signInCard: {
     gap: spacing.md,
   },
@@ -405,8 +455,35 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2,
   },
+  themePicker: {
+    gap: spacing.sm,
+  },
+  themeOptions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderSoft,
+  },
+  themeOptionActive: {
+    borderColor: colors.accentStrong,
+    backgroundColor: colors.accentSoft,
+  },
+  themeSwatch: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.pill,
+  },
   footer: {
     gap: spacing.xs,
     paddingVertical: spacing.md,
   },
 });
+}

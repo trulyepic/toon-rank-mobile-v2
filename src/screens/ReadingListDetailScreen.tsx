@@ -174,6 +174,7 @@ function SavedTitleCard({
   onEditChapter: () => void;
   onRemove: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Surface variant="raised" radius="xl" style={styles.itemCard}>
       <Pressable onPress={onOpen} style={styles.itemMain}>
@@ -206,6 +207,7 @@ function SavedTitleCard({
 }
 
 export function ReadingListDetailScreen() {
+  const styles = getStyles();
   const route = useRoute<ReadingListDetailRoute>();
   const navigation = useNavigation<ReadingListDetailNavigation>();
   const queryClient = useQueryClient();
@@ -550,7 +552,8 @@ export function ReadingListDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   stack: {
     gap: spacing.sm,
   },
@@ -675,3 +678,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 });
+}

@@ -69,6 +69,7 @@ function ThreadCard({
   onPinToggle?: (thread: ForumThread) => void;
   isAdmin: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const seriesLabel =
     thread.series_refs.length > 0
@@ -229,6 +230,7 @@ function CategoryManagerModal({
   onClose: () => void;
   onRefresh: () => void;
 }) {
+  const styles = getStyles();
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -424,6 +426,7 @@ function CategoryManagerModal({
 }
 
 export function ForumScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isSignedIn, user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -796,7 +799,8 @@ export function ForumScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -1090,3 +1094,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+}

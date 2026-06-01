@@ -53,6 +53,7 @@ function truncate(text: string, max = 120): string {
 // ─── Row components ──────────────────────────────────────────────────────────
 
 function ThreadRow({ thread }: { thread: ForumThread }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   return (
     <Pressable
@@ -88,6 +89,7 @@ function FollowingRow({
   onUnfollow: () => void;
   isUnfollowing: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   return (
     <Surface variant="raised" radius="xl" style={styles.followingCard}>
@@ -123,6 +125,7 @@ function FollowingRow({
 }
 
 function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boolean }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   const threadId = post.thread_id;
 
@@ -183,6 +186,7 @@ function SavedRow({
   onRemove: () => void;
   isRemoving: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<ForumActivityNav>();
   const threadId = post.thread_id;
   const isEdited =
@@ -230,6 +234,7 @@ function SavedRow({
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function ForumActivityScreen() {
+  const styles = getStyles();
   const { isSignedIn, user } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("threads");
@@ -597,7 +602,8 @@ export function ForumActivityScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -757,3 +763,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 });
+}

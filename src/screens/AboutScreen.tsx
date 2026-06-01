@@ -31,6 +31,7 @@ function LinkRow({
 }
 
 export function AboutScreen() {
+  const styles = getStyles();
   return (
     <ScreenShell title="About" subtitle="Toon Ranks — the community rankings app.">
       {/* Hero */}
@@ -89,7 +90,8 @@ export function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -130,3 +132,4 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
 });
+}

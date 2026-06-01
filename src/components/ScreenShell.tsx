@@ -19,6 +19,32 @@ type Props = PropsWithChildren<{
 }>;
 
 export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }: Props) {
+  const styles = StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    keyboard: {
+      flex: 1,
+    },
+    content: {
+      padding: spacing.md,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xl,
+      gap: spacing.md,
+    },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: spacing.md,
+    },
+    headerText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -45,28 +71,3 @@ export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }:
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboard: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: spacing.md,
-  },
-  headerText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-});

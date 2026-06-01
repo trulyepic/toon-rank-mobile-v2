@@ -54,6 +54,7 @@ function StatChip({
   accent?: boolean;
   onPress?: () => void;
 }) {
+  const styles = getStyles();
   const content = (
     <>
       <Ionicons
@@ -95,6 +96,7 @@ function FavoriteCard({
   favorite: FavoriteSeries;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -124,6 +126,7 @@ function ReadingListRow({
   list: PublicReadingListPreview;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -148,6 +151,7 @@ function ReadingListRow({
 }
 
 export function PublicProfileScreen() {
+  const styles = getStyles();
   const route = useRoute<PublicProfileRoute>();
   const navigation = useNavigation<PublicProfileNavigation>();
   const { username } = route.params;
@@ -282,7 +286,8 @@ export function PublicProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   profileCard: {
     alignItems: "center",
     gap: spacing.md,
@@ -377,3 +382,4 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
 });
+}

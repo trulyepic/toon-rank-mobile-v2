@@ -90,6 +90,7 @@ function FavoriteCard({
   onOpen: () => void;
   onRemove: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -129,6 +130,7 @@ function FavoriteCard({
 }
 
 export function ProfileScreen() {
+  const styles = getStyles();
   const { isSignedIn, user, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -756,7 +758,8 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     alignItems: "center",
     gap: spacing.md,
@@ -955,3 +958,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.credSurface,
   },
 });
+}

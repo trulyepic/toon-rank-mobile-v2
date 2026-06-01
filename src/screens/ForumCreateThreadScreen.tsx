@@ -56,6 +56,7 @@ const MAX_TITLE_LENGTH = 200;
 const MAX_BODY_LENGTH = 2000;
 
 export function ForumCreateThreadScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<CreateThreadNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn, status } = useAuth();
@@ -359,7 +360,8 @@ export function ForumCreateThreadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   closeButton: {
     width: 42,
     height: 42,
@@ -504,3 +506,4 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 });
+}

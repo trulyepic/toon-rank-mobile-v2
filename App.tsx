@@ -3,29 +3,19 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import type { LinkingOptions } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AuthProvider } from "./src/auth/AuthContext";
 import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import type { RootStackParamList } from "./src/navigation/RootNavigator";
-import { colors } from "./src/theme/tokens";
+import { applyTheme, colors, DEFAULT_THEME, type ThemeName } from "./src/theme/tokens";
+import { ThemeProvider } from "./src/theme/ThemeContext";
 import { configureGoogleSignIn } from "./src/utils/googleSignInNative";
+import * as SecureStore from "expo-secure-store";
 
+const THEME_KEY = "toonranks_theme";
 const queryClient = new QueryClient();
-
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.text,
-    border: colors.border,
-    primary: colors.accent,
-    notification: colors.warning,
-  },
-};
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ["toonranks://"],
@@ -36,20 +26,55 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
+function AppInner({ navKey }: { navKey: number }) {
+  const navTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.accentStrong,
+      notification: colors.warning,
+    },
+  };
+
+  return (
+    <NavigationContainer key={navKey} theme={navTheme} linking={linking}>
+      <StatusBar style="light" />
+      <RootNavigator />
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
+  const [ready, setReady] = useState(false);
+  const [navKey, setNavKey] = useState(0);
+  const onThemeChange = useCallback(() => setNavKey((k) => k + 1), []);
+
   useEffect(() => {
     void configureGoogleSignIn();
+    // Read and apply theme before anything renders
+    SecureStore.getItemAsync(THEME_KEY)
+      .then((stored) => {
+        const theme = (stored as ThemeName) ?? DEFAULT_THEME;
+        applyTheme(theme);
+      })
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, []);
+
+  if (!ready) return null;
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <CompareProvider>
-            <NavigationContainer theme={theme} linking={linking}>
-              <StatusBar style="light" />
-              <RootNavigator />
-            </NavigationContainer>
+            <ThemeProvider onThemeChange={onThemeChange}>
+              <AppInner navKey={navKey} />
+            </ThemeProvider>
           </CompareProvider>
         </AuthProvider>
       </QueryClientProvider>

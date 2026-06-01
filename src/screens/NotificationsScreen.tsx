@@ -59,6 +59,7 @@ function NotificationRow({
   notification: NotificationOut;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   const isUnread = !notification.is_read;
 
   return (
@@ -97,6 +98,7 @@ function NotificationRow({
 }
 
 export function NotificationsScreen() {
+  const styles = getStyles();
   const { isSignedIn } = useAuth();
   const navigation = useNavigation<NotificationsNav>();
   const queryClient = useQueryClient();
@@ -223,7 +225,8 @@ export function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   list: {
     overflow: "hidden",
     gap: 0,
@@ -280,3 +283,4 @@ const styles = StyleSheet.create({
     marginLeft: spacing.md + 7 + spacing.sm + 32 + spacing.sm,
   },
 });
+}

@@ -74,6 +74,7 @@ function PodiumCard({
   featured?: boolean;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   const rankTheme = getRankTheme(user.rank);
 
   return (
@@ -142,6 +143,7 @@ function LeaderboardRow({
   user: LeaderboardUser;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   const rankTheme = getRankTheme(user.rank);
 
   return (
@@ -207,6 +209,7 @@ function LeaderboardRow({
 }
 
 export function LeaderboardScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const leaderboardQuery = useInfiniteQuery({
     queryKey: ["users", "leaderboard"],
@@ -301,7 +304,8 @@ export function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -405,3 +409,4 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
 });
+}

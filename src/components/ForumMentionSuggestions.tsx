@@ -21,6 +21,7 @@ type Props = {
 };
 
 export function ForumMentionSuggestions({ mention, onSelect }: Props) {
+  const styles = getStyles();
   const queryText = mention?.query.trim() ?? "";
   const enabled = Boolean(mention && queryText.length >= 1);
 
@@ -123,7 +124,8 @@ export function ForumMentionSuggestions({ mention, onSelect }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   root: {
     gap: spacing.xs,
     padding: spacing.sm,
@@ -168,3 +170,4 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
 });
+}

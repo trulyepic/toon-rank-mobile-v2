@@ -24,6 +24,36 @@ Rankers/Cred Point parity, public profiles, and the remaining forum parity slice
 (categories/sort, reporting, follows/bookmarks, notifications, read state, and richer composer
 tools).
 
+## Design Direction — Violet/Indigo Theme (Option A)
+
+**Decision (June 2026):** Replace the generic blue-navy colour palette with a deep violet/indigo
+identity. Rationale:
+
+- The original blue-on-blue-on-dark-navy palette was generic and lacked personality.
+- Amber-gold (Option B) was tried first but not preferred.
+- Violet/indigo reads as premium and distinctive — used by apps like Linear, Notion, and Luma.
+- The dark violet background (`#0f0e14`) is a subtle but meaningful shift from cold navy — it
+  gives the app depth and a richer night-mode feel.
+- `accentStrong: "#a78bfa"` (violet-400) is soft enough not to be garish but distinct enough
+  to replace the generic `#5f88ff` blue convincingly.
+
+**Palette change summary:**
+
+| Token                       | Before                 | After                           |
+| --------------------------- | ---------------------- | ------------------------------- |
+| `background`                | `#101216` (cold navy)  | `#0f0e14` (deep violet-dark)    |
+| `surface`                   | `#1a1f2a` (blue-gray)  | `#1a1828` (violet-dark)         |
+| `surfaceRaised`             | `#202737` (blue-gray)  | `#221f35` (violet-raised)       |
+| `accent` (surface bg)       | `#315fdc` (blue)       | `#1e1a3a` (dark violet)         |
+| `accentStrong` (icons/text) | `#5f88ff` (blue)       | `#a78bfa` (violet-400)          |
+| `accentBorder`              | `#6d93ff` (blue)       | `#5b45b8` (violet-border)       |
+| `text`                      | `#f7f9fc` (cold white) | `#f4f2ff` (violet-tinted white) |
+| `textMuted`                 | `#aeb8ca` (blue-gray)  | `#a8a4c4` (violet-muted)        |
+
+Semantic colours (`success`, `warning`, `danger`, `credText`) are unchanged.
+
+---
+
 ## Web-To-Mobile Parity Index
 
 Use this index before adding new phases. It maps major website features to the mobile roadmap so

@@ -43,6 +43,7 @@ function scoreBg(score: number): string {
 }
 
 function ScorePill({ vote }: { vote: CategoryVote }) {
+  const styles = getStyles();
   const label = SHORT_LABEL[vote.category] ?? vote.category;
   const fg = scoreColor(vote.score);
   const bg = scoreBg(vote.score);
@@ -55,6 +56,7 @@ function ScorePill({ vote }: { vote: CategoryVote }) {
 }
 
 function SeriesRatingCard({ item }: { item: MySeriesVote }) {
+  const styles = getStyles();
   const navigation = useNavigation<SeriesRatingsNav>();
   const title = item.title ?? `Series #${item.series_id}`;
 
@@ -106,6 +108,7 @@ function SeriesRatingCard({ item }: { item: MySeriesVote }) {
 // ─── Main section ─────────────────────────────────────────────────────────────
 
 export function SeriesRatingsSection() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useInfiniteQuery({
     queryKey: ["series", "me", "votes"],
@@ -161,7 +164,8 @@ export function SeriesRatingsSection() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   root: {
     gap: spacing.sm,
   },
@@ -259,3 +263,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+}

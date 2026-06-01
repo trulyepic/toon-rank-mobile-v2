@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function AccountRequiredCard({ title, body }: Props) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
@@ -43,7 +44,8 @@ export function AccountRequiredCard({ title, body }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   card: {
     gap: spacing.md,
   },
@@ -66,3 +68,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 });
+}

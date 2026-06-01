@@ -14,6 +14,7 @@ const rankColors: Record<number, string> = {
 };
 
 export function RankerBadge({ rank }: Props) {
+  const styles = getStyles();
   if (!rank || rank > 10) return null;
 
   const isPodium = rank <= 3;
@@ -30,7 +31,8 @@ export function RankerBadge({ rank }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
     borderWidth: 1,
@@ -47,3 +49,4 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
 });
+}

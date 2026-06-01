@@ -35,6 +35,7 @@ export function ForumComposerToolbar({
   onFormat,
   onPickAttachment,
 }: Props) {
+  const styles = getStyles();
   return (
     <View style={styles.toolbarWrap}>
       <ScrollView
@@ -96,7 +97,8 @@ export function ForumComposerToolbar({
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   toolbarWrap: {
     marginVertical: spacing.sm,
   },
@@ -141,3 +143,4 @@ const styles = StyleSheet.create({
     opacity: 0.48,
   },
 });
+}

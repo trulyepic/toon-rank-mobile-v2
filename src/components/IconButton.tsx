@@ -29,6 +29,28 @@ export function IconButton({
   style,
   ...props
 }: Props) {
+  const styles = StyleSheet.create({
+    base: {
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+    },
+    selected: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accent,
+    },
+    pressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    disabled: {
+      opacity: 0.48,
+    },
+  });
+
   return (
     <Pressable
       {...props}
@@ -49,24 +71,3 @@ export function IconButton({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-  },
-  selected: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accent,
-  },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  disabled: {
-    opacity: 0.48,
-  },
-});

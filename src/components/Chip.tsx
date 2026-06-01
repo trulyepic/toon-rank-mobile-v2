@@ -28,6 +28,7 @@ type ChipButtonProps = Omit<PressableProps, "style"> & {
 };
 
 export function Chip({ label, tone = "neutral", iconLeft, style, ...props }: Props) {
+  const toneStyles = getToneStyles();
   return (
     <View {...props} style={[styles.base, toneStyles[tone], style]}>
       {iconLeft}
@@ -45,6 +46,7 @@ export function ChipButton({
   style,
   ...props
 }: ChipButtonProps) {
+  const toneStyles = getToneStyles();
   return (
     <Pressable
       {...props}
@@ -85,21 +87,23 @@ const styles = StyleSheet.create({
   },
 });
 
-const toneStyles = StyleSheet.create({
-  neutral: {
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.borderSoft,
-  },
-  accent: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-  },
-  muted: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-  },
-  warning: {
-    backgroundColor: colors.warningSurface,
-    borderColor: colors.warningBorder,
-  },
-});
+function getToneStyles() {
+  return StyleSheet.create({
+    neutral: {
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderSoft,
+    },
+    accent: {
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accent,
+    },
+    muted: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    warning: {
+      backgroundColor: colors.warningSurface,
+      borderColor: colors.warningBorder,
+    },
+  });
+}

@@ -74,6 +74,7 @@ function MetricCard({
   value: string;
   highlight?: boolean;
 }) {
+  const styles = getStyles();
   return (
     <Surface
       variant={highlight ? "accent" : "default"}
@@ -99,6 +100,7 @@ function BreakdownCard({
   score: number;
   votes: number;
 }) {
+  const styles = getStyles();
   return (
     <Surface style={styles.breakdownCard}>
       <View style={styles.breakdownTopRow}>
@@ -129,6 +131,7 @@ function VoteCategoryCard({
   isSubmitting: boolean;
   onVote: (category: VoteCategory, score: number) => void;
 }) {
+  const styles = getStyles();
   const hasVoted = selectedScore !== null;
 
   return (
@@ -180,6 +183,7 @@ function VoteCategoryCard({
 }
 
 export function SeriesDetailScreen() {
+  const styles = getStyles();
   const route = useRoute<SeriesDetailRoute>();
   const navigation = useNavigation<SeriesDetailNavigation>();
   const queryClient = useQueryClient();
@@ -694,7 +698,8 @@ export function SeriesDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   heroShell: {
     alignSelf: "center",
     width: "100%",
@@ -930,3 +935,4 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 });
+}

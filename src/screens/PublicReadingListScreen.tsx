@@ -35,6 +35,7 @@ function PublicTitleCard({
   summary?: RankedSeries;
   onOpen: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Surface variant="raised" radius="xl" style={styles.itemCard}>
       <Pressable
@@ -65,6 +66,7 @@ function PublicTitleCard({
 }
 
 export function PublicReadingListScreen() {
+  const styles = getStyles();
   const route = useRoute<PublicReadingListRoute>();
   const navigation = useNavigation<PublicReadingListNavigation>();
   const { token } = route.params;
@@ -151,7 +153,8 @@ export function PublicReadingListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   stack: {
     gap: spacing.sm,
   },
@@ -179,3 +182,4 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
 });
+}

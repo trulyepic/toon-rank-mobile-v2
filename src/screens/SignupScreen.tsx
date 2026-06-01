@@ -19,6 +19,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 const RECAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 
 export function SignupScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<Navigation>();
   const { setSession } = useAuth();
   const [email, setEmail] = useState("");
@@ -239,7 +240,8 @@ export function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -308,3 +310,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderSoft,
   },
 });
+}

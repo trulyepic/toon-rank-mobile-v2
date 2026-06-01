@@ -69,6 +69,7 @@ function HomeCard({
   canAddMore: boolean;
   onToggleCompare: () => void;
 }) {
+  const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
   const compareDisabled = !selectedForCompare && !canAddMore;
 
@@ -131,6 +132,7 @@ function HomeCard({
 }
 
 export function HomeScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
@@ -299,7 +301,8 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   listContent: {
     gap: spacing.md,
   },
@@ -483,3 +486,4 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
+}

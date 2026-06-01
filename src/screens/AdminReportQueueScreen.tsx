@@ -50,6 +50,7 @@ function ReportCard({
   onDelete: () => void;
   isActioning: boolean;
 }) {
+  const styles = getStyles();
   const navigation = useNavigation<AdminReportNav>();
 
   return (
@@ -144,6 +145,7 @@ function ReportCard({
 }
 
 export function AdminReportQueueScreen() {
+  const styles = getStyles();
   const { isSignedIn, user } = useAuth();
   const queryClient = useQueryClient();
   const isAdmin = user?.role === "ADMIN";
@@ -288,7 +290,8 @@ export function AdminReportQueueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   tabRow: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -328,3 +331,4 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
 });
+}

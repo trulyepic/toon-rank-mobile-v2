@@ -13,6 +13,7 @@ type Props = {
 };
 
 export function ForumSeriesStrip({ seriesRefs }: Props) {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const visibleSeriesRefs = getVisibleSeriesRefs(seriesRefs);
 
@@ -71,7 +72,8 @@ function getVisibleSeriesRefs(seriesRefs: SeriesRef[]) {
     .slice(0, 3);
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   strip: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -108,3 +110,4 @@ const styles = StyleSheet.create({
     gap: 1,
   },
 });
+}

@@ -20,6 +20,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 import { openInAppBrowser } from "../utils/externalLinks";
 
 export function SettingsScreen() {
+  const styles = getStyles();
   const { isSignedIn, logout, status, user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isLoadingAuth = status === "loading";
@@ -149,7 +150,8 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   sessionCard: {
     gap: spacing.md,
   },
@@ -208,3 +210,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderSoft,
   },
 });
+}

@@ -153,6 +153,7 @@ function PostCard({
   canReport?: boolean;
   onReport?: (post: ForumPost) => void;
 }) {
+  const styles = getStyles();
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
   const upvotes = getUpvoteCount(post);
@@ -462,6 +463,7 @@ function InlineComposer({
   onSelectionChange: (selection: ForumTextSelection) => void;
   onFormat: (action: ForumFormatAction) => void;
 }) {
+  const styles = getStyles();
   const inputRef = useRef<TextInput | null>(null);
   const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
   const canSubmit =
@@ -545,6 +547,7 @@ function ForumAttachmentPicker({
   disabled: boolean;
   onRemove: () => void;
 }) {
+  const styles = getStyles();
   return (
     <View style={styles.attachmentBlock}>
       {attachment ? (
@@ -632,6 +635,7 @@ function ReplyTree({
   onReport?: (post: ForumPost) => void;
   reportedPostIds?: Set<number>;
 }) {
+  const styles = getStyles();
   const children = byParent[post.id] || [];
   const label = parentPost
     ? depth === 0
@@ -710,6 +714,7 @@ function ReplyTree({
 }
 
 export function ForumThreadScreen() {
+  const styles = getStyles();
   const route = useRoute<ForumThreadRoute>();
   const navigation = useNavigation<ForumThreadNavigation>();
   const queryClient = useQueryClient();
@@ -2365,7 +2370,8 @@ function getDownvoteCount(post: ForumPost) {
   return post.downvote_count ?? 0;
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     gap: spacing.sm,
   },
@@ -2840,3 +2846,4 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 });
+}

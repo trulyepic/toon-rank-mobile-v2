@@ -94,6 +94,7 @@ function SummaryTile({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -119,6 +120,7 @@ function SummaryTile({
 }
 
 function StatusBadge({ status }: { status: IssueStatus }) {
+  const styles = getStyles();
   const meta = statusMeta[status];
   return (
     <View
@@ -135,6 +137,7 @@ function StatusBadge({ status }: { status: IssueStatus }) {
 }
 
 function IssueCard({ issue }: { issue: Issue }) {
+  const styles = getStyles();
   return (
     <Surface variant="raised" radius="xl" style={styles.issueCard}>
       <View style={styles.issueHeader}>
@@ -175,6 +178,7 @@ function IssueCard({ issue }: { issue: Issue }) {
 }
 
 export function IssueTrackerScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [statusFilter, setStatusFilter] = useState<IssueStatus | undefined>();
   const [typeFilter, setTypeFilter] = useState<IssueType | undefined>();
@@ -357,7 +361,8 @@ export function IssueTrackerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     alignItems: "center",
@@ -470,3 +475,4 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
 });
+}

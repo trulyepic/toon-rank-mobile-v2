@@ -20,6 +20,7 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 const RECAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 
 export function LoginScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<Navigation>();
   const { setSession } = useAuth();
   const [username, setUsername] = useState("");
@@ -217,7 +218,8 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -295,3 +297,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderSoft,
   },
 });
+}

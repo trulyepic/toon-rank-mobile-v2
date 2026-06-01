@@ -53,6 +53,7 @@ const CATEGORIES: CategoryInfo[] = [
 ];
 
 export function HowRankingsWorkScreen() {
+  const styles = getStyles();
   return (
     <ScreenShell
       title="How Rankings Work"
@@ -122,7 +123,8 @@ export function HowRankingsWorkScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -164,3 +166,4 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 });
+}

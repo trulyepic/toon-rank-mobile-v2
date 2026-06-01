@@ -53,6 +53,7 @@ function SearchResultCard({
   canAddMore: boolean;
   onToggleCompare: () => void;
 }) {
+  const styles = getStyles();
   const compareDisabled = !selectedForCompare && !canAddMore;
   const score = Number(item.final_score || 0);
 
@@ -121,6 +122,7 @@ function SearchResultCard({
 }
 
 export function SearchScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const [query, setQuery] = useState("");
@@ -302,7 +304,8 @@ export function SearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   typeRail: {
     flexDirection: "row",
     alignItems: "center",
@@ -523,3 +526,4 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
+}

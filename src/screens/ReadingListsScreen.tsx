@@ -39,6 +39,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 type ReadingListsNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function ReadingListsScreen() {
+  const styles = getStyles();
   const navigation = useNavigation<ReadingListsNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn, status } = useAuth();
@@ -351,7 +352,8 @@ export function ReadingListsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function getStyles() {
+  return StyleSheet.create({
   hero: {
     flexDirection: "row",
     gap: spacing.md,
@@ -438,3 +440,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 });
+}
