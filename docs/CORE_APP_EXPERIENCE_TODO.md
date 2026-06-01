@@ -29,23 +29,23 @@ tools).
 Use this index before adding new phases. It maps major website features to the mobile roadmap so
 future work does not miss or duplicate large feature areas.
 
-| Website feature area                                                  | Mobile status                                                         | TODO phase                   |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------- |
-| Auth, signup, and longer mobile sessions                              | Mostly implemented; refresh/session hardening tracked                 | Phases 1, 2, 2.5             |
-| Series ratings and category voting                                    | Implemented                                                           | Phase 3                      |
-| Reading lists and public list sharing                                 | Mostly implemented; list detail filter/sort still tracked             | Phases 4, 14, 25             |
-| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked           | Phases 5, 6, 27              |
-| Forum thread sort, pinned threads, categories, category management    | Missing on mobile                                                     | Phase 30                     |
-| Forum follow, post bookmarks, saved/following activity tabs           | Missing on mobile                                                     | Phase 31                     |
-| Forum post reporting and admin report queue                           | Missing on mobile                                                     | Phases 32, 36                |
-| Forum notifications, unread counts, read-state badges                 | Missing on mobile                                                     | Phases 33, 34                |
-| Forum post-content search and user mention autocomplete               | Missing on mobile                                                     | Phase 35                     |
-| Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                     | Phase 23                     |
-| Public user profiles and pinned favorite series                       | Missing on mobile                                                     | Phase 24                     |
-| My submissions, contributor title submission flow                     | Missing on mobile; edit submission and synopsis steps incomplete      | Phase 28                     |
-| Admin pending title review and user role management                   | Not in mobile — future work                                           | Phases 28.5, 36              |
-| Public issue tracker view and optional admin issue triage             | Public read-only tracker implemented; admin triage intentionally open | Phases 21, 26, 40            |
-| Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist  | Phases 37, 41                |
+| Website feature area                                                  | Mobile status                                                         | TODO phase        |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------- |
+| Auth, signup, and longer mobile sessions                              | Mostly implemented; refresh/session hardening tracked                 | Phases 1, 2, 2.5  |
+| Series ratings and category voting                                    | Implemented                                                           | Phase 3           |
+| Reading lists and public list sharing                                 | Mostly implemented; list detail filter/sort still tracked             | Phases 4, 14, 25  |
+| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked           | Phases 5, 6, 27   |
+| Forum thread sort, pinned threads, categories, category management    | Missing on mobile                                                     | Phase 30          |
+| Forum follow, post bookmarks, saved/following activity tabs           | Missing on mobile                                                     | Phase 31          |
+| Forum post reporting and admin report queue                           | Missing on mobile                                                     | Phases 32, 36     |
+| Forum notifications, unread counts, read-state badges                 | Missing on mobile                                                     | Phases 33, 34     |
+| Forum post-content search and user mention autocomplete               | Missing on mobile                                                     | Phase 35          |
+| Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                     | Phase 23          |
+| Public user profiles and pinned favorite series                       | Missing on mobile                                                     | Phase 24          |
+| My submissions, contributor title submission flow                     | Missing on mobile; edit submission and synopsis steps incomplete      | Phase 28          |
+| Admin pending title review and user role management                   | Not in mobile — future work                                           | Phases 28.5, 36   |
+| Public issue tracker view and optional admin issue triage             | Public read-only tracker implemented; admin triage intentionally open | Phases 21, 26, 40 |
+| Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist  | Phases 37, 41     |
 
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
@@ -1730,13 +1730,13 @@ The web's `PendingTitlesPage` combines two admin functions on a single page:
 
 ### Backend endpoints (to verify before implementing)
 
-| Endpoint                         | Auth  | Description                                            |
-| -------------------------------- | ----- | ------------------------------------------------------ |
-| `GET /series/submissions/pending`| Admin | List all pending series submissions for admin review   |
-| `POST /series/{id}/approve`      | Admin | Approve a pending series (goes live)                   |
-| `DELETE /series/{id}`            | Admin | Reject/delete a pending submission                     |
-| `GET /admin/users`               | Admin | List all users with role                               |
-| `PATCH /admin/users/{id}/role`   | Admin | Update a user's role (`GENERAL`/`CONTRIBUTOR`/`ADMIN`) |
+| Endpoint                          | Auth  | Description                                            |
+| --------------------------------- | ----- | ------------------------------------------------------ |
+| `GET /series/submissions/pending` | Admin | List all pending series submissions for admin review   |
+| `POST /series/{id}/approve`       | Admin | Approve a pending series (goes live)                   |
+| `DELETE /series/{id}`             | Admin | Reject/delete a pending submission                     |
+| `GET /admin/users`                | Admin | List all users with role                               |
+| `PATCH /admin/users/{id}/role`    | Admin | Update a user's role (`GENERAL`/`CONTRIBUTOR`/`ADMIN`) |
 
 > Re-verify these endpoint paths against the backend before implementing — they may differ from the
 > web's API calls.
