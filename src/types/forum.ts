@@ -151,6 +151,30 @@ export interface EditForumPostRequest {
   series_ids?: number[];
 }
 
+export interface ForumReport {
+  id: number;
+  post_id: number;
+  thread_id: number;
+  reporter_username: string | null;
+  reason: string | null;
+  status: "OPEN" | "REVIEWED" | "DISMISSED";
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by_username: string | null;
+  post_excerpt: string | null;
+  thread_title: string | null;
+}
+
+export interface ForumReportPage {
+  items: ForumReport[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+}
+
 export interface UpdateForumThreadRequest {
   title: string;
   first_post_markdown: string;

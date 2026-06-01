@@ -2115,34 +2115,34 @@ Purpose: let signed-in users flag individual forum posts for admin review — ma
 
 **32a — API layer**
 
-- [ ] Add `reportPost(threadId: number, postId: number, reason?: string): Promise<void>` → `POST /forum/threads/{id}/posts/{postId}/report` with body `{ reason }` to `src/api/forum.ts`
-- [ ] Add `ForumReport` type to `src/types/forum.ts`
-- [ ] Add `getForumReports(page: number, status?: "OPEN" | "REVIEWED" | "DISMISSED"): Promise<Paginated<ForumReport>>` → `GET /forum/reports` to `src/api/forum.ts`
-- [ ] Add `reviewForumReport(id: number, status: "REVIEWED" | "DISMISSED"): Promise<void>` → `PATCH /forum/reports/{id}` to `src/api/forum.ts`
-- [ ] Add `deleteForumReport(id: number): Promise<void>` → `DELETE /forum/reports/{id}` to `src/api/forum.ts`
+- [x] Add `reportPost(threadId: number, postId: number, reason?: string): Promise<void>` → `POST /forum/threads/{id}/posts/{postId}/report` with body `{ reason }` to `src/api/forum.ts`
+- [x] Add `ForumReport` type to `src/types/forum.ts`
+- [x] Add `getForumReports(page: number, status?: "OPEN" | "REVIEWED" | "DISMISSED"): Promise<Paginated<ForumReport>>` → `GET /forum/reports` to `src/api/forum.ts`
+- [x] Add `reviewForumReport(id: number, status: "REVIEWED" | "DISMISSED"): Promise<void>` → `PATCH /forum/reports/{id}` to `src/api/forum.ts`
+- [x] Add `deleteForumReport(id: number): Promise<void>` → `DELETE /forum/reports/{id}` to `src/api/forum.ts`
 
 **32b — Report button on posts**
 
-- [ ] In `ForumThreadScreen`, add a "⚑ Report" action to each post/reply action row
-- [ ] Visible only to signed-in users who are not the post author (block self-reporting client-side to match backend)
-- [ ] Tapping opens an `Alert` or a bottom sheet with:
+- [x] In `ForumThreadScreen`, add a "⚑ Report" action to each post/reply action row
+- [x] Visible only to signed-in users who are not the post author (block self-reporting client-side to match backend)
+- [x] Tapping opens an `Alert` or a bottom sheet with:
   - Header: "Report this post"
   - Optional text input for reason (max 500 chars)
   - "Submit Report" button and Cancel
-- [ ] On 201 success: show a success alert ("Report submitted. Our team will review it.") and hide the Report button for that post in the current session
-- [ ] On 409: show alert "You have already reported this post."
-- [ ] On 429: show alert "You've reported too many posts recently. Try again later."
+- [x] On 201 success: show a success alert ("Report submitted. Our team will review it.") and hide the Report button for that post in the current session
+- [x] On 409: show alert "You have already reported this post."
+- [x] On 429: show alert "You've reported too many posts recently. Try again later."
 
 **32c — Admin report queue screen**
 
-- [ ] Create `src/screens/AdminReportQueueScreen.tsx` (admin-only)
-- [ ] Filter tabs: Open / Reviewed / Dismissed / All
-- [ ] Each report card shows: status badge, reporter username, timestamp, thread link (navigates to `ForumThreadScreen` scrolled to `post_id`), reason (if any), post excerpt
-- [ ] "✓ Reviewed" button and "Dismiss" button on Open reports — call `reviewForumReport`; update row status in-place
-- [ ] "Delete" button on all reports — calls `deleteForumReport`; removes row optimistically
-- [ ] Paginated with load-more; loading and empty states per tab
-- [ ] Add to `RootStackParamList` as `AdminReportQueue: undefined`
-- [ ] Add "Report Queue" entry to the admin section of `MoreScreen` (visible only when `isAdmin`)
+- [x] Create `src/screens/AdminReportQueueScreen.tsx` (admin-only)
+- [x] Filter tabs: Open / Reviewed / Dismissed / All
+- [x] Each report card shows: status badge, reporter username, timestamp, thread link (navigates to `ForumThreadScreen` scrolled to `post_id`), reason (if any), post excerpt
+- [x] "✓ Reviewed" button and "Dismiss" button on Open reports — call `reviewForumReport`; update row status in-place
+- [x] "Delete" button on all reports — calls `deleteForumReport`; removes row optimistically
+- [x] Paginated with load-more; loading and empty states per tab
+- [x] Add to `RootStackParamList` as `AdminReportQueue: undefined`
+- [x] Add "Report Queue" entry to the admin section of `MoreScreen` (visible only when `isAdmin`)
 
 **32d — Emulator test steps**
 
