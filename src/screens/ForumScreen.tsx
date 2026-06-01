@@ -103,7 +103,22 @@ function ThreadCard({
             />
           </View>
           <View style={styles.threadTitleWrap}>
-            <AppText variant="cardTitle">{thread.title}</AppText>
+            <View style={styles.threadTitleRow}>
+              <AppText
+                variant="cardTitle"
+                style={thread.has_unread ? styles.unreadTitle : undefined}
+                numberOfLines={2}
+              >
+                {thread.title}
+              </AppText>
+              {thread.has_unread && thread.unread_count ? (
+                <View style={styles.unreadChip}>
+                  <AppText style={styles.unreadChipText}>
+                    {thread.unread_count} new
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
             <AppText variant="caption" tone="muted">
               {seriesLabel}
             </AppText>
@@ -909,6 +924,29 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  threadTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    flexWrap: "wrap",
+  },
+  unreadTitle: {
+    fontWeight: "800",
+  },
+  unreadChip: {
+    backgroundColor: "rgba(22, 163, 74, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(22, 163, 74, 0.4)",
+    borderRadius: radii.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    alignSelf: "flex-start",
+  },
+  unreadChipText: {
+    color: colors.success,
+    fontSize: 10,
+    fontWeight: "700",
   },
   metaRow: {
     flexDirection: "row",
