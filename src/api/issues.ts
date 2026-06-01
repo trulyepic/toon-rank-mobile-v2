@@ -1,5 +1,13 @@
 import { api } from "./client";
-import type { Issue, ReportIssueRequest } from "../types/issue";
+import type { Issue, IssueStatus, IssueType, ReportIssueRequest } from "../types/issue";
+
+export type ListIssuesParams = {
+  q?: string;
+  type?: IssueType;
+  status?: IssueStatus;
+  page?: number;
+  page_size?: number;
+};
 
 export async function reportIssue(payload: ReportIssueRequest) {
   const formData = new FormData();
@@ -17,5 +25,10 @@ export async function reportIssue(payload: ReportIssueRequest) {
   const res = await api.post<Issue>("/issues/report", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+}
+
+export async function listIssues(params?: ListIssuesParams) {
+  const res = await api.get<Issue[]>("/issues", { params });
   return res.data;
 }
