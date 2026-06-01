@@ -2383,18 +2383,18 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
 - [x] Forum markdown rendering exists and is used on thread posts.
 - [x] Forum image/GIF rendering exists for posts after the media rendering pass.
 - [x] Posting, nested replies, and up/down votes exist when signed in.
+- [x] Compact markdown toolbar actions exist in new-thread, main reply, and inline reply composers.
 - [ ] Draft persistence is not implemented for new threads or replies.
 - [ ] Reading-list insertion is not implemented in mobile forum composers.
-- [ ] A compact markdown toolbar is not implemented in mobile forum composers.
 - [ ] User mention autocomplete is tracked separately in Phase 35 and should not be duplicated here.
 
 ### Work items
 
-- [ ] Re-audit web `RichReplyEditor` before implementing this phase.
+- [x] Re-audit web `RichReplyEditor` before implementing this phase.
 - [ ] Persist unsent new-thread drafts locally by forum context.
 - [ ] Persist unsent reply drafts locally by thread and parent post, so accidental navigation or app backgrounding does not erase a reply.
 - [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
-- [ ] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
+- [x] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
 - [ ] Keep the keyboard visible and the text box in view while using autocomplete, toolbar actions, and image/list pickers.
 - [ ] Add tests for draft restore/clear behavior and reading-list insertion formatting.
 

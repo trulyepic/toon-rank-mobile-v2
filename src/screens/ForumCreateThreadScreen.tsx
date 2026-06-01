@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { createForumThread, updateForumThread, uploadForumMedia } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
@@ -19,6 +19,7 @@ import {
   AccountRequiredCard,
   AppButton,
   AppText,
+  ForumComposerToolbar,
   ForumMentionSuggestions,
   ScreenShell,
   Surface,
@@ -35,6 +36,11 @@ import {
   pickForumMediaAttachment,
   type ForumMediaAttachment,
 } from "../utils/forumMedia";
+import {
+  applyForumFormat,
+  type ForumFormatAction,
+  type ForumTextSelection,
+} from "../utils/forumComposerFormatting";
 import { validateForumThreadDraft } from "../utils/forumValidation";
 
 type CreateThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -46,8 +52,13 @@ export function ForumCreateThreadScreen() {
   const navigation = useNavigation<CreateThreadNavigation>();
   const queryClient = useQueryClient();
   const { isSignedIn, status } = useAuth();
+  const bodyInputRef = useRef<TextInput | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [bodySelection, setBodySelection] = useState<ForumTextSelection>({
+    start: 0,
+    end: 0,
+  });
   const [attachment, setAttachment] = useState<ForumMediaAttachment | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const activeMention = getActiveForumMention(body);
@@ -116,6 +127,18 @@ export function ForumCreateThreadScreen() {
     if (picked) setAttachment(picked);
   };
 
+  const handleFormatBody = (action: ForumFormatAction) => {
+    const formatted = applyForumFormat(body, bodySelection, action);
+    const nextBody = formatted.text.slice(0, MAX_BODY_LENGTH);
+    setBody(nextBody);
+    setBodySelection({
+      start: Math.min(formatted.selection.start, nextBody.length),
+      end: Math.min(formatted.selection.end, nextBody.length),
+    });
+    setValidationMessage(null);
+    requestAnimationFrame(() => bodyInputRef.current?.focus());
+  };
+
   return (
     <ScreenShell
       title="New thread"
@@ -180,12 +203,20 @@ export function ForumCreateThreadScreen() {
                 {body.length}/{MAX_BODY_LENGTH}
               </AppText>
             </View>
+            <ForumComposerToolbar
+              disabled={createMutation.isPending}
+              onFormat={handleFormatBody}
+              onPickAttachment={handlePickAttachment}
+            />
             <TextInput
+              ref={bodyInputRef}
               value={body}
               onChangeText={(value) => {
                 setBody(value.slice(0, MAX_BODY_LENGTH));
                 setValidationMessage(null);
               }}
+              onSelectionChange={(event) => setBodySelection(event.nativeEvent.selection)}
+              selection={bodySelection}
               placeholder="Write the opening post..."
               placeholderTextColor={colors.textSubtle}
               multiline
@@ -195,20 +226,22 @@ export function ForumCreateThreadScreen() {
             <ForumMentionSuggestions
               mention={activeMention}
               onSelect={(series) => {
-                setBody((current) =>
-                  activeMention
+                setBody((current) => {
+                  const next = activeMention
                     ? insertForumMention(current, activeMention, series).slice(
                         0,
                         MAX_BODY_LENGTH,
                       )
-                    : current,
-                );
+                    : current;
+                  setBodySelection({ start: next.length, end: next.length });
+                  return next;
+                });
                 setValidationMessage(null);
               }}
             />
 
-            <View style={styles.attachmentBlock}>
-              {attachment ? (
+            {attachment ? (
+              <View style={styles.attachmentBlock}>
                 <View style={styles.attachmentPreview}>
                   <Image
                     source={{ uri: attachment.uri }}
@@ -234,15 +267,8 @@ export function ForumCreateThreadScreen() {
                     <Ionicons name="close" size={18} color={colors.text} />
                   </Pressable>
                 </View>
-              ) : null}
-              <AppButton
-                label={attachment ? "Replace image/GIF" : "Attach image/GIF"}
-                variant="ghost"
-                disabled={createMutation.isPending}
-                onPress={handlePickAttachment}
-                iconLeft={<Ionicons name="image-outline" size={16} color={colors.text} />}
-              />
-            </View>
+              </View>
+            ) : null}
 
             {validationMessage ? (
               <View style={styles.validationBox}>
