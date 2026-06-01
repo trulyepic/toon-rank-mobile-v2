@@ -9,6 +9,7 @@ import type {
   ForumThread,
   ForumThreadPage,
   ForumThreadPostsPage,
+  ForumMediaUploadResponse,
   ForumVote,
   ForumVoteResponse,
   LockForumThreadRequest,
@@ -16,6 +17,12 @@ import type {
   UpdateForumThreadRequest,
   UpdateForumThreadSettingsRequest,
 } from "../types/forum";
+
+export type ForumMediaFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
 
 export async function getForumThreads(page = 1, pageSize = 20, q?: string) {
   const res = await api.get<ForumThreadPage>("/forum/threads-paged", {
@@ -44,6 +51,26 @@ export async function createForumThread(payload: CreateForumThreadRequest) {
 
 export async function createForumPost(threadId: number, payload: CreateForumPostRequest) {
   const res = await api.post<ForumPost>(`/forum/threads/${threadId}/posts`, payload);
+  return res.data;
+}
+
+export async function uploadForumMedia(
+  threadId: number,
+  file: ForumMediaFile,
+  postId?: number,
+) {
+  const form = new FormData();
+  form.append("thread_id", String(threadId));
+
+  if (typeof postId === "number") {
+    form.append("post_id", String(postId));
+  }
+
+  form.append("file", file as unknown as Blob);
+
+  const res = await api.post<ForumMediaUploadResponse>("/forum/media/upload", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 }
 

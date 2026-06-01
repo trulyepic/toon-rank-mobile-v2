@@ -1527,6 +1527,8 @@ and reach the report form from the same screen.
 
 Suggested branch: `mobile-forum-media`
 
+Status: completed on branch `mobile-forum-media`.
+
 Purpose: let signed-in users attach images and GIFs to new forum posts and replies, matching the
 image embedding already available on the web.
 
@@ -1561,26 +1563,26 @@ thread is created (or a placeholder thread_id must be used — check the endpoin
 
 **27a — API**
 
-- [ ] Add `uploadForumMedia(threadId: number, fileUri: string, mimeType: string): Promise<{ url:
+- [x] Add `uploadForumMedia(threadId: number, fileUri: string, mimeType: string): Promise<{ url:
 string; width: number; height: number }>` → `POST /forum/media/upload` (multipart form) to
       `src/api/forum.ts`
-- [ ] Handle the size/dimension validation error from the backend gracefully (show a toast with the
+- [x] Handle the size/dimension validation error from the backend gracefully (show a toast with the
       reason)
 
 **27b — Image picker and upload flow (thread creation)**
 
-- [ ] In `ForumCreateThreadScreen`, add an "Attach image" button in the editor toolbar area.
+- [x] In `ForumCreateThreadScreen`, add an "Attach image" button in the editor toolbar area.
       Tapping it opens `ImagePicker.launchImageLibraryAsync` (or camera). Limit to 1 attachment at a
       time to start.
-- [ ] On pick: show a thumbnail preview in the compose area with a remove (×) button.
-- [ ] On "Post thread": if an image is attached, upload it first via `uploadForumMedia`, then insert
+- [x] On pick: show a thumbnail preview in the compose area with a remove (×) button.
+- [x] On "Post thread": if an image is attached, upload it first via `uploadForumMedia`, then insert
       `\n![image](url)\n` at the end of the body before submitting.
-- [ ] Show an upload progress indicator while the image is uploading.
+- [x] Show an upload progress indicator while the image is uploading.
 
 **27c — Image picker and upload flow (replies)**
 
-- [ ] In the reply composer (`ForumThreadScreen`), add the same "Attach image" button.
-- [ ] Same flow: pick → preview → upload on submit → insert markdown into reply body.
+- [x] In the reply composer (`ForumThreadScreen`), add the same "Attach image" button.
+- [x] Same flow: pick → preview → upload on submit → insert markdown into reply body.
 
 **27d — Emulator test steps**
 

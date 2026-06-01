@@ -2,10 +2,18 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { useState } from "react";
 
-import { createForumThread } from "../api/forum";
+import { createForumThread, updateForumThread, uploadForumMedia } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AccountRequiredCard,
@@ -22,6 +30,11 @@ import {
   getActiveForumMention,
   insertForumMention,
 } from "../utils/forumMentions";
+import {
+  appendForumMediaMarkdown,
+  pickForumMediaAttachment,
+  type ForumMediaAttachment,
+} from "../utils/forumMedia";
 import { validateForumThreadDraft } from "../utils/forumValidation";
 
 type CreateThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -35,22 +48,38 @@ export function ForumCreateThreadScreen() {
   const { isSignedIn, status } = useAuth();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [attachment, setAttachment] = useState<ForumMediaAttachment | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const activeMention = getActiveForumMention(body);
 
   const createMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const draft = validateForumThreadDraft({ title, body });
 
       if (draft.error) {
         throw new Error(draft.error);
       }
 
-      return createForumThread({
+      const createdThread = await createForumThread({
         title: draft.title,
         first_post_markdown: draft.body,
         series_ids: extractForumSeriesIds(draft.body),
       });
+
+      if (!attachment) {
+        return createdThread;
+      }
+
+      const media = await uploadForumMedia(createdThread.id, attachment);
+      await updateForumThread(createdThread.id, {
+        title: draft.title,
+        first_post_markdown: appendForumMediaMarkdown(draft.body, media.url),
+        series_ids: extractForumSeriesIds(
+          appendForumMediaMarkdown(draft.body, media.url),
+        ),
+      });
+
+      return createdThread;
     },
     onMutate: () => {
       setValidationMessage(null);
@@ -58,6 +87,7 @@ export function ForumCreateThreadScreen() {
     onSuccess: (thread) => {
       setTitle("");
       setBody("");
+      setAttachment(null);
       void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
       navigation.replace("ForumThread", { threadId: thread.id });
     },
@@ -80,6 +110,11 @@ export function ForumCreateThreadScreen() {
     titleCount >= 3 &&
     titleCount <= MAX_TITLE_LENGTH &&
     bodyCount > 0;
+
+  const handlePickAttachment = async () => {
+    const picked = await pickForumMediaAttachment();
+    if (picked) setAttachment(picked);
+  };
 
   return (
     <ScreenShell
@@ -115,8 +150,8 @@ export function ForumCreateThreadScreen() {
             <View style={styles.heroText}>
               <AppText variant="sectionTitle">Start a discussion</AppText>
               <AppText tone="muted">
-                Markdown and series references are supported. Image and GIF uploads are
-                tracked for a later composer pass.
+                Markdown, series references, and one image or GIF attachment are
+                supported.
               </AppText>
             </View>
           </Surface>
@@ -172,6 +207,43 @@ export function ForumCreateThreadScreen() {
               }}
             />
 
+            <View style={styles.attachmentBlock}>
+              {attachment ? (
+                <View style={styles.attachmentPreview}>
+                  <Image
+                    source={{ uri: attachment.uri }}
+                    style={styles.attachmentImage}
+                  />
+                  <View style={styles.attachmentInfo}>
+                    <AppText variant="caption" numberOfLines={1}>
+                      {attachment.name}
+                    </AppText>
+                    <AppText variant="caption" tone="subtle">
+                      {attachment.type}
+                    </AppText>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove attachment"
+                    onPress={() => setAttachment(null)}
+                    style={({ pressed }) => [
+                      styles.removeAttachmentButton,
+                      pressed ? styles.pressed : null,
+                    ]}
+                  >
+                    <Ionicons name="close" size={18} color={colors.text} />
+                  </Pressable>
+                </View>
+              ) : null}
+              <AppButton
+                label={attachment ? "Replace image/GIF" : "Attach image/GIF"}
+                variant="ghost"
+                disabled={createMutation.isPending}
+                onPress={handlePickAttachment}
+                iconLeft={<Ionicons name="image-outline" size={16} color={colors.text} />}
+              />
+            </View>
+
             {validationMessage ? (
               <View style={styles.validationBox}>
                 <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
@@ -188,10 +260,22 @@ export function ForumCreateThreadScreen() {
                 onPress={() => navigation.goBack()}
               />
               <AppButton
-                label={createMutation.isPending ? "Creating..." : "Create thread"}
+                label={
+                  createMutation.isPending
+                    ? attachment
+                      ? "Uploading..."
+                      : "Creating..."
+                    : "Create thread"
+                }
                 selected
                 disabled={!canSubmit}
-                iconLeft={<Ionicons name="send-outline" size={16} color={colors.text} />}
+                iconLeft={
+                  createMutation.isPending ? (
+                    <ActivityIndicator size="small" color={colors.text} />
+                  ) : (
+                    <Ionicons name="send-outline" size={16} color={colors.text} />
+                  )
+                }
                 onPress={() => createMutation.mutate()}
               />
             </View>
@@ -267,6 +351,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23,
     fontWeight: "600",
+  },
+  attachmentBlock: {
+    gap: spacing.sm,
+  },
+  attachmentPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
+  },
+  attachmentImage: {
+    width: 58,
+    height: 58,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceRaised,
+  },
+  attachmentInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  removeAttachmentButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   validationBox: {
     flexDirection: "row",
