@@ -28,7 +28,12 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { resetMyAvatar, setAvatarPreset, updateMyUsername, uploadAvatar } from "../api/auth";
+import {
+  resetMyAvatar,
+  setAvatarPreset,
+  updateMyUsername,
+  uploadAvatar,
+} from "../api/auth";
 import { searchSeries } from "../api/series";
 import {
   getMyFavorites,
@@ -238,7 +243,9 @@ export function ProfileScreen() {
       Alert.alert("Username updated", `Your username is now "${data.username}".`);
     },
     onError: (error: unknown) => {
-      const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
+      const axiosError = error as {
+        response?: { status?: number; data?: { detail?: string } };
+      };
       if (axiosError.response?.status === 409) {
         setUsernameError("That username is already taken.");
       } else if (axiosError.response?.status === 429) {
@@ -260,7 +267,9 @@ export function ProfileScreen() {
   const submitUsername = () => {
     const trimmed = usernameInput.trim();
     if (!USERNAME_REGEX.test(trimmed)) {
-      setUsernameError("3–20 characters — letters, numbers, underscores, or hyphens only.");
+      setUsernameError(
+        "3–20 characters — letters, numbers, underscores, or hyphens only.",
+      );
       return;
     }
     usernameMutation.mutate(trimmed);
@@ -340,7 +349,10 @@ export function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Edit username"
                 onPress={openUsernameModal}
-                style={({ pressed }) => [styles.usernameEditButton, pressed ? styles.pressed : null]}
+                style={({ pressed }) => [
+                  styles.usernameEditButton,
+                  pressed ? styles.pressed : null,
+                ]}
               >
                 <Ionicons name="pencil-outline" size={14} color={colors.textMuted} />
               </Pressable>
@@ -612,7 +624,10 @@ export function ProfileScreen() {
               autoFocus
               placeholder="New username"
               placeholderTextColor={colors.textMuted}
-              style={[styles.usernameInput, usernameError ? styles.usernameInputError : null]}
+              style={[
+                styles.usernameInput,
+                usernameError ? styles.usernameInputError : null,
+              ]}
               value={usernameInput}
               onChangeText={(text) => {
                 setUsernameInput(text);
