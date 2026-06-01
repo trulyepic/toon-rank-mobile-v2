@@ -70,4 +70,3 @@ export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }:
     </SafeAreaView>
   );
 }
-

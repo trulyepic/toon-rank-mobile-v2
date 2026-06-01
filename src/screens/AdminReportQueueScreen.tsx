@@ -292,43 +292,43 @@ export function AdminReportQueueScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  tabRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  list: {
-    gap: spacing.sm,
-  },
-  card: {
-    gap: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexWrap: "wrap",
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-  },
-  threadLink: {
-    color: colors.accentStrong,
-    textDecorationLine: "underline",
-  },
-  excerpt: {
-    padding: spacing.sm,
-  },
-  cardActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+    tabRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    list: {
+      gap: spacing.sm,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      flexWrap: "wrap",
+    },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+    },
+    threadLink: {
+      color: colors.accentStrong,
+      textDecorationLine: "underline",
+    },
+    excerpt: {
+      padding: spacing.sm,
+    },
+    cardActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
 }

@@ -85,4 +85,3 @@ const paddingStyles = StyleSheet.create({
   md: { padding: spacing.md },
   lg: { padding: spacing.lg },
 });
-

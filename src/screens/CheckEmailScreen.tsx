@@ -38,19 +38,19 @@ export function CheckEmailScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  card: {
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  iconWrap: {
-    width: 58,
-    height: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-});
+    card: {
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    iconWrap: {
+      width: 58,
+      height: 58,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+  });
 }

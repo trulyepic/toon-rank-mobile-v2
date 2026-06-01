@@ -554,128 +554,128 @@ export function ReadingListDetailScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  stack: {
-    gap: spacing.sm,
-  },
-  filterPanel: {
-    gap: spacing.md,
-  },
-  filterHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  filterTitleRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    minWidth: 0,
-  },
-  filterCountBadge: {
-    minWidth: 28,
-    minHeight: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accentSoft,
-  },
-  filterBody: {
-    gap: spacing.md,
-  },
-  filterGroup: {
-    gap: spacing.sm,
-  },
-  chipWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  scoreFilterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  scoreInput: {
-    flex: 1,
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  filterNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderColor: colors.accent,
-    backgroundColor: colors.accentSoft,
-  },
-  filterNoteText: {
-    flex: 1,
-  },
-  itemCard: {
-    gap: spacing.md,
-  },
-  itemMain: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  cover: {
-    width: 64,
-    height: 86,
-    borderRadius: radii.md,
-    backgroundColor: colors.backgroundSoft,
-  },
-  coverFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  itemText: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  itemActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    padding: spacing.lg,
-    backgroundColor: "rgba(0,0,0,0.62)",
-  },
-  modalCard: {
-    gap: spacing.md,
-  },
-  input: {
-    minHeight: 54,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-});
+    stack: {
+      gap: spacing.sm,
+    },
+    filterPanel: {
+      gap: spacing.md,
+    },
+    filterHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    filterTitleRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      minWidth: 0,
+    },
+    filterCountBadge: {
+      minWidth: 28,
+      minHeight: 28,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    filterBody: {
+      gap: spacing.md,
+    },
+    filterGroup: {
+      gap: spacing.sm,
+    },
+    chipWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    scoreFilterRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    scoreInput: {
+      flex: 1,
+      minHeight: 48,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 16,
+      fontWeight: "800",
+    },
+    filterNote: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSoft,
+    },
+    filterNoteText: {
+      flex: 1,
+    },
+    itemCard: {
+      gap: spacing.md,
+    },
+    itemMain: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    cover: {
+      width: 64,
+      height: 86,
+      borderRadius: radii.md,
+      backgroundColor: colors.backgroundSoft,
+    },
+    coverFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    itemText: {
+      flex: 1,
+      gap: 4,
+      minWidth: 0,
+    },
+    itemActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    modalBackdrop: {
+      flex: 1,
+      justifyContent: "center",
+      padding: spacing.lg,
+      backgroundColor: "rgba(0,0,0,0.62)",
+    },
+    modalCard: {
+      gap: spacing.md,
+    },
+    input: {
+      minHeight: 54,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 17,
+      fontWeight: "700",
+    },
+    modalActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+  });
 }

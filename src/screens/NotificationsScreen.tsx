@@ -227,60 +227,60 @@ export function NotificationsScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  list: {
-    overflow: "hidden",
-    gap: 0,
-    padding: 0,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  unreadRow: {
-    backgroundColor: "rgba(99, 102, 241, 0.07)",
-  },
-  rowPressed: {
-    opacity: 0.75,
-  },
-  unreadDot: {
-    width: 7,
-    height: 7,
-    borderRadius: radii.pill,
-    backgroundColor: colors.accentStrong,
-    marginLeft: spacing.sm,
-    flexShrink: 0,
-  },
-  readSpacer: {
-    width: 7,
-    marginLeft: spacing.sm,
-  },
-  rowIcon: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-    flexShrink: 0,
-  },
-  rowBody: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  actor: {
-    fontWeight: "700",
-    color: colors.text,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.borderSoft,
-    marginLeft: spacing.md + 7 + spacing.sm + 32 + spacing.sm,
-  },
-});
+    list: {
+      overflow: "hidden",
+      gap: 0,
+      padding: 0,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+      paddingRight: spacing.md,
+    },
+    unreadRow: {
+      backgroundColor: "rgba(99, 102, 241, 0.07)",
+    },
+    rowPressed: {
+      opacity: 0.75,
+    },
+    unreadDot: {
+      width: 7,
+      height: 7,
+      borderRadius: radii.pill,
+      backgroundColor: colors.accentStrong,
+      marginLeft: spacing.sm,
+      flexShrink: 0,
+    },
+    readSpacer: {
+      width: 7,
+      marginLeft: spacing.sm,
+    },
+    rowIcon: {
+      width: 32,
+      height: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+      flexShrink: 0,
+    },
+    rowBody: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    actor: {
+      fontWeight: "700",
+      color: colors.text,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.borderSoft,
+      marginLeft: spacing.md + 7 + spacing.sm + 32 + spacing.sm,
+    },
+  });
 }

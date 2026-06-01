@@ -125,45 +125,45 @@ export function HowRankingsWorkScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
-  },
-  heroEmoji: {
-    fontSize: 36,
-    lineHeight: 44,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  card: {
-    gap: spacing.sm,
-  },
-  highlight: {
-    fontWeight: "700",
-    color: colors.text,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    flexShrink: 0,
-  },
-  categoryEmoji: {
-    fontSize: 20,
-  },
-  categoryText: {
-    flex: 1,
-    gap: 2,
-  },
-});
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+      alignItems: "flex-start",
+    },
+    heroEmoji: {
+      fontSize: 36,
+      lineHeight: 44,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    highlight: {
+      fontWeight: "700",
+      color: colors.text,
+    },
+    categoryRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      alignItems: "flex-start",
+    },
+    categoryIcon: {
+      width: 40,
+      height: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      flexShrink: 0,
+    },
+    categoryEmoji: {
+      fontSize: 20,
+    },
+    categoryText: {
+      flex: 1,
+      gap: 2,
+    },
+  });
 }

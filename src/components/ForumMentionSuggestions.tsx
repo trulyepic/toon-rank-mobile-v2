@@ -126,48 +126,48 @@ export function ForumMentionSuggestions({ mention, onSelect }: Props) {
 
 function getStyles() {
   return StyleSheet.create({
-  root: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  section: {
-    gap: 2,
-  },
-  sectionLabel: {
-    fontSize: 10,
-    letterSpacing: 0.6,
-    paddingHorizontal: spacing.xs,
-    paddingTop: spacing.xs,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.xs,
-    borderRadius: radii.md,
-  },
-  pressed: {
-    opacity: 0.82,
-    backgroundColor: colors.surfacePressed,
-  },
-  cover: {
-    width: 32,
-    height: 42,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surface,
-  },
-  text: {
-    flex: 1,
-    minWidth: 0,
-  },
-});
+    root: {
+      gap: spacing.xs,
+      padding: spacing.sm,
+      borderRadius: radii.lg,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    section: {
+      gap: 2,
+    },
+    sectionLabel: {
+      fontSize: 10,
+      letterSpacing: 0.6,
+      paddingHorizontal: spacing.xs,
+      paddingTop: spacing.xs,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      padding: spacing.xs,
+      borderRadius: radii.md,
+    },
+    pressed: {
+      opacity: 0.82,
+      backgroundColor: colors.surfacePressed,
+    },
+    cover: {
+      width: 32,
+      height: 42,
+      borderRadius: radii.sm,
+      backgroundColor: colors.surface,
+    },
+    text: {
+      flex: 1,
+      minWidth: 0,
+    },
+  });
 }

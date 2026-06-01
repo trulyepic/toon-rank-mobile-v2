@@ -43,13 +43,13 @@ export function CoverImage({ uri, style, fallbackIconSize = 24 }: Props) {
 
 function getStyles() {
   return StyleSheet.create({
-  image: {
-    backgroundColor: colors.surface,
-  },
-  fallback: {
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+    image: {
+      backgroundColor: colors.surface,
+    },
+    fallback: {
+      backgroundColor: colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });
 }

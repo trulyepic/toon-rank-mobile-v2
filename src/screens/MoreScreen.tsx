@@ -382,108 +382,108 @@ export function MoreScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  signInCard: {
-    gap: spacing.md,
-  },
-  accountIntro: {
-    gap: spacing.xs,
-  },
-  welcomeLine: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "baseline",
-  },
-  signInContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  signInIcon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  signInText: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.xs,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  rowStack: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  rowDisabled: {
-    opacity: 0.78,
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-  rowIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  rowIconDisabled: {
-    backgroundColor: colors.backgroundSoft,
-    borderColor: colors.borderSoft,
-  },
-  rowText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  themePicker: {
-    gap: spacing.sm,
-  },
-  themeOptions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  themeOption: {
-    flex: 1,
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radii.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderSoft,
-  },
-  themeOptionActive: {
-    borderColor: colors.accentStrong,
-    backgroundColor: colors.accentSoft,
-  },
-  themeSwatch: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.pill,
-  },
-  footer: {
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-  },
-});
+    signInCard: {
+      gap: spacing.md,
+    },
+    accountIntro: {
+      gap: spacing.xs,
+    },
+    welcomeLine: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "baseline",
+    },
+    signInContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    signInIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    signInText: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    rowStack: {
+      gap: spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    rowDisabled: {
+      opacity: 0.78,
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.99 }],
+    },
+    rowIcon: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    rowIconDisabled: {
+      backgroundColor: colors.backgroundSoft,
+      borderColor: colors.borderSoft,
+    },
+    rowText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    themePicker: {
+      gap: spacing.sm,
+    },
+    themeOptions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    themeOption: {
+      flex: 1,
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      borderRadius: radii.lg,
+      borderWidth: 1.5,
+      borderColor: colors.borderSoft,
+    },
+    themeOptionActive: {
+      borderColor: colors.accentStrong,
+      backgroundColor: colors.accentSoft,
+    },
+    themeSwatch: {
+      width: 28,
+      height: 28,
+      borderRadius: radii.pill,
+    },
+    footer: {
+      gap: spacing.xs,
+      paddingVertical: spacing.md,
+    },
+  });
 }

@@ -242,72 +242,72 @@ export function SignupScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  form: {
-    gap: spacing.md,
-  },
-  field: {
-    gap: spacing.xs,
-  },
-  input: {
-    minHeight: 50,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-  },
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 50,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-  },
-  passwordInput: {
-    flex: 1,
-    color: colors.text,
-    paddingHorizontal: spacing.md,
-    fontSize: 16,
-    paddingVertical: spacing.sm,
-  },
-  eyeBtn: {
-    paddingHorizontal: spacing.sm,
-  },
-  errorBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(235, 106, 90, 0.12)",
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  errorText: {
-    flex: 1,
-  },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.borderSoft,
-  },
-});
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+      alignItems: "flex-start",
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    form: {
+      gap: spacing.md,
+    },
+    field: {
+      gap: spacing.xs,
+    },
+    input: {
+      minHeight: 50,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      fontSize: 16,
+    },
+    passwordRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: 50,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+    },
+    passwordInput: {
+      flex: 1,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      fontSize: 16,
+      paddingVertical: spacing.sm,
+    },
+    eyeBtn: {
+      paddingHorizontal: spacing.sm,
+    },
+    errorBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+      padding: spacing.md,
+      borderRadius: radii.lg,
+      backgroundColor: "rgba(235, 106, 90, 0.12)",
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    errorText: {
+      flex: 1,
+    },
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.borderSoft,
+    },
+  });
 }

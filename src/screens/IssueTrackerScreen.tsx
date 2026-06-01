@@ -363,116 +363,116 @@ export function IssueTrackerScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  heroIcon: {
-    width: 54,
-    height: 54,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  heroText: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.xs,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  summaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  summaryTilePressable: {
-    width: "48%",
-    flexGrow: 1,
-  },
-  summaryTile: {
-    gap: spacing.xs,
-  },
-  summaryTileSelected: {
-    borderColor: colors.accentBorder,
-  },
-  filters: {
-    gap: spacing.md,
-  },
-  searchWrap: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-    paddingHorizontal: spacing.md,
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: 0,
-    color: colors.text,
-    fontSize: 16,
-    paddingVertical: spacing.sm,
-  },
-  filterGroup: {
-    gap: spacing.xs,
-  },
-  chipWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  issueStack: {
-    gap: spacing.sm,
-  },
-  issueCard: {
-    gap: spacing.md,
-  },
-  issueHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  issueTitleWrap: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.xs,
-  },
-  statusBadge: {
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  screenshotButton: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  pressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-});
+    hero: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    heroIcon: {
+      width: 54,
+      height: 54,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    heroText: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    summaryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    summaryTilePressable: {
+      width: "48%",
+      flexGrow: 1,
+    },
+    summaryTile: {
+      gap: spacing.xs,
+    },
+    summaryTileSelected: {
+      borderColor: colors.accentBorder,
+    },
+    filters: {
+      gap: spacing.md,
+    },
+    searchWrap: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      paddingHorizontal: spacing.md,
+    },
+    searchInput: {
+      flex: 1,
+      minWidth: 0,
+      color: colors.text,
+      fontSize: 16,
+      paddingVertical: spacing.sm,
+    },
+    filterGroup: {
+      gap: spacing.xs,
+    },
+    chipWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    issueStack: {
+      gap: spacing.sm,
+    },
+    issueCard: {
+      gap: spacing.md,
+    },
+    issueHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+    },
+    issueTitleWrap: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+    statusBadge: {
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    screenshotButton: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    pressed: {
+      opacity: 0.88,
+      transform: [{ scale: 0.99 }],
+    },
+  });
 }

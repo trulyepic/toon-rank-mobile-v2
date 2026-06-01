@@ -155,31 +155,31 @@ export function PublicReadingListScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  stack: {
-    gap: spacing.sm,
-  },
-  itemCard: {
-    gap: spacing.md,
-  },
-  itemMain: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  cover: {
-    width: 64,
-    height: 86,
-    borderRadius: radii.md,
-    backgroundColor: colors.backgroundSoft,
-  },
-  itemText: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  pressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-});
+    stack: {
+      gap: spacing.sm,
+    },
+    itemCard: {
+      gap: spacing.md,
+    },
+    itemMain: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    cover: {
+      width: 64,
+      height: 86,
+      borderRadius: radii.md,
+      backgroundColor: colors.backgroundSoft,
+    },
+    itemText: {
+      flex: 1,
+      gap: 4,
+      minWidth: 0,
+    },
+    pressed: {
+      opacity: 0.88,
+      transform: [{ scale: 0.99 }],
+    },
+  });
 }

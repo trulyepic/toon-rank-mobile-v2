@@ -152,62 +152,62 @@ export function SettingsScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  sessionCard: {
-    gap: spacing.md,
-  },
-  signedOutContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  sessionIcon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  sessionText: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.xs,
-  },
-  buttonRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  rowIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  rowText: {
-    flex: 1,
-    minWidth: 0,
-    gap: spacing.xs,
-  },
-  accountCard: {
-    gap: spacing.sm,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSoft,
-  },
-});
+    sessionCard: {
+      gap: spacing.md,
+    },
+    signedOutContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    sessionIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    sessionText: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    rowIcon: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    rowText: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+    accountCard: {
+      gap: spacing.sm,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.borderSoft,
+    },
+  });
 }

@@ -595,144 +595,144 @@ const MONOSPACE = Platform.OS === "ios" ? "Menlo" : "monospace";
 
 function getStyles() {
   return StyleSheet.create({
-  root: {
-    gap: spacing.sm,
-  },
-  image: {
-    width: "100%",
-    aspectRatio: 16 / 10,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  linkPill: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    maxWidth: "100%",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  linkText: {
-    color: colors.text,
-    flexShrink: 1,
-  },
-  pressed: {
-    opacity: 0.86,
-  },
-  spoiler: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radii.lg,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  spoilerHeader: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    maxWidth: "100%",
-  },
-  spoilerBody: {
-    paddingTop: spacing.xs,
-  },
-  // Markdown text block styles
-  mdRoot: {
-    gap: spacing.sm,
-  },
-  mdBody: {
-    fontSize: 15,
-    lineHeight: 23,
-    fontWeight: "400",
-    color: colors.textMuted,
-  },
-  mdBold: {
-    fontWeight: "700",
-    color: colors.text,
-  },
-  mdItalic: {
-    fontStyle: "italic",
-  },
-  mdStrike: {
-    textDecorationLine: "line-through",
-  },
-  mdLink: {
-    color: colors.accentStrong,
-    textDecorationLine: "underline",
-  },
-  mentionChip: {
-    color: colors.accentStrong,
-    fontWeight: "700",
-    backgroundColor: colors.accentSoft,
-    borderRadius: 4,
-    paddingHorizontal: 2,
-  },
-  mdInlineCode: {
-    fontFamily: MONOSPACE,
-    fontSize: 13,
-    backgroundColor: colors.backgroundSoft,
-    color: colors.accentStrong,
-  },
-  mdCodeBlock: {
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-  },
-  mdCodeText: {
-    fontFamily: MONOSPACE,
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  mdBlockquote: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accentBorder,
-    paddingLeft: spacing.sm,
-    gap: 4,
-  },
-  mdQuoteText: {
-    color: colors.textSubtle,
-    fontStyle: "italic",
-  },
-  mdList: {
-    gap: 4,
-  },
-  mdListRow: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    alignItems: "flex-start",
-  },
-  mdListBullet: {
-    color: colors.textMuted,
-    minWidth: 16,
-  },
-  mdH1: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  mdH2: {
-    fontSize: 19,
-    lineHeight: 25,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  mdH3: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: "700",
-    color: colors.text,
-  },
-});
+    root: {
+      gap: spacing.sm,
+    },
+    image: {
+      width: "100%",
+      aspectRatio: 16 / 10,
+      borderRadius: radii.lg,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    linkPill: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      maxWidth: "100%",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.pill,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    linkText: {
+      color: colors.text,
+      flexShrink: 1,
+    },
+    pressed: {
+      opacity: 0.86,
+    },
+    spoiler: {
+      gap: spacing.xs,
+      padding: spacing.sm,
+      borderRadius: radii.lg,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    spoilerHeader: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      maxWidth: "100%",
+    },
+    spoilerBody: {
+      paddingTop: spacing.xs,
+    },
+    // Markdown text block styles
+    mdRoot: {
+      gap: spacing.sm,
+    },
+    mdBody: {
+      fontSize: 15,
+      lineHeight: 23,
+      fontWeight: "400",
+      color: colors.textMuted,
+    },
+    mdBold: {
+      fontWeight: "700",
+      color: colors.text,
+    },
+    mdItalic: {
+      fontStyle: "italic",
+    },
+    mdStrike: {
+      textDecorationLine: "line-through",
+    },
+    mdLink: {
+      color: colors.accentStrong,
+      textDecorationLine: "underline",
+    },
+    mentionChip: {
+      color: colors.accentStrong,
+      fontWeight: "700",
+      backgroundColor: colors.accentSoft,
+      borderRadius: 4,
+      paddingHorizontal: 2,
+    },
+    mdInlineCode: {
+      fontFamily: MONOSPACE,
+      fontSize: 13,
+      backgroundColor: colors.backgroundSoft,
+      color: colors.accentStrong,
+    },
+    mdCodeBlock: {
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.md,
+      padding: spacing.sm,
+    },
+    mdCodeText: {
+      fontFamily: MONOSPACE,
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textMuted,
+    },
+    mdBlockquote: {
+      borderLeftWidth: 3,
+      borderLeftColor: colors.accentBorder,
+      paddingLeft: spacing.sm,
+      gap: 4,
+    },
+    mdQuoteText: {
+      color: colors.textSubtle,
+      fontStyle: "italic",
+    },
+    mdList: {
+      gap: 4,
+    },
+    mdListRow: {
+      flexDirection: "row",
+      gap: spacing.xs,
+      alignItems: "flex-start",
+    },
+    mdListBullet: {
+      color: colors.textMuted,
+      minWidth: 16,
+    },
+    mdH1: {
+      fontSize: 22,
+      lineHeight: 28,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    mdH2: {
+      fontSize: 19,
+      lineHeight: 25,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    mdH3: {
+      fontSize: 16,
+      lineHeight: 22,
+      fontWeight: "700",
+      color: colors.text,
+    },
+  });
 }

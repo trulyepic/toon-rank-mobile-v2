@@ -288,98 +288,98 @@ export function PublicProfileScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  profileCard: {
-    alignItems: "center",
-    gap: spacing.md,
-    overflow: "hidden",
-  },
-  accentStrip: {
-    alignSelf: "stretch",
-    height: 4,
-    marginHorizontal: -spacing.md,
-    marginTop: -spacing.md,
-    backgroundColor: colors.accentBorder,
-  },
-  identityText: {
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  statsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  statChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  credChip: {
-    borderColor: colors.credBorder,
-    backgroundColor: colors.credSurface,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  favoritesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  favoriteCard: {
-    width: "48%",
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    overflow: "hidden",
-  },
-  favoriteCover: {
-    width: "100%",
-    aspectRatio: 2 / 3,
-  },
-  favoriteText: {
-    gap: 2,
-    padding: spacing.sm,
-  },
-  stack: {
-    gap: spacing.sm,
-  },
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    padding: spacing.md,
-  },
-  listIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  listText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-});
+    profileCard: {
+      alignItems: "center",
+      gap: spacing.md,
+      overflow: "hidden",
+    },
+    accentStrip: {
+      alignSelf: "stretch",
+      height: 4,
+      marginHorizontal: -spacing.md,
+      marginTop: -spacing.md,
+      backgroundColor: colors.accentBorder,
+    },
+    identityText: {
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    statsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    statChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    credChip: {
+      borderColor: colors.credBorder,
+      backgroundColor: colors.credSurface,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    favoritesGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    favoriteCard: {
+      width: "48%",
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      overflow: "hidden",
+    },
+    favoriteCover: {
+      width: "100%",
+      aspectRatio: 2 / 3,
+    },
+    favoriteText: {
+      gap: 2,
+      padding: spacing.sm,
+    },
+    stack: {
+      gap: spacing.sm,
+    },
+    listRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      padding: spacing.md,
+    },
+    listIcon: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.md,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    listText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.99 }],
+    },
+  });
 }

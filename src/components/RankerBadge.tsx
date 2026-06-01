@@ -33,20 +33,20 @@ export function RankerBadge({ rank }: Props) {
 
 function getStyles() {
   return StyleSheet.create({
-  badge: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    backgroundColor: colors.backgroundSoft,
-  },
-  podiumBadge: {
-    backgroundColor: "rgba(250, 204, 21, 0.09)",
-  },
-  badgeText: {
-    fontSize: 11,
-    lineHeight: 14,
-  },
-});
+    badge: {
+      alignSelf: "flex-start",
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      backgroundColor: colors.backgroundSoft,
+    },
+    podiumBadge: {
+      backgroundColor: "rgba(250, 204, 21, 0.09)",
+    },
+    badgeText: {
+      fontSize: 11,
+      lineHeight: 14,
+    },
+  });
 }

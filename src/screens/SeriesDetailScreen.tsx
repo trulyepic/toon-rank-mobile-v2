@@ -700,239 +700,239 @@ export function SeriesDetailScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  heroShell: {
-    alignSelf: "center",
-    width: "100%",
-    maxWidth: 360,
-    overflow: "hidden",
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceRaised,
-    ...shadows.card,
-  },
-  heroImage: {
-    width: "100%",
-    aspectRatio: 3 / 2,
-    backgroundColor: colors.surface,
-  },
-  heroFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    padding: spacing.sm,
-  },
-  heroExpandBadge: {
-    position: "absolute",
-    bottom: spacing.sm,
-    right: spacing.sm,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  retryCard: {
-    gap: spacing.md,
-  },
-  retryText: {
-    gap: spacing.xs,
-  },
-  metaPanel: {
-    gap: spacing.sm,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  genreRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  scoreCard: {
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: 4,
-  },
-  quickActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionBtn: {
-    flex: 1,
-  },
-  metricGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  metricCard: {
-    minWidth: "47%",
-    flexGrow: 1,
-    gap: spacing.xs,
-  },
-  metricValueHighlight: {
-    color: colors.text,
-  },
-  infoCard: {
-    gap: spacing.sm,
-  },
-  infoBody: {
-    fontSize: 16,
-    lineHeight: 28,
-  },
-  breakdownGrid: {
-    gap: spacing.sm,
-  },
-  breakdownCard: {
-    gap: spacing.xs,
-  },
-  breakdownTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  voteSection: {
-    gap: spacing.md,
-  },
-  voteNotice: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  voteNoticeText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  voteCard: {
-    gap: spacing.md,
-  },
-  voteHeaderText: {
-    gap: spacing.xs,
-  },
-  voteTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  votedPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  scoreGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  scoreButton: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.backgroundSoft,
-  },
-  scoreButtonSelected: {
-    borderColor: colors.accentBorder,
-    backgroundColor: colors.accentStrong,
-  },
-  scoreButtonPressed: {
-    transform: [{ scale: 0.96 }],
-  },
-  scoreButtonDisabled: {
-    opacity: 0.58,
-  },
-  scoreButtonText: {
-    fontWeight: "900",
-    color: colors.textMuted,
-  },
-  scoreButtonTextSelected: {
-    fontWeight: "900",
-    color: colors.background,
-  },
-  reportRow: {
-    alignItems: "center",
-    paddingTop: spacing.xs,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: "center",
-    padding: spacing.lg,
-    backgroundColor: "rgba(0,0,0,0.62)",
-  },
-  saveModal: {
-    maxHeight: "82%",
-    gap: spacing.sm,
-  },
-  saveModalScroll: {
-    gap: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  saveModalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  input: {
-    minHeight: 54,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSoft,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  saveListStack: {
-    gap: spacing.sm,
-  },
-  createListSection: {
-    gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSoft,
-    paddingTop: spacing.md,
-    marginTop: spacing.xs,
-  },
-  createListRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  createListInput: {
-    flex: 1,
-    minHeight: 44,
-  },
-  saveListRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  saveListRowSaved: {
-    opacity: 0.82,
-  },
-  saveListText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-});
+    heroShell: {
+      alignSelf: "center",
+      width: "100%",
+      maxWidth: 360,
+      overflow: "hidden",
+      borderRadius: radii.xl,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      ...shadows.card,
+    },
+    heroImage: {
+      width: "100%",
+      aspectRatio: 3 / 2,
+      backgroundColor: colors.surface,
+    },
+    heroFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      padding: spacing.sm,
+    },
+    heroExpandBadge: {
+      position: "absolute",
+      bottom: spacing.sm,
+      right: spacing.sm,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    retryCard: {
+      gap: spacing.md,
+    },
+    retryText: {
+      gap: spacing.xs,
+    },
+    metaPanel: {
+      gap: spacing.sm,
+    },
+    chipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    genreRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    scoreCard: {
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      padding: spacing.md,
+      gap: 4,
+    },
+    quickActions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    actionBtn: {
+      flex: 1,
+    },
+    metricGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    metricCard: {
+      minWidth: "47%",
+      flexGrow: 1,
+      gap: spacing.xs,
+    },
+    metricValueHighlight: {
+      color: colors.text,
+    },
+    infoCard: {
+      gap: spacing.sm,
+    },
+    infoBody: {
+      fontSize: 16,
+      lineHeight: 28,
+    },
+    breakdownGrid: {
+      gap: spacing.sm,
+    },
+    breakdownCard: {
+      gap: spacing.xs,
+    },
+    breakdownTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
+    voteSection: {
+      gap: spacing.md,
+    },
+    voteNotice: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+    },
+    voteNoticeText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    voteCard: {
+      gap: spacing.md,
+    },
+    voteHeaderText: {
+      gap: spacing.xs,
+    },
+    voteTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    votedPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    scoreGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    scoreButton: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+    },
+    scoreButtonSelected: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentStrong,
+    },
+    scoreButtonPressed: {
+      transform: [{ scale: 0.96 }],
+    },
+    scoreButtonDisabled: {
+      opacity: 0.58,
+    },
+    scoreButtonText: {
+      fontWeight: "900",
+      color: colors.textMuted,
+    },
+    scoreButtonTextSelected: {
+      fontWeight: "900",
+      color: colors.background,
+    },
+    reportRow: {
+      alignItems: "center",
+      paddingTop: spacing.xs,
+    },
+    modalBackdrop: {
+      flex: 1,
+      justifyContent: "center",
+      padding: spacing.lg,
+      backgroundColor: "rgba(0,0,0,0.62)",
+    },
+    saveModal: {
+      maxHeight: "82%",
+      gap: spacing.sm,
+    },
+    saveModalScroll: {
+      gap: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    saveModalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
+    input: {
+      minHeight: 54,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      borderRadius: radii.lg,
+      paddingHorizontal: spacing.md,
+      color: colors.text,
+      backgroundColor: colors.backgroundSoft,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    saveListStack: {
+      gap: spacing.sm,
+    },
+    createListSection: {
+      gap: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSoft,
+      paddingTop: spacing.md,
+      marginTop: spacing.xs,
+    },
+    createListRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    createListInput: {
+      flex: 1,
+      minHeight: 44,
+    },
+    saveListRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    saveListRowSaved: {
+      opacity: 0.82,
+    },
+    saveListText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+  });
 }

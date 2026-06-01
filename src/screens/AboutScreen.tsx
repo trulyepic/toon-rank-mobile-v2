@@ -19,6 +19,7 @@ function LinkRow({
   color: string;
   onPress: () => void;
 }) {
+  const styles = getStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -92,44 +93,44 @@ export function AboutScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "center",
-  },
-  logoWrap: {
-    width: 64,
-    height: 64,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.xl,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  logoEmoji: {
-    fontSize: 30,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  card: {
-    gap: spacing.sm,
-  },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  link: {
-    textDecorationLine: "underline",
-  },
-  subtle: {
-    fontSize: 12,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-});
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+      alignItems: "center",
+    },
+    logoWrap: {
+      width: 64,
+      height: 64,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.xl,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    logoEmoji: {
+      fontSize: 30,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    card: {
+      gap: spacing.sm,
+    },
+    linkRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    link: {
+      textDecorationLine: "underline",
+    },
+    subtle: {
+      fontSize: 12,
+    },
+    pressed: {
+      opacity: 0.75,
+    },
+  });
 }

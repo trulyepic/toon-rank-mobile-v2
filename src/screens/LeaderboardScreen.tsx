@@ -306,107 +306,107 @@ export function LeaderboardScreen() {
 
 function getStyles() {
   return StyleSheet.create({
-  hero: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  podiumRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: spacing.sm,
-  },
-  podiumColumn: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  podiumPressable: {
-    width: "100%",
-  },
-  firstColumn: {
-    flex: 1.12,
-  },
-  podiumCard: {
-    alignItems: "center",
-    gap: spacing.xs,
-    minHeight: 204,
-    borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-  },
-  featuredPodium: {
-    minHeight: 226,
-  },
-  rankPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  avatarRing: {
-    padding: 3,
-    borderRadius: radii.pill,
-    borderWidth: 2,
-    backgroundColor: "rgba(10, 13, 20, 0.42)",
-  },
-  stack: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    borderWidth: 1,
-  },
-  rowRank: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.backgroundSoft,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  rowText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  cpPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.credBorder,
-    backgroundColor: colors.credSurface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-});
+    hero: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    heroIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.accent,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    heroText: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    podiumRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: spacing.sm,
+    },
+    podiumColumn: {
+      flex: 1,
+      justifyContent: "flex-end",
+    },
+    podiumPressable: {
+      width: "100%",
+    },
+    firstColumn: {
+      flex: 1.12,
+    },
+    podiumCard: {
+      alignItems: "center",
+      gap: spacing.xs,
+      minHeight: 204,
+      borderWidth: 1,
+      paddingHorizontal: spacing.sm,
+    },
+    featuredPodium: {
+      minHeight: 226,
+    },
+    rankPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    avatarRing: {
+      padding: 3,
+      borderRadius: radii.pill,
+      borderWidth: 2,
+      backgroundColor: "rgba(10, 13, 20, 0.42)",
+    },
+    stack: {
+      gap: spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderWidth: 1,
+    },
+    rowRank: {
+      width: 42,
+      height: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+    },
+    rowText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    cpPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.credBorder,
+      backgroundColor: colors.credSurface,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.99 }],
+    },
+  });
 }
