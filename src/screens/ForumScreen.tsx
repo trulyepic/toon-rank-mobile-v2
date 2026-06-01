@@ -48,6 +48,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 import type { ForumCategory, ForumThread } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
+import { useNotificationCount } from "../hooks/useNotificationCount";
 
 const SORT_OPTIONS: { value: ForumThreadSort; label: string }[] = [
   { value: "activity", label: "Active" },
@@ -413,6 +414,7 @@ export function ForumScreen() {
   const isAdmin = user?.role === "ADMIN";
   const queryClient = useQueryClient();
   const topRankMap = useTopRankMap();
+  const { count: notifCount } = useNotificationCount();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<ForumThreadSort>("activity");
@@ -511,6 +513,28 @@ export function ForumScreen() {
       subtitle="Browse Toon Ranks discussions. Vote and reply with your account."
       rightSlot={
         <View style={styles.headerRight}>
+          {isSignedIn ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                notifCount > 0 ? `${notifCount} unread notifications` : "Notifications"
+              }
+              onPress={() => navigation.navigate("Notifications")}
+              style={({ pressed }) => [
+                styles.gearButton,
+                pressed ? styles.pressedLight : null,
+              ]}
+            >
+              <Ionicons name="notifications-outline" size={20} color={colors.text} />
+              {notifCount > 0 ? (
+                <View style={styles.notifBadge}>
+                  <AppText style={styles.notifBadgeText}>
+                    {notifCount > 99 ? "99+" : String(notifCount)}
+                  </AppText>
+                </View>
+              ) : null}
+            </Pressable>
+          ) : null}
           {isAdmin ? (
             <Pressable
               accessibilityRole="button"
@@ -750,6 +774,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+  },
+  notifBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 17,
+    height: 17,
+    borderRadius: radii.pill,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.surface,
+  },
+  notifBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: 13,
   },
   gearButton: {
     width: 36,

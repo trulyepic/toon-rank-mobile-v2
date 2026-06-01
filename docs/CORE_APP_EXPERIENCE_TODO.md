@@ -2201,16 +2201,16 @@ Purpose: bring in-app notifications to mobile — @-mentions, thread replies, an
 
 **33a — API layer**
 
-- [ ] Add `NotificationOut` type to a new `src/types/notification.ts`
-- [ ] Add `NotificationsPage` type (items, total, page, page_size, total_pages, has_prev, has_next, unread_count)
-- [ ] Add `getNotifications(page: number): Promise<NotificationsPage>` → `GET /notifications` to a new `src/api/notifications.ts`
-- [ ] Add `getUnreadCount(): Promise<{ count: number }>` → `GET /notifications/unread-count`
-- [ ] Add `markNotificationRead(id: number): Promise<void>` → `PATCH /notifications/{id}/read`
-- [ ] Add `markAllNotificationsRead(): Promise<void>` → `POST /notifications/read-all`
+- [x] Add `NotificationOut` type to a new `src/types/notification.ts`
+- [x] Add `NotificationsPage` type (items, total, page, page_size, total_pages, has_prev, has_next, unread_count)
+- [x] Add `getNotifications(page: number): Promise<NotificationsPage>` → `GET /notifications` to a new `src/api/notifications.ts`
+- [x] Add `getUnreadCount(): Promise<{ count: number }>` → `GET /notifications/unread-count`
+- [x] Add `markNotificationRead(id: number): Promise<void>` → `PATCH /notifications/{id}/read`
+- [x] Add `markAllNotificationsRead(): Promise<void>` → `POST /notifications/read-all`
 
 **33b — Unread count polling**
 
-- [ ] Create a `useNotificationCount()` hook in `src/hooks/` that:
+- [x] Create a `useNotificationCount()` hook in `src/hooks/` that:
   - Fetches `getUnreadCount()` on mount when signed in
   - Polls every 60 seconds while the app is in the foreground (`AppState` listener)
   - Re-fetches on app coming to foreground from background (`AppState` change to `"active"`)
@@ -2218,22 +2218,22 @@ Purpose: bring in-app notifications to mobile — @-mentions, thread replies, an
 
 **33c — Notification bell in navigation**
 
-- [ ] Add a bell icon button to the header of a primary screen (e.g., top-right of `ForumScreen` or the app's main tab header area). Show only when signed in.
-- [ ] When `unreadCount > 0`, overlay a red badge with the count (cap display at "99+")
-- [ ] Tapping the bell navigates to `NotificationsScreen`
+- [x] Add a bell icon button to the header of a primary screen (e.g., top-right of `ForumScreen` or the app's main tab header area). Show only when signed in.
+- [x] When `unreadCount > 0`, overlay a red badge with the count (cap display at "99+")
+- [x] Tapping the bell navigates to `NotificationsScreen`
 
 **33d — NotificationsScreen**
 
-- [ ] Create `src/screens/NotificationsScreen.tsx`
-- [ ] Fetch notifications with `useInfiniteQuery`; newest first; load-more pagination
-- [ ] Each notification row shows:
+- [x] Create `src/screens/NotificationsScreen.tsx`
+- [x] Fetch notifications with `useInfiniteQuery`; newest first; load-more pagination
+- [x] Each notification row shows:
   - Actor username (if any) + summary text (e.g. "replied to your thread")
   - Relative timestamp ("3h ago", "2d ago")
   - Unread rows have a distinct blue tint background; a small blue dot on the left
-- [ ] Tapping a row: calls `markNotificationRead(id)`, marks row as read in local state, navigates to `ForumThreadScreen` for the relevant `thread_id` (with `postId` for scroll-to-post if `post_id` is set)
-- [ ] "Mark all as read" button at the top — calls `markAllNotificationsRead()`; clears all tints and badge
-- [ ] Empty state: "No notifications yet."
-- [ ] Add `Notifications: undefined` to `RootStackParamList` and register the screen
+- [x] Tapping a row: calls `markNotificationRead(id)`, marks row as read in local state, navigates to `ForumThreadScreen` for the relevant `thread_id` (with `postId` for scroll-to-post if `post_id` is set)
+- [x] "Mark all as read" button at the top — calls `markAllNotificationsRead()`; clears all tints and badge
+- [x] Empty state: "No notifications yet."
+- [x] Add `Notifications: undefined` to `RootStackParamList` and register the screen
 
 **33e — Emulator test steps**
 
