@@ -1402,14 +1402,14 @@ controls.
 
 **25a — Filter state and logic**
 
-- [ ] Add a `FilterBar` component (or inline state block) to `ReadingListDetailScreen`:
+- [x] Add a `FilterBar` component (or inline state block) to `ReadingListDetailScreen`:
   - `filterType: "" | "MANHWA" | "MANGA" | "MANHUA"` — picker or segmented chips
   - `filterStatus: "" | "ONGOING" | "COMPLETE" | "HIATUS" | "SEASON_END" | "UNKNOWN"` — picker
   - `sortBy: "DEFAULT" | "RANK_ASC" | "RANK_DESC" | "STARS_DESC" | "STARS_ASC" | "VOTES_DESC" |
 "VOTES_ASC" | "TITLE_ASC" | "TITLE_DESC"` — picker
   - `minStars: string` — numeric text input (e.g., `"7.5"`)
   - "Reset" button that clears all four fields to their defaults
-- [ ] Apply filters and sort client-side against the `summaries` map already built from fetched items.
+- [x] Apply filters and sort client-side against the `summaries` map already built from fetched items.
       Filtering predicate:
   - type: `summary.type === filterType` (skip if blank)
   - status: `summary.status.toUpperCase() === filterStatus` (skip if blank)
@@ -1417,16 +1417,16 @@ controls.
     precision of the input; e.g., `"7.5"` means `>= 7.5 and < 7.6`)
   - Sort: apply the chosen sort key after filtering; use `localeCompare` for title sorts; nulls last
     for numeric sorts
-- [ ] When any filter/sort is active, suppress the "Load more" pagination button and show a muted
+- [x] When any filter/sort is active, suppress the "Load more" pagination button and show a muted
       note "Load all items first to sort accurately" if `hasNextPage` is true.
-- [ ] Reset clears all state and re-enables pagination.
+- [x] Reset clears all state and re-enables pagination.
 
 **25b — UI placement**
 
-- [ ] Show the FilterBar as a collapsible/expandable section at the top of the screen below the list
+- [x] Show the FilterBar as a collapsible/expandable section at the top of the screen below the list
       header — collapsed by default (to keep the screen clean for users with short lists). A single
       "Sort & Filter" chip shows the active filter count as a badge when any filter is active.
-- [ ] Inside the expanded bar, lay out the four controls in a 2-column grid or vertical stack
+- [x] Inside the expanded bar, lay out the four controls in a 2-column grid or vertical stack
       appropriate for the screen width.
 
 **25c — Emulator test steps**
