@@ -17,6 +17,7 @@ import { ReadingListDetailScreen } from "../screens/ReadingListDetailScreen";
 import { PublicReadingListScreen } from "../screens/PublicReadingListScreen";
 import { PublicProfileScreen } from "../screens/PublicProfileScreen";
 import { ReportIssueScreen } from "../screens/ReportIssueScreen";
+import { IssueTrackerScreen } from "../screens/IssueTrackerScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   Leaderboard: undefined;
   Profile: undefined;
   ReportIssue: { pageUrl?: string; title?: string; issueType?: string } | undefined;
+  IssueTracker: undefined;
   Settings: undefined;
 };
 
@@ -58,6 +60,7 @@ export function RootNavigator() {
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+      <Stack.Screen name="IssueTracker" component={IssueTrackerScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );

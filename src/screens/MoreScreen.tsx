@@ -46,6 +46,11 @@ const supportRows: MenuRowProps[] = [
     subtitle: "Send bugs, content problems, and suggestions.",
   },
   {
+    icon: "list-outline",
+    title: "Issue Tracker",
+    subtitle: "View reported bugs, feature requests, and current status.",
+  },
+  {
     icon: "mail-outline",
     title: "Support",
     subtitle: SUPPORT_EMAIL,
@@ -116,6 +121,10 @@ export function MoreScreen() {
 
     if (row.title === "Report an Issue") {
       return { ...row, onPress: () => navigation.navigate("ReportIssue") };
+    }
+
+    if (row.title === "Issue Tracker") {
+      return { ...row, onPress: () => navigation.navigate("IssueTracker") };
     }
 
     return { ...row, onPress: () => openSupportEmail(SUPPORT_EMAIL) };

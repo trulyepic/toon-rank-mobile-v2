@@ -29,22 +29,22 @@ tools).
 Use this index before adding new phases. It maps major website features to the mobile roadmap so
 future work does not miss or duplicate large feature areas.
 
-| Website feature area                                                  | Mobile status                                                        | TODO phase                   |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- |
-| Auth, signup, and longer mobile sessions                              | Mostly implemented; refresh/session hardening tracked                | Phases 1, 2, 2.5             |
-| Series ratings and category voting                                    | Implemented                                                          | Phase 3                      |
-| Reading lists and public list sharing                                 | Mostly implemented; list detail filter/sort still tracked            | Phases 4, 14, 25             |
-| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked          | Phases 5, 6, 27              |
-| Forum thread sort, pinned threads, categories, category management    | Missing on mobile                                                    | Phase 30                     |
-| Forum follow, post bookmarks, saved/following activity tabs           | Missing on mobile                                                    | Phase 31                     |
-| Forum post reporting and admin report queue                           | Missing on mobile                                                    | Phases 32, 36                |
-| Forum notifications, unread counts, read-state badges                 | Missing on mobile                                                    | Phases 33, 34                |
-| Forum post-content search and user mention autocomplete               | Missing on mobile                                                    | Phase 35                     |
-| Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                    | Phase 23                     |
-| Public user profiles and pinned favorite series                       | Missing on mobile                                                    | Phase 24                     |
-| My submissions, pending titles, contributor/admin title review        | Missing on mobile                                                    | Phases 28, 36 where relevant |
-| Public issue tracker view and optional admin issue triage             | Missing on mobile; report submission exists                          | Phases 21, 26, 40            |
-| Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist | Phases 37, 41                |
+| Website feature area                                                  | Mobile status                                                         | TODO phase                   |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------- |
+| Auth, signup, and longer mobile sessions                              | Mostly implemented; refresh/session hardening tracked                 | Phases 1, 2, 2.5             |
+| Series ratings and category voting                                    | Implemented                                                           | Phase 3                      |
+| Reading lists and public list sharing                                 | Mostly implemented; list detail filter/sort still tracked             | Phases 4, 14, 25             |
+| Forum posting, replies, nested replies, markdown/media, up/down votes | Mostly implemented; markdown regression tests still tracked           | Phases 5, 6, 27              |
+| Forum thread sort, pinned threads, categories, category management    | Missing on mobile                                                     | Phase 30                     |
+| Forum follow, post bookmarks, saved/following activity tabs           | Missing on mobile                                                     | Phase 31                     |
+| Forum post reporting and admin report queue                           | Missing on mobile                                                     | Phases 32, 36                |
+| Forum notifications, unread counts, read-state badges                 | Missing on mobile                                                     | Phases 33, 34                |
+| Forum post-content search and user mention autocomplete               | Missing on mobile                                                     | Phase 35                     |
+| Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                     | Phase 23                     |
+| Public user profiles and pinned favorite series                       | Missing on mobile                                                     | Phase 24                     |
+| My submissions, pending titles, contributor/admin title review        | Missing on mobile                                                     | Phases 28, 36 where relevant |
+| Public issue tracker view and optional admin issue triage             | Public read-only tracker implemented; admin triage intentionally open | Phases 21, 26, 40            |
+| Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist  | Phases 37, 41                |
 
 ## Phase 1: Mobile Auth Contract Across Backend, Web, And App
 
@@ -1476,36 +1476,36 @@ The web's `/issues` page is **publicly accessible** (no login required). It show
 
 **26a — API and types**
 
-- [ ] Add `Issue` type to `src/types/issue.ts` if not already there (it may already exist from the
+- [x] Add `Issue` type to `src/types/issue.ts` if not already there (it may already exist from the
       report screen). Ensure it includes: `id`, `title`, `description`, `type`, `status`,
       `created_at`, `screenshot_url`.
-- [ ] Add `listIssues(params: { q?: string; type?: string; status?: string; page?: number;
+- [x] Add `listIssues(params: { q?: string; type?: string; status?: string; page?: number;
 page_size?: number }): Promise<Issue[]>` → `GET /issues` to `src/api/issues.ts`
 
 **26b — IssueTrackerScreen**
 
-- [ ] Create `src/screens/IssueTrackerScreen.tsx`
-- [ ] Header section: screen title "Site Updates & Known Issues", subtitle explaining what the tracker
+- [x] Create `src/screens/IssueTrackerScreen.tsx`
+- [x] Header section: screen title "Site Updates & Known Issues", subtitle explaining what the tracker
       is for, and a "Report an Issue" button that navigates to `ReportIssue`.
-- [ ] Status summary row: four chips showing count of Open / In Progress / Resolved / Won't Fix.
+- [x] Status summary row: four chips showing count of Open / In Progress / Resolved / Won't Fix.
       Tapping a chip sets the active status filter.
-- [ ] Filter bar: status tab pills (All / Open / In Progress / Resolved / Won't Fix), type dropdown
+- [x] Filter bar: status tab pills (All / Open / In Progress / Resolved / Won't Fix), type dropdown
       or segmented control (All / Bug / Feature / Content / Other), and a search text input.
-- [ ] List: `FlatList` of issue rows. Each row shows title (bold), truncated description (2 lines),
+- [x] List of issue rows. Each row shows title (bold), truncated description (2 lines),
       type chip, status badge (color-coded), and reported date.
-- [ ] Status badge colors: Open = amber, In Progress = blue, Resolved = green, Won't Fix = muted.
-- [ ] Load up to 50 issues per page; show a "Load more" button if `has_more` is true. Refetch when
-      filter inputs change (debounce search by 300 ms).
-- [ ] Empty state when no issues match the filters.
-- [ ] Screenshot link: if `screenshot_url` is set on an issue, show a small camera icon that opens
+- [x] Status badge colors: Open = amber, In Progress = blue, Resolved = green, Won't Fix = muted.
+- [x] Load up to 50 issues per page; show a "Load more" button when the backend returns a full page.
+      Refetch when filter inputs change (debounce search by 300 ms).
+- [x] Empty state when no issues match the filters.
+- [x] Screenshot link: if `screenshot_url` is set on an issue, show a small camera icon that opens
       the URL in the in-app browser.
-- [ ] Admin status editing: admin-only — skip for mobile (the tracker is read-only on mobile).
+- [x] Admin status editing: admin-only — skip for mobile (the tracker is read-only on mobile).
 
 **26c — Navigation**
 
-- [ ] Add `IssueTracker: undefined` to `RootStackParamList` in `RootNavigator.tsx` and register
+- [x] Add `IssueTracker: undefined` to `RootStackParamList` in `RootNavigator.tsx` and register
       `IssueTrackerScreen`.
-- [ ] Add "Issue Tracker" entry to `MoreScreen` in the Support section, below "Report an Issue".
+- [x] Add "Issue Tracker" entry to `MoreScreen` in the Support section, below "Report an Issue".
       Icon: `list-outline`. Navigate to `IssueTracker`.
 
 **26d — Emulator test steps**
@@ -2421,9 +2421,9 @@ The website `/issues` page is public for viewing, and admins can update issue st
 ### Current mobile status
 
 - [x] Mobile already has `ReportIssueScreen` and issue submission API coverage.
-- [ ] Mobile does not yet have the public issue tracker screen from Phase 26.
+- [x] Mobile has the public read-only issue tracker screen from Phase 26.
 - [ ] Mobile does not yet have admin issue triage controls.
-- [ ] This phase should not start until Phase 26 exists, unless the product decision changes.
+- [x] This phase should not start until Phase 26 exists, unless the product decision changes.
 
 ### Work items
 
