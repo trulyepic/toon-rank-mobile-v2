@@ -42,7 +42,8 @@ future work does not miss or duplicate large feature areas.
 | Forum post-content search and user mention autocomplete               | Missing on mobile                                                     | Phase 35                     |
 | Rankers leaderboard, Cred Points, rank chips, ranker badges           | Missing on mobile                                                     | Phase 23                     |
 | Public user profiles and pinned favorite series                       | Missing on mobile                                                     | Phase 24                     |
-| My submissions, pending titles, contributor/admin title review        | Missing on mobile                                                     | Phases 28, 36 where relevant |
+| My submissions, contributor title submission flow                     | Missing on mobile; edit submission and synopsis steps incomplete      | Phase 28                     |
+| Admin pending title review and user role management                   | Not in mobile — future work                                           | Phases 28.5, 36              |
 | Public issue tracker view and optional admin issue triage             | Public read-only tracker implemented; admin triage intentionally open | Phases 21, 26, 40            |
 | Public info pages, route/deep-link parity, fallback screens           | Partially implemented; Terms/Privacy and public list deep link exist  | Phases 37, 41                |
 
@@ -1675,6 +1676,115 @@ utility checks for this. Regular members (`GENERAL` role) cannot submit.
 Done means Contributor and Admin users can submit new series for the rankings and track their
 submission status from the mobile app.
 
+### Known gaps — documented for future phases
+
+The following two steps of the web submission flow are not yet covered by any work item above. They
+are documented here so they are not missed when Phase 28 is implemented.
+
+**28e — Edit pending submission (future work)**
+
+The web's `EditSeriesModal` lets a contributor edit a pending submission's metadata (title, type,
+genre, author, artist, cover image) via `PUT /series/{series_id}` before admin review. Mobile
+Phase 28 does not yet include this edit path.
+
+- Add an Edit action to each submission card in `MySubmissionsScreen` (accessible only while
+  `approval_status === "PENDING_REVIEW"`).
+- Re-uses the same form fields as `SubmitSeriesScreen`; pre-fills with current values.
+- Calls `PUT /series/{series_id}` (multipart if cover image is changed).
+- On success, refreshes the submissions list and shows a success toast.
+
+**28f — Add synopsis and secondary cover (future work)**
+
+The web's `AddSeriesDetailModal` lets a contributor add a synopsis and a secondary cover image
+directly to a pending submission to flip `detail_ready` to `true`, which signals the series is
+ready for admin review. Mobile Phase 28 currently just navigates to the series detail page with a
+prompt, but no native form covers this step.
+
+- Add a "Complete for review" action/button on pending submission cards where `detail_ready` is
+  false.
+- Opens a bottom sheet or screen with: synopsis text area + secondary cover image picker.
+- Calls the relevant backend field-update endpoint to set synopsis and secondary cover.
+- On success, shows `detail_ready = true` chip on the submission card and dismisses the sheet.
+
+---
+
+## Phase 28.5: Admin — Pending Titles Review (Future Work)
+
+> **Status: Future work.** Do not start this phase until Phase 28 is complete and the contributor
+> submission flow is live. This phase covers the admin counterpart — reviewing, approving, or
+> rejecting pending submissions — so admins do not need to use the website for this workflow.
+
+Suggested branch: `mobile-admin-pending-titles`
+
+Purpose: let admins approve or reject pending series submissions and manage user roles from the
+mobile app, matching the web's `PendingTitlesPage`.
+
+### Background — what exists on the web
+
+The web's `PendingTitlesPage` combines two admin functions on a single page:
+
+1. **Pending series review** — lists all series with `approval_status === "PENDING_REVIEW"`;
+   admins can approve (series goes live) or delete/reject each submission.
+2. **User role management** — lists all users with their current role; admins can change any
+   user's role between `GENERAL`, `CONTRIBUTOR`, and `ADMIN` via a dropdown.
+
+### Backend endpoints (to verify before implementing)
+
+| Endpoint                         | Auth  | Description                                            |
+| -------------------------------- | ----- | ------------------------------------------------------ |
+| `GET /series/submissions/pending`| Admin | List all pending series submissions for admin review   |
+| `POST /series/{id}/approve`      | Admin | Approve a pending series (goes live)                   |
+| `DELETE /series/{id}`            | Admin | Reject/delete a pending submission                     |
+| `GET /admin/users`               | Admin | List all users with role                               |
+| `PATCH /admin/users/{id}/role`   | Admin | Update a user's role (`GENERAL`/`CONTRIBUTOR`/`ADMIN`) |
+
+> Re-verify these endpoint paths against the backend before implementing — they may differ from the
+> web's API calls.
+
+### Work items
+
+**28.5a — Admin pending submissions screen**
+
+- [ ] Create `src/screens/AdminPendingTitlesScreen.tsx` (admin-only; show
+      `AccountRequiredCard` or "Admin access required" if not admin).
+- [ ] Fetch the pending submissions list. Show a card per pending series: cover thumbnail, title,
+      type, contributor name, submission date, `detail_ready` chip.
+- [ ] Approve action: confirmation alert → calls approve endpoint → removes row optimistically.
+- [ ] Delete/reject action: confirmation alert with reason (optional) → calls delete endpoint →
+      removes row optimistically.
+- [ ] Empty state: "No pending submissions."
+
+**28.5b — Admin user role management screen**
+
+- [ ] Add a "User Roles" section or tab within `AdminPendingTitlesScreen` (or as a separate
+      `AdminUserRolesScreen`).
+- [ ] Fetch the user list. Show rows: username, email, current role badge.
+- [ ] Role change control: action sheet with `GENERAL` / `CONTRIBUTOR` / `ADMIN` options;
+      calls `PATCH /admin/users/{id}/role`; optimistic update with revert on error.
+- [ ] Guard: prevent demoting yourself (the signed-in admin's own row should have the role
+      control disabled or hidden).
+
+**28.5c — Navigation**
+
+- [ ] Add `AdminPendingTitles: undefined` (and `AdminUserRoles: undefined` if separate) to
+      `RootStackParamList`.
+- [ ] Add an "Admin: Pending Titles" entry to `MoreScreen` under the existing admin-only section
+      (visible only when `user.role === "ADMIN"`).
+
+**28.5d — Emulator test steps**
+
+1. Sign in as a non-admin user — confirm the Pending Titles entry does not appear in MoreScreen.
+2. Sign in as admin — confirm the entry appears; open it.
+3. Confirm pending submissions are listed with approve and delete actions.
+4. Approve a submission — confirm it disappears from the list and is live on the series detail page.
+5. Delete a submission — confirm it disappears from the list.
+6. Open user role management — confirm users are listed with current roles.
+7. Change a user's role — confirm the badge updates; open the website and confirm the change is reflected.
+8. Confirm your own role control is disabled so self-demotion is not possible.
+
+Done means admins can manage the full submission and contributor workflow entirely from the mobile
+app without needing to open the website.
+
 ---
 
 ## Phase 29: Username Change
@@ -1754,11 +1864,15 @@ behavior as the web account page, including Google OAuth accounts.
 
 ---
 
-## Phase 30: Forum Enhancements I — Thread Pinning, Sorting, And Categories
+## Phase 30: Forum Enhancements I — Thread Pinning, Sorting, Categories, And Post Meta
 
 Suggested branch: `mobile-forum-enhancements-1`
 
-Purpose: bring three interrelated forum list improvements to mobile — pinned thread visual treatment, sort controls, and category/subforum filtering — matching the features live on the production website.
+Purpose: bring forum list improvements to mobile — pinned thread visual treatment, sort controls, category/subforum filtering, thread view counts, and "(edited)" post indicators — matching the features live on the production website.
+
+> **Confirmed gap (June 2026 audit):** Mobile forum screens (`ForumScreen`, `ForumCreateThreadScreen`,
+> `ForumThreadScreen`) contain zero references to `category`, `ForumCategory`, or category slugs.
+> Categories are entirely absent from mobile and must be built from scratch in this phase.
 
 ### Background — what was built on the web and backend
 
@@ -1847,7 +1961,30 @@ Purpose: bring three interrelated forum list improvements to mobile — pinned t
 - [ ] Delete: confirmation alert; calls `DELETE /forum/categories/{id}`; shows error if 409 (threads still assigned)
 - [ ] Add category: form at the bottom of the modal; slug auto-generated from name; calls `POST /forum/categories`
 
-**30g — Emulator test steps**
+**30g — Thread view count display**
+
+The backend already returns `view_count` on `ForumThread` objects. The web shows a `👁 N` chip in
+each thread row.
+
+- [ ] Add `view_count?: number` to the `ForumThread` type in `src/types/forum.ts` (if not already
+      present).
+- [ ] In `ForumScreen` thread row meta row (alongside reply count and date), show a `👁 {view_count}`
+      chip when `view_count` is defined and > 0.
+- [ ] Keep the chip muted/secondary so it does not compete visually with reply count.
+
+**30h — "(edited)" indicator on posts**
+
+The backend returns `updated_at` on `ForumPost` objects. The web shows an `(edited)` label when
+`updated_at` is meaningfully later than `created_at` (> ~10 seconds). Mobile covers editing posts
+(Phase 12) but does not yet surface this indicator in rendered posts.
+
+- [ ] Add `updated_at?: string` to the `ForumPost` type in `src/types/forum.ts` (if not already
+      present).
+- [ ] In `ForumThreadScreen` post and reply cards, show a muted `(edited)` label in the meta row
+      when `updated_at` and `created_at` differ by more than 10 seconds.
+- [ ] Apply to the original post and all reply cards.
+
+**30i — Emulator test steps**
 
 1. Open `ForumScreen` — confirm sort pills (Active / Newest / Most replies) appear and switching sort reloads the list in the correct order
 2. Confirm category pills appear (General Discussion, Series Talk, Recommendations, Off-Topic)
@@ -1856,8 +1993,10 @@ Purpose: bring three interrelated forum list improvements to mobile — pinned t
 5. As admin, tap the pin toggle on an unpinned thread — confirm it moves to the top with amber styling; tap again — confirm it un-pins
 6. Create a new thread — confirm the category picker is shown; select a category; confirm the thread appears in that category's filtered view
 7. Edit a thread (admin) — confirm the category picker shows the current category and allows changing it
+8. Confirm thread rows show a `👁 N` view count chip when the backend returns a non-zero `view_count`
+9. Edit a post body, then open the thread — confirm the edited post shows an `(edited)` label in its meta row; confirm unedited posts do not show it
 
-Done means the mobile forum list matches the web in pinned thread treatment, sort options, and category browsing, and thread creation/editing includes category assignment.
+Done means the mobile forum list matches the web in pinned thread treatment, sort options, category browsing, view counts, and edited post indicators.
 
 ---
 
@@ -2261,6 +2400,17 @@ This is separate from the report button and form (covered in Phase 32). Phase 32
 
 Done means mobile admins have the same moderation tools as the web — report queue, thread pinning, and category management — in a single branch.
 
+### Future work — Admin user role management
+
+> **Status: Future work.** Covered in Phase 28.5b. Documented here as a cross-reference so this
+> phase does not appear incomplete when Phase 28.5 has not yet been built.
+
+The web's `PendingTitlesPage` lets admins change any user's role (`GENERAL` → `CONTRIBUTOR` →
+`ADMIN`) via a dropdown. This is not a forum moderation tool per se, but is admin-only and is
+grouped with pending-title review on the web. The mobile equivalent is tracked in **Phase 28.5b**
+and should be built alongside the pending titles review screen rather than here, since both live on
+the same web page.
+
 ---
 
 ## Phase 37: Public Info, Help, And Legal Page Parity
@@ -2296,6 +2446,12 @@ The mobile app should not blindly copy website layout, but users still need easy
 - [ ] Keep Terms and Privacy pointed at the production web pages unless/until the legal copy is duplicated natively. If opened in a browser, use in-app browser behavior and make it obvious the user is viewing Toon Ranks legal pages.
 - [ ] Add a native not-found/fallback screen for unsupported deep links and broken internal navigation.
 - [ ] Make sure support/contact copy uses `support@toonranks.com` and stays aligned with the backend/frontend email alias docs.
+- [ ] **Inline ratings tooltip on `SeriesDetailScreen`:** The web has a `RatingInfoTooltip` component
+      directly on the series detail ratings section, showing a brief "how rankings work" explanation
+      inline without requiring navigation. Consider adding a small `ⓘ` info icon or tooltip sheet
+      on the `SeriesRatingsSection` so users can understand the rating system without leaving the
+      screen. The full "How Rankings Work" native screen (above) handles deep reading; this is a
+      quick inline nudge. Decide whether both are needed or if one replaces the other.
 - [ ] Add tests for the More screen entries and any native info screens.
 
 ### Emulator test steps
@@ -2393,6 +2549,15 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
 - [x] Re-audit web `RichReplyEditor` before implementing this phase.
 - [ ] Persist unsent new-thread drafts locally by forum context.
 - [ ] Persist unsent reply drafts locally by thread and parent post, so accidental navigation or app backgrounding does not erase a reply.
+- [ ] **Quote-reply:** The web shipped a "Quote" button on each post/reply action row that inserts a
+      blockquote attribution (`> **@author** wrote:\n> {excerpt}`) and pre-fills the reply composer,
+      threading the reply under the quoted post via `quoteParentId`. Add:
+  - A "Quote" action button in each post/reply action row (alongside the existing reply button),
+    visible to signed-in users.
+  - On tap: build the blockquote markdown string from the post author and first ~200 chars of body;
+    pre-fill the relevant composer (inline reply if in a thread, main composer if quoting the OP).
+  - Pass `quoteParentId` (the quoted post's id) so the backend threads it correctly.
+  - Auto-scroll to and focus the composer after inserting the quote text.
 - [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
 - [x] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
 - [ ] Keep the keyboard visible and the text box in view while using autocomplete, toolbar actions, and image/list pickers.
@@ -2460,12 +2625,21 @@ The website currently has public and account routes for home, auth, verification
 - [x] Mobile linking currently handles `toonranks://lists/:token` for public reading lists.
 - [x] Native routes already exist for series detail, login, signup, check email, reading lists, public reading list, forum threads, forum activity, profile, report issue, and settings.
 - [ ] Native routes do not yet exist for verify email, reset password, leaderboard, public user profile, issue tracker, admin reports, public info pages, or not-found fallback.
+- [ ] Password reset emails currently link to the website's `/reset-password` page; mobile has no
+      deep link handler for this route, so tapping the email link on a mobile device does not open
+      the app. Phase 2.6 opens the website forgot-password flow in an in-app browser, but does not
+      handle the return deep link when the reset email is tapped.
 - [ ] Deep linking is not yet mapped for most native routes.
 
 ### Work items
 
 - [ ] Create a route parity table in this document or a dedicated mobile docs file with columns: Web route, Mobile behavior, Auth required, Status.
 - [ ] Support deep links for high-value user-facing routes: series detail, forum thread, forum post anchor, public list, public profile, leaderboard, login, signup, verify email, reset password, and report issue.
+- [ ] **Reset-password deep link (confirmed gap):** Add a `toonranks://auth/reset-password?token=…`
+      deep link handler that opens a native `ResetPasswordScreen` (or hands off gracefully to the
+      in-app browser) so that password reset emails route back into the app on mobile. Pair this
+      with the existing Phase 2.6 forgot-password in-app browser entry point and Phase 16
+      (email verification redirect) so the full auth recovery flow is consistent.
 - [ ] Open low-value or desktop-heavy routes in the production website when native parity is not worth building yet.
 - [ ] Add a native fallback screen for unsupported or expired links.
 - [ ] Verify email templates and notification payloads point to links that mobile can either handle directly or gracefully hand off to the website.
