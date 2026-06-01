@@ -36,6 +36,7 @@ import {
   extractForumSeriesIds,
   getActiveForumMention,
   insertForumMention,
+  insertUserMention,
 } from "../utils/forumMentions";
 import {
   appendForumMediaMarkdown,
@@ -249,6 +250,22 @@ export function ForumCreateThreadScreen() {
                 {body.length}/{MAX_BODY_LENGTH}
               </AppText>
             </View>
+            <ForumMentionSuggestions
+              mention={activeMention}
+              onSelect={(selection) => {
+                setBody((current) => {
+                  if (!activeMention) return current;
+                  const next = (
+                    selection.type === "series"
+                      ? insertForumMention(current, activeMention, selection.series)
+                      : insertUserMention(current, activeMention, selection.username)
+                  ).slice(0, MAX_BODY_LENGTH);
+                  setBodySelection({ start: next.length, end: next.length });
+                  return next;
+                });
+                setValidationMessage(null);
+              }}
+            />
             <ForumComposerToolbar
               disabled={createMutation.isPending}
               onFormat={handleFormatBody}
@@ -268,22 +285,6 @@ export function ForumCreateThreadScreen() {
               multiline
               textAlignVertical="top"
               style={styles.bodyInput}
-            />
-            <ForumMentionSuggestions
-              mention={activeMention}
-              onSelect={(series) => {
-                setBody((current) => {
-                  const next = activeMention
-                    ? insertForumMention(current, activeMention, series).slice(
-                        0,
-                        MAX_BODY_LENGTH,
-                      )
-                    : current;
-                  setBodySelection({ start: next.length, end: next.length });
-                  return next;
-                });
-                setValidationMessage(null);
-              }}
             />
 
             {attachment ? (

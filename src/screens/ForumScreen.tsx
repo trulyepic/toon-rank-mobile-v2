@@ -435,6 +435,7 @@ export function ForumScreen() {
   const [sort, setSort] = useState<ForumThreadSort>("activity");
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [searchPosts, setSearchPosts] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -452,7 +453,7 @@ export function ForumScreen() {
   const activeCategory = categories.find((c) => c.slug === activeCategorySlug) ?? null;
 
   const threadsQuery = useInfiniteQuery({
-    queryKey: ["forum", "threads", debouncedQuery, sort, activeCategorySlug],
+    queryKey: ["forum", "threads", debouncedQuery, sort, activeCategorySlug, searchPosts],
     queryFn: ({ pageParam }) =>
       getForumThreads(
         pageParam,
@@ -460,6 +461,7 @@ export function ForumScreen() {
         debouncedQuery || undefined,
         sort,
         activeCategorySlug ?? undefined,
+        debouncedQuery ? searchPosts : undefined,
       ),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
@@ -605,15 +607,43 @@ export function ForumScreen() {
           placeholderTextColor={colors.textMuted}
           style={styles.searchInput}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(t) => {
+            setQuery(t);
+            if (!t) setSearchPosts(false);
+          }}
           returnKeyType="search"
         />
         {query.length > 0 ? (
-          <Pressable onPress={() => setQuery("")} hitSlop={8}>
+          <Pressable
+            onPress={() => {
+              setQuery("");
+              setSearchPosts(false);
+            }}
+            hitSlop={8}
+          >
             <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
+
+      {debouncedQuery.length > 0 ? (
+        <Pressable
+          onPress={() => setSearchPosts((prev) => !prev)}
+          style={styles.searchPostsToggle}
+        >
+          <View
+            style={[
+              styles.searchPostsCheck,
+              searchPosts ? styles.searchPostsCheckOn : null,
+            ]}
+          >
+            {searchPosts ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
+          </View>
+          <AppText variant="caption" tone={searchPosts ? "accent" : "muted"}>
+            Search inside posts
+          </AppText>
+        </Pressable>
+      ) : null}
 
       {/* Sort controls */}
       <ScrollView
@@ -836,6 +866,26 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  searchPostsToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    alignSelf: "flex-start",
+  },
+  searchPostsCheck: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchPostsCheckOn: {
+    borderColor: colors.accentStrong,
+    backgroundColor: colors.accentStrong,
   },
   searchInput: {
     flex: 1,

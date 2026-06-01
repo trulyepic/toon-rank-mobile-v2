@@ -32,6 +32,7 @@ import {
   getForumThreadPosts,
   lockForumThread,
   markThreadRead,
+  searchPostsInThread,
   pinForumThread,
   setForumPostVote,
   reportPost,
@@ -68,7 +69,6 @@ import type {
   ForumThreadPostsPage,
   ForumVote,
   ForumVoteResponse,
-  SeriesRef,
 } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 import {
@@ -76,7 +76,9 @@ import {
   extractForumSeriesIds,
   getActiveForumMention,
   insertForumMention,
+  insertUserMention,
 } from "../utils/forumMentions";
+import type { MentionSelection } from "../components/ForumMentionSuggestions";
 import {
   appendForumMediaMarkdown,
   pickForumMediaAttachment,
@@ -215,6 +217,18 @@ function PostCard({
 
       {isEditing ? (
         <View style={styles.editBlock}>
+          <ForumMentionSuggestions
+            mention={getActiveForumMention(editText)}
+            onSelect={(selection: MentionSelection) => {
+              const mention = getActiveForumMention(editText);
+              if (!mention) return;
+              const next =
+                selection.type === "series"
+                  ? insertForumMention(editText, mention, selection.series)
+                  : insertUserMention(editText, mention, selection.username);
+              onEditChange(next);
+            }}
+          />
           <TextInput
             autoCapitalize="sentences"
             autoCorrect
@@ -440,7 +454,7 @@ function InlineComposer({
   onCancel: () => void;
   isPending: boolean;
   activeMention: ActiveMention | null;
-  onMentionSelect: (series: SeriesRef) => void;
+  onMentionSelect: (selection: MentionSelection) => void;
   attachment: ForumMediaAttachment | null;
   onPickAttachment: () => void;
   onRemoveAttachment: () => void;
@@ -470,6 +484,7 @@ function InlineComposer({
           {replyText.length}/{REPLY_MAX_LENGTH}
         </AppText>
       </View>
+      <ForumMentionSuggestions mention={activeMention} onSelect={onMentionSelect} />
       <ForumComposerToolbar
         disabled={isPending}
         onFormat={(action) => {
@@ -492,7 +507,6 @@ function InlineComposer({
         placeholderTextColor={colors.textSubtle}
         style={styles.replyInput}
       />
-      <ForumMentionSuggestions mention={activeMention} onSelect={onMentionSelect} />
       <ForumAttachmentPicker
         attachment={attachment}
         disabled={isPending}
@@ -718,6 +732,9 @@ export function ForumThreadScreen() {
   const [editThreadBody, setEditThreadBody] = useState("");
   const [editThreadCategoryId, setEditThreadCategoryId] = useState<number | null>(null);
   const [reportedPostIds, setReportedPostIds] = useState<Set<number>>(new Set());
+  const [postSearchOpen, setPostSearchOpen] = useState(false);
+  const [postSearchQuery, setPostSearchQuery] = useState("");
+  const [debouncedPostSearch, setDebouncedPostSearch] = useState("");
   const [reportModalPost, setReportModalPost] = useState<ForumPost | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [reportError, setReportError] = useState("");
@@ -729,6 +746,19 @@ export function ForumThreadScreen() {
   const hasScrolledToPost = useRef(false);
   const queryKey = ["forum", "thread", threadId] as const;
   const activeMention = getActiveForumMention(replyText);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPostSearch(postSearchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [postSearchQuery]);
+
+  const postSearchResultsQuery = useQuery({
+    queryKey: ["forum", "thread-post-search", threadId, debouncedPostSearch],
+    queryFn: () => searchPostsInThread(threadId, debouncedPostSearch),
+    enabled: postSearchOpen && debouncedPostSearch.length >= 2,
+    staleTime: 30_000,
+  });
+  const postSearchResults = postSearchResultsQuery.data?.items ?? [];
   const activeThreadBodyMention = getActiveForumMention(editThreadBody);
   const postsQuery = useInfiniteQuery({
     queryKey,
@@ -833,7 +863,10 @@ export function ForumThreadScreen() {
   });
   const editMutation = useMutation({
     mutationFn: ({ postId, markdown }: { postId: number; markdown: string }) =>
-      editForumPost(threadId, postId, { content_markdown: markdown }),
+      editForumPost(threadId, postId, {
+        content_markdown: markdown,
+        series_ids: extractForumSeriesIds(markdown),
+      }),
     onSuccess: (updatedPost) => {
       setEditingPostId(null);
       setEditText("");
@@ -878,6 +911,24 @@ export function ForumThreadScreen() {
               )
                 ? page.total_top_level - 1
                 : page.total_top_level,
+            })),
+          };
+        },
+      );
+      // Decrement post_count on the thread card in the forum list
+      queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+        { queryKey: ["forum", "threads"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((t) =>
+                t.id === threadId
+                  ? { ...t, post_count: Math.max(0, t.post_count - 1) }
+                  : t,
+              ),
             })),
           };
         },
@@ -934,6 +985,29 @@ export function ForumThreadScreen() {
           };
         },
       );
+      // Sync title and category to the thread list card
+      queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+        { queryKey: ["forum", "threads"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((t) =>
+                t.id === threadId
+                  ? {
+                      ...t,
+                      title: updatedThread.title,
+                      category_id: updatedThread.category_id,
+                      category_name: updatedThread.category_name,
+                    }
+                  : t,
+              ),
+            })),
+          };
+        },
+      );
     },
     onError: (error) => {
       Alert.alert(
@@ -967,6 +1041,22 @@ export function ForumThreadScreen() {
           return {
             ...current,
             pages: current.pages.map((page) => ({ ...page, thread: updatedThread })),
+          };
+        },
+      );
+      // Sync locked badge to the thread list card
+      queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+        { queryKey: ["forum", "threads"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((t) =>
+                t.id === threadId ? { ...t, locked: updatedThread.locked } : t,
+              ),
+            })),
           };
         },
       );
@@ -1022,6 +1112,22 @@ export function ForumThreadScreen() {
             pages: current.pages.map((page) => ({
               ...page,
               thread: { ...page.thread, is_pinned: result.is_pinned },
+            })),
+          };
+        },
+      );
+      // Sync pin state to the thread list card
+      queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+        { queryKey: ["forum", "threads"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((t) =>
+                t.id === threadId ? { ...t, is_pinned: result.is_pinned } : t,
+              ),
             })),
           };
         },
@@ -1420,11 +1526,14 @@ export function ForumThreadScreen() {
       },
     ]);
   };
-  const handleMentionSelect = (series: SeriesRef) => {
+  const handleMentionSelect = (selection: MentionSelection) => {
     setReplyText((current) => {
-      const next = activeMention
-        ? insertForumMention(current, activeMention, series).slice(0, REPLY_MAX_LENGTH)
-        : current;
+      if (!activeMention) return current;
+      const next = (
+        selection.type === "series"
+          ? insertForumMention(current, activeMention, selection.series)
+          : insertUserMention(current, activeMention, selection.username)
+      ).slice(0, REPLY_MAX_LENGTH);
       setReplySelection({ start: next.length, end: next.length });
       return next;
     });
@@ -1475,7 +1584,98 @@ export function ForumThreadScreen() {
       title="Thread"
       subtitle="Read public discussions, vote, and reply with your Toon Ranks account."
       scrollRef={scrollViewRef}
+      rightSlot={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={postSearchOpen ? "Close search" : "Search posts"}
+          onPress={() => {
+            setPostSearchOpen((prev) => !prev);
+            setPostSearchQuery("");
+            setDebouncedPostSearch("");
+          }}
+          style={({ pressed }) => [
+            styles.threadSearchButton,
+            pressed ? styles.pressedLight : null,
+          ]}
+        >
+          <Ionicons
+            name={postSearchOpen ? "close" : "search-outline"}
+            size={20}
+            color={colors.text}
+          />
+        </Pressable>
+      }
     >
+      {/* In-thread post search */}
+      {postSearchOpen ? (
+        <View style={styles.postSearchContainer}>
+          <View style={styles.postSearchBar}>
+            <Ionicons name="search-outline" size={17} color={colors.textMuted} />
+            <TextInput
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="Search posts in this thread..."
+              placeholderTextColor={colors.textMuted}
+              style={styles.postSearchInput}
+              value={postSearchQuery}
+              onChangeText={setPostSearchQuery}
+              returnKeyType="search"
+            />
+          </View>
+          {debouncedPostSearch.length >= 2 ? (
+            postSearchResultsQuery.isLoading ? (
+              <LoadingState message="Searching..." />
+            ) : postSearchResults.length === 0 ? (
+              <AppText tone="muted" variant="caption" style={styles.postSearchEmpty}>
+                {'No posts matched "'}
+                {debouncedPostSearch}
+                {'".'}
+              </AppText>
+            ) : (
+              <View style={styles.postSearchResults}>
+                {postSearchResults.map((result) => (
+                  <Pressable
+                    key={result.id}
+                    style={({ pressed }) => [
+                      styles.postSearchRow,
+                      pressed ? styles.pressedLight : null,
+                    ]}
+                    onPress={() => {
+                      setPostSearchOpen(false);
+                      setPostSearchQuery("");
+                      const ref = postRefs.current.get(result.id);
+                      if (ref && scrollViewRef.current) {
+                        ref.measureLayout(
+                          scrollViewRef.current as unknown as View,
+                          (_x, y) =>
+                            scrollViewRef.current?.scrollTo({
+                              y: Math.max(0, y - spacing.md),
+                              animated: true,
+                            }),
+                          () => {},
+                        );
+                      }
+                    }}
+                  >
+                    <AppText variant="caption" tone="muted" numberOfLines={1}>
+                      @{result.author_username || "Unknown"}
+                    </AppText>
+                    <AppText variant="caption" numberOfLines={2}>
+                      {result.content_markdown.slice(0, 120)}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </View>
+            )
+          ) : debouncedPostSearch.length > 0 ? (
+            <AppText tone="muted" variant="caption" style={styles.postSearchEmpty}>
+              Type at least 2 characters.
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
+
       {postsQuery.isLoading ? <LoadingState message="Loading thread..." /> : null}
 
       {postsQuery.isError ? (
@@ -1794,6 +1994,27 @@ export function ForumThreadScreen() {
               {editThreadBody.length}/{REPLY_MAX_LENGTH}
             </AppText>
           </View>
+          <ForumMentionSuggestions
+            mention={activeThreadBodyMention}
+            onSelect={(selection) => {
+              setEditThreadBody((current) => {
+                if (!activeThreadBodyMention) return current;
+                return (
+                  selection.type === "series"
+                    ? insertForumMention(
+                        current,
+                        activeThreadBodyMention,
+                        selection.series,
+                      )
+                    : insertUserMention(
+                        current,
+                        activeThreadBodyMention,
+                        selection.username,
+                      )
+                ).slice(0, REPLY_MAX_LENGTH);
+              });
+            }}
+          />
           <TextInput
             value={editThreadBody}
             onChangeText={(v) => setEditThreadBody(v.slice(0, REPLY_MAX_LENGTH))}
@@ -1802,19 +2023,6 @@ export function ForumThreadScreen() {
             multiline
             textAlignVertical="top"
             style={styles.replyInput}
-          />
-          <ForumMentionSuggestions
-            mention={activeThreadBodyMention}
-            onSelect={(series) => {
-              setEditThreadBody((current) =>
-                activeThreadBodyMention
-                  ? insertForumMention(current, activeThreadBodyMention, series).slice(
-                      0,
-                      REPLY_MAX_LENGTH,
-                    )
-                  : current,
-              );
-            }}
           />
           <View style={styles.editActions}>
             <AppButton
@@ -2011,6 +2219,10 @@ export function ForumThreadScreen() {
             </AppText>
           ) : isSignedIn ? (
             <>
+              <ForumMentionSuggestions
+                mention={activeMention}
+                onSelect={handleMentionSelect}
+              />
               <ForumComposerToolbar
                 disabled={replyMutation.isPending}
                 onFormat={handleFormatReply}
@@ -2032,13 +2244,9 @@ export function ForumThreadScreen() {
                 placeholderTextColor={colors.textSubtle}
                 style={styles.replyInput}
               />
-              <ForumMentionSuggestions
-                mention={activeMention}
-                onSelect={handleMentionSelect}
-              />
               <View style={styles.composerActions}>
                 <AppText variant="caption" tone="muted" style={styles.composerHint}>
-                  Markdown is supported. Type @ to reference a series. Image and GIF
+                  Markdown is supported. Type @ to mention a user or series. Image and GIF
                   uploads are supported.
                 </AppText>
                 <ForumAttachmentPicker
@@ -2470,6 +2678,50 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
+  },
+  threadSearchButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  postSearchContainer: {
+    gap: spacing.sm,
+  },
+  postSearchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  postSearchInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
+  postSearchResults: {
+    gap: spacing.xs,
+  },
+  postSearchRow: {
+    gap: 2,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  postSearchEmpty: {
+    paddingHorizontal: spacing.xs,
   },
   sheetBackdrop: {
     flex: 1,
