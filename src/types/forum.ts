@@ -26,6 +26,8 @@ export interface ForumThread {
   category_id?: number | null;
   category_name?: string | null;
   view_count?: number;
+  viewer_is_following?: boolean;
+  follower_count?: number;
 }
 
 export interface ForumCategory {
@@ -73,6 +75,7 @@ export interface ForumPost {
   viewer_vote?: ForumVote | null;
   heart_count?: number;
   viewer_has_hearted?: boolean;
+  viewer_has_bookmarked?: boolean;
 }
 
 export interface ForumPostPage {

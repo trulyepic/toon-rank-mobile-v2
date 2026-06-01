@@ -185,6 +185,34 @@ export async function updateForumThreadSettings(
   return res.data;
 }
 
+export async function toggleThreadFollow(threadId: number) {
+  const res = await api.post<{ following: boolean; follower_count: number }>(
+    `/forum/threads/${threadId}/follow`,
+  );
+  return res.data;
+}
+
+export async function getMyFollowedThreads(page = 1, pageSize = 10) {
+  const res = await api.get<ForumThreadPage>("/forum/me/following", {
+    params: { page, page_size: pageSize },
+  });
+  return res.data;
+}
+
+export async function togglePostBookmark(threadId: number, postId: number) {
+  const res = await api.post<{ bookmarked: boolean }>(
+    `/forum/threads/${threadId}/posts/${postId}/bookmark`,
+  );
+  return res.data;
+}
+
+export async function getMyBookmarkedPosts(page = 1, pageSize = 10) {
+  const res = await api.get<ForumPostPage>("/forum/me/bookmarks", {
+    params: { page, page_size: pageSize },
+  });
+  return res.data;
+}
+
 export async function getMyForumThreads(page = 1, pageSize = 10) {
   const res = await api.get<ForumThreadPage>("/forum/me/threads", {
     params: { page, page_size: pageSize },
