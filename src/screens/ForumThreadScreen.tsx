@@ -32,6 +32,8 @@ import {
   lockForumThread,
   pinForumThread,
   setForumPostVote,
+  togglePostBookmark,
+  toggleThreadFollow,
   updateForumThread,
   updateForumThreadSettings,
   uploadForumMedia,
@@ -115,6 +117,8 @@ function PostCard({
   onRegisterRef,
   rank,
   onAuthorPress,
+  isBookmarked,
+  onBookmark,
 }: {
   post: ForumPost;
   depth?: number;
@@ -136,6 +140,8 @@ function PostCard({
   onRegisterRef?: (ref: View | null) => void;
   rank?: number;
   onAuthorPress?: (username: string) => void;
+  isBookmarked?: boolean;
+  onBookmark?: (post: ForumPost) => void;
 }) {
   const viewerVote = getViewerVote(post);
   const isVoting = pendingVote !== null;
@@ -294,6 +300,24 @@ function PostCard({
           >
             <Ionicons name="return-up-forward-outline" size={13} color={colors.text} />
             <AppText variant="caption">Reply</AppText>
+          </Pressable>
+        ) : null}
+        {onBookmark && !isEditing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isBookmarked ? "Remove bookmark" : "Bookmark post"}
+            onPress={() => onBookmark(post)}
+            style={({ pressed }) => [
+              styles.replyAction,
+              isBookmarked ? styles.activeBookmarkAction : null,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons
+              name={isBookmarked ? "bookmark" : "bookmark-outline"}
+              size={13}
+              color={isBookmarked ? colors.credText : colors.text}
+            />
           </Pressable>
         ) : null}
         {canEdit && !isEditing ? (
@@ -501,6 +525,7 @@ function ReplyTree({
   registerPostRef,
   topRankMap,
   onAuthorPress,
+  onBookmark,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -525,6 +550,7 @@ function ReplyTree({
   registerPostRef?: (id: number, ref: View | null) => void;
   topRankMap: Record<string, number>;
   onAuthorPress: (username: string) => void;
+  onBookmark?: (post: ForumPost) => void;
 }) {
   const children = byParent[post.id] || [];
   const label = parentPost
@@ -557,6 +583,8 @@ function ReplyTree({
         onRegisterRef={(r) => registerPostRef?.(post.id, r)}
         rank={rankForUsername(topRankMap, post.author_username)}
         onAuthorPress={onAuthorPress}
+        isBookmarked={post.viewer_has_bookmarked}
+        onBookmark={onBookmark}
       />
       {renderInlineComposer(post)}
       {children.map((child) => (
@@ -585,6 +613,7 @@ function ReplyTree({
           registerPostRef={registerPostRef}
           topRankMap={topRankMap}
           onAuthorPress={onAuthorPress}
+          onBookmark={onBookmark}
         />
       ))}
     </View>
@@ -923,6 +952,97 @@ export function ForumThreadScreen() {
         "Pin not updated",
         error instanceof Error ? error.message : "Try again in a moment.",
       );
+    },
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => toggleThreadFollow(threadId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              thread: {
+                ...page.thread,
+                viewer_is_following: !page.thread.viewer_is_following,
+              },
+            })),
+          };
+        },
+      );
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              thread: {
+                ...page.thread,
+                viewer_is_following: result.following,
+                follower_count: result.follower_count,
+              },
+            })),
+          };
+        },
+      );
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      Alert.alert("Follow failed", "Could not update follow status. Try again.");
+    },
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: (postId: number) => togglePostBookmark(threadId, postId),
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((p) =>
+                p.id === postId
+                  ? { ...p, viewer_has_bookmarked: !p.viewer_has_bookmarked }
+                  : p,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onSuccess: (result, postId) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((p) =>
+                p.id === postId ? { ...p, viewer_has_bookmarked: result.bookmarked } : p,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      Alert.alert("Bookmark failed", "Could not update bookmark. Try again.");
     },
   });
 
@@ -1314,6 +1434,44 @@ export function ForumThreadScreen() {
             ) : null}
           </View>
 
+          {/* Follow button — signed-in users only */}
+          {isSignedIn ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                thread.viewer_is_following ? "Unfollow thread" : "Follow thread"
+              }
+              onPress={() => followMutation.mutate()}
+              disabled={followMutation.isPending}
+              style={({ pressed }) => [
+                styles.followButton,
+                thread.viewer_is_following ? styles.followButtonActive : null,
+                pressed ? styles.pressedBadge : null,
+              ]}
+            >
+              <Ionicons
+                name={
+                  thread.viewer_is_following ? "notifications" : "notifications-outline"
+                }
+                size={15}
+                color={thread.viewer_is_following ? colors.accentStrong : colors.text}
+              />
+              <AppText
+                variant="caption"
+                style={
+                  thread.viewer_is_following ? styles.followButtonTextActive : undefined
+                }
+              >
+                {thread.viewer_is_following ? "Following" : "Follow"}
+              </AppText>
+              {thread.follower_count != null && thread.follower_count > 0 ? (
+                <AppText variant="caption" tone="muted">
+                  · {thread.follower_count}
+                </AppText>
+              ) : null}
+            </Pressable>
+          ) : null}
+
           {/* Admin / author actions — visually separated */}
           {canManageThread ? (
             <View style={styles.heroActionsRow}>
@@ -1605,6 +1763,8 @@ export function ForumThreadScreen() {
             onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
             rank={rankForUsername(topRankMap, originalPost.author_username)}
             onAuthorPress={openPublicProfile}
+            isBookmarked={originalPost.viewer_has_bookmarked}
+            onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
           />
           {renderInlineComposer(originalPost)}
         </View>
@@ -1652,6 +1812,7 @@ export function ForumThreadScreen() {
                 registerPostRef={registerPostRef}
                 topRankMap={topRankMap}
                 onAuthorPress={openPublicProfile}
+                onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
               />
             ))}
           </View>
@@ -2118,6 +2279,29 @@ const styles = StyleSheet.create({
   },
   pressedLight: {
     opacity: 0.6,
+  },
+  followButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  followButtonActive: {
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accentSoft,
+  },
+  followButtonTextActive: {
+    color: colors.accentStrong,
+  },
+  activeBookmarkAction: {
+    borderColor: colors.credBorder,
+    backgroundColor: colors.credSurface,
   },
   postDateRow: {
     flexDirection: "row",

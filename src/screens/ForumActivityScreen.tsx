@@ -1,11 +1,19 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useState } from "react";
 
-import { getMyForumThreads, getMyForumPosts, getMyForumVotes } from "../api/forum";
+import {
+  getMyBookmarkedPosts,
+  getMyFollowedThreads,
+  getMyForumPosts,
+  getMyForumThreads,
+  getMyForumVotes,
+  togglePostBookmark,
+  toggleThreadFollow,
+} from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AccountRequiredCard,
@@ -24,7 +32,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { ForumPost, ForumThread } from "../types/forum";
 
-type Tab = "threads" | "posts" | "votes";
+type Tab = "threads" | "posts" | "votes" | "following" | "saved";
 type ForumActivityNav = NativeStackNavigationProp<RootStackParamList>;
 
 const PAGE_SIZE = 10;
@@ -68,6 +76,49 @@ function ThreadRow({ thread }: { thread: ForumThread }) {
         <Ionicons name="chevron-forward" size={16} color={colors.textSubtle} />
       )}
     </Pressable>
+  );
+}
+
+function FollowingRow({
+  thread,
+  onUnfollow,
+  isUnfollowing,
+}: {
+  thread: ForumThread;
+  onUnfollow: () => void;
+  isUnfollowing: boolean;
+}) {
+  const navigation = useNavigation<ForumActivityNav>();
+  return (
+    <Surface variant="raised" radius="xl" style={styles.followingCard}>
+      <Pressable
+        onPress={() => navigation.navigate("ForumThread", { threadId: thread.id })}
+        style={({ pressed }) => [styles.followingRow, pressed && styles.rowPressed]}
+      >
+        <View style={styles.rowBody}>
+          <AppText variant="cardTitle" numberOfLines={2} style={styles.threadTitle}>
+            {thread.title}
+          </AppText>
+          <AppText tone="muted" style={styles.rowMeta}>
+            {thread.post_count} {thread.post_count === 1 ? "post" : "posts"} · updated{" "}
+            {shortDate(thread.updated_at)}
+          </AppText>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={colors.textSubtle} />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Unfollow thread"
+        onPress={onUnfollow}
+        disabled={isUnfollowing}
+        style={({ pressed }) => [styles.unfollowButton, pressed && styles.rowPressed]}
+      >
+        <Ionicons name="notifications-off-outline" size={13} color={colors.textMuted} />
+        <AppText variant="caption" tone="muted">
+          Unfollow
+        </AppText>
+      </Pressable>
+    </Surface>
   );
 }
 
@@ -115,9 +166,62 @@ function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boo
             }
             hitSlop={8}
           >
-            <AppText style={styles.viewThreadLink}>View thread →</AppText>
+            <AppText style={styles.viewThreadLink}>View →</AppText>
           </Pressable>
         ) : null}
+      </View>
+    </Surface>
+  );
+}
+
+function SavedRow({
+  post,
+  onRemove,
+  isRemoving,
+}: {
+  post: ForumPost;
+  onRemove: () => void;
+  isRemoving: boolean;
+}) {
+  const navigation = useNavigation<ForumActivityNav>();
+  const threadId = post.thread_id;
+  const isEdited =
+    new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 10000;
+
+  return (
+    <Surface variant="raised" radius="xl" style={styles.postCard}>
+      <AppText tone="muted" style={styles.postContent} numberOfLines={4}>
+        {truncate(stripMarkdownToText(post.content_markdown), 140)}
+      </AppText>
+      <View style={styles.postCardFooter}>
+        <View style={styles.savedMeta}>
+          <AppText tone="muted" style={styles.rowMeta}>
+            {post.author_username ? `@${post.author_username} · ` : ""}
+            {shortDate(post.created_at)}
+            {isEdited ? " (edited)" : ""}
+          </AppText>
+        </View>
+        <View style={styles.savedActions}>
+          {threadId ? (
+            <Pressable
+              onPress={() =>
+                navigation.navigate("ForumThread", { threadId, postId: post.id })
+              }
+              hitSlop={8}
+            >
+              <AppText style={styles.viewThreadLink}>View →</AppText>
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Remove bookmark"
+            onPress={onRemove}
+            disabled={isRemoving}
+            hitSlop={8}
+          >
+            <Ionicons name="close-circle-outline" size={18} color={colors.textMuted} />
+          </Pressable>
+        </View>
       </View>
     </Surface>
   );
@@ -127,6 +231,7 @@ function PostRow({ post, showVoteBadge }: { post: ForumPost; showVoteBadge?: boo
 
 export function ForumActivityScreen() {
   const { isSignedIn, user } = useAuth();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("threads");
 
   const threadsQuery = useInfiniteQuery({
@@ -153,13 +258,73 @@ export function ForumActivityScreen() {
     enabled: isSignedIn,
   });
 
+  // Lazy — only fetched when the tab is first opened
+  const followingQuery = useInfiniteQuery({
+    queryKey: ["forum", "me", "following"],
+    queryFn: ({ pageParam }) => getMyFollowedThreads(pageParam as number, PAGE_SIZE),
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
+    initialPageParam: 1,
+    enabled: isSignedIn && tab === "following",
+  });
+
+  const savedQuery = useInfiniteQuery({
+    queryKey: ["forum", "me", "bookmarks"],
+    queryFn: ({ pageParam }) => getMyBookmarkedPosts(pageParam as number, PAGE_SIZE),
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
+    initialPageParam: 1,
+    enabled: isSignedIn && tab === "saved",
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: (threadId: number) => toggleThreadFollow(threadId),
+    onSuccess: (_result, threadId) => {
+      queryClient.setQueryData<{ pages: { items: ForumThread[] }[] }>(
+        ["forum", "me", "following"],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((t) => t.id !== threadId),
+            })),
+          };
+        },
+      );
+    },
+  });
+
+  const removeBookmarkMutation = useMutation({
+    mutationFn: ({ threadId, postId }: { threadId: number; postId: number }) =>
+      togglePostBookmark(threadId, postId),
+    onSuccess: (_result, { postId }) => {
+      queryClient.setQueryData<{ pages: { items: ForumPost[] }[] }>(
+        ["forum", "me", "bookmarks"],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((p) => p.id !== postId),
+            })),
+          };
+        },
+      );
+    },
+  });
+
   const threadsCount = threadsQuery.data?.pages[0]?.total;
   const postsCount = postsQuery.data?.pages[0]?.total;
   const votesCount = votesQuery.data?.pages[0]?.total;
+  const followingCount = followingQuery.data?.pages[0]?.total;
+  const savedCount = savedQuery.data?.pages[0]?.total;
 
   const threads = threadsQuery.data?.pages.flatMap((p) => p.items) ?? [];
   const posts = postsQuery.data?.pages.flatMap((p) => p.items) ?? [];
   const votes = votesQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const following = followingQuery.data?.pages.flatMap((p) => p.items) ?? [];
+  const saved = savedQuery.data?.pages.flatMap((p) => p.items) ?? [];
 
   function tabLabel(base: string, count: number | undefined, loading: boolean) {
     if (loading) return `${base} (…)`;
@@ -194,7 +359,7 @@ export function ForumActivityScreen() {
               <AppText variant="sectionTitle"> activity</AppText>
             </View>
             <AppText tone="muted">
-              {"Everything you've posted, replied, and voted on."}
+              {"Everything you've posted, replied, voted on, and saved."}
             </AppText>
           </View>
         </Surface>
@@ -223,6 +388,24 @@ export function ForumActivityScreen() {
               label={tabLabel("Votes", votesCount, votesQuery.isLoading)}
               selected={tab === "votes"}
               onPress={() => setTab("votes")}
+            />
+            <ChipButton
+              label={tabLabel(
+                "Following",
+                followingCount,
+                tab === "following" && followingQuery.isLoading,
+              )}
+              selected={tab === "following"}
+              onPress={() => setTab("following")}
+            />
+            <ChipButton
+              label={tabLabel(
+                "Saved",
+                savedCount,
+                tab === "saved" && savedQuery.isLoading,
+              )}
+              selected={tab === "saved"}
+              onPress={() => setTab("saved")}
             />
           </ScrollView>
 
@@ -319,6 +502,93 @@ export function ForumActivityScreen() {
               )}
             </View>
           ) : null}
+
+          {/* Following tab */}
+          {tab === "following" ? (
+            <View style={styles.tabContent}>
+              {followingQuery.isLoading ? (
+                <LoadingState message="Loading followed threads…" />
+              ) : followingQuery.isError ? (
+                <ErrorState message="Could not load followed threads. Try again." />
+              ) : following.length === 0 ? (
+                <EmptyState
+                  title="No followed threads"
+                  message="Tap Follow on a thread to get notified of new replies."
+                />
+              ) : (
+                <>
+                  <View style={styles.list}>
+                    {following.map((t) => (
+                      <FollowingRow
+                        key={t.id}
+                        thread={t}
+                        isUnfollowing={
+                          unfollowMutation.isPending &&
+                          unfollowMutation.variables === t.id
+                        }
+                        onUnfollow={() => unfollowMutation.mutate(t.id)}
+                      />
+                    ))}
+                  </View>
+                  {followingQuery.hasNextPage ? (
+                    <AppButton
+                      label={followingQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                      variant="secondary"
+                      disabled={followingQuery.isFetchingNextPage}
+                      onPress={() => void followingQuery.fetchNextPage()}
+                    />
+                  ) : null}
+                </>
+              )}
+            </View>
+          ) : null}
+
+          {/* Saved tab */}
+          {tab === "saved" ? (
+            <View style={styles.tabContent}>
+              {savedQuery.isLoading ? (
+                <LoadingState message="Loading saved posts…" />
+              ) : savedQuery.isError ? (
+                <ErrorState message="Could not load saved posts. Try again." />
+              ) : saved.length === 0 ? (
+                <EmptyState
+                  title="No saved posts"
+                  message="Tap the bookmark icon on any post to save it here."
+                />
+              ) : (
+                <>
+                  <View style={styles.list}>
+                    {saved.map((p) => (
+                      <SavedRow
+                        key={p.id}
+                        post={p}
+                        isRemoving={
+                          removeBookmarkMutation.isPending &&
+                          removeBookmarkMutation.variables?.postId === p.id
+                        }
+                        onRemove={() =>
+                          p.thread_id
+                            ? removeBookmarkMutation.mutate({
+                                threadId: p.thread_id,
+                                postId: p.id,
+                              })
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </View>
+                  {savedQuery.hasNextPage ? (
+                    <AppButton
+                      label={savedQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                      variant="secondary"
+                      disabled={savedQuery.isFetchingNextPage}
+                      onPress={() => void savedQuery.fetchNextPage()}
+                    />
+                  ) : null}
+                </>
+              )}
+            </View>
+          ) : null}
         </View>
       ) : null}
     </ScreenShell>
@@ -405,6 +675,26 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.6,
   },
+  // Following row
+  followingCard: {
+    gap: 0,
+    overflow: "hidden",
+  },
+  followingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  unfollowButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+  },
   // Post / vote rows
   postCard: {
     gap: spacing.sm,
@@ -423,6 +713,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  savedMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+  savedActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   viewThreadLink: {
     fontSize: 12,

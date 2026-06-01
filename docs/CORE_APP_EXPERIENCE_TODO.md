@@ -2030,38 +2030,38 @@ Purpose: let users follow threads to receive notifications on new replies, and b
 
 **31a — API layer**
 
-- [ ] Add `toggleThreadFollow(threadId: number): Promise<{ following: boolean; follower_count: number }>` → `POST /forum/threads/{id}/follow` to `src/api/forum.ts`
-- [ ] Add `getMyFollowedThreads(page: number, pageSize: number): Promise<ForumThreadPage>` → `GET /forum/me/following` to `src/api/forum.ts`
-- [ ] Add `togglePostBookmark(threadId: number, postId: number): Promise<{ bookmarked: boolean }>` → `POST /forum/threads/{id}/posts/{postId}/bookmark` to `src/api/forum.ts`
-- [ ] Add `getMyBookmarkedPosts(page: number, pageSize: number): Promise<ForumPostPage>` → `GET /forum/me/bookmarks` to `src/api/forum.ts`
-- [ ] Add `viewer_is_following?: boolean` to `ForumThread` type in `src/types/forum.ts`
-- [ ] Add `viewer_has_bookmarked?: boolean` to `ForumPost` type in `src/types/forum.ts`
+- [x] Add `toggleThreadFollow(threadId: number): Promise<{ following: boolean; follower_count: number }>` → `POST /forum/threads/{id}/follow` to `src/api/forum.ts`
+- [x] Add `getMyFollowedThreads(page: number, pageSize: number): Promise<ForumThreadPage>` → `GET /forum/me/following` to `src/api/forum.ts`
+- [x] Add `togglePostBookmark(threadId: number, postId: number): Promise<{ bookmarked: boolean }>` → `POST /forum/threads/{id}/posts/{postId}/bookmark` to `src/api/forum.ts`
+- [x] Add `getMyBookmarkedPosts(page: number, pageSize: number): Promise<ForumPostPage>` → `GET /forum/me/bookmarks` to `src/api/forum.ts`
+- [x] Add `viewer_is_following?: boolean` to `ForumThread` type in `src/types/forum.ts`
+- [x] Add `viewer_has_bookmarked?: boolean` to `ForumPost` type in `src/types/forum.ts`
 
 **31b — Follow button on thread view**
 
-- [ ] In `ForumThreadScreen`, add a Follow/Following button in the thread header (visible to signed-in users only)
-- [ ] Button label: "Follow" when not following; "✓ Following" when following
-- [ ] On tap: optimistically toggle `viewer_is_following`, call `toggleThreadFollow`; revert on error with an alert
-- [ ] Show follower count next to the button as muted text
+- [x] In `ForumThreadScreen`, add a Follow/Following button in the thread header (visible to signed-in users only)
+- [x] Button label: "Follow" when not following; "✓ Following" when following
+- [x] On tap: optimistically toggle `viewer_is_following`, call `toggleThreadFollow`; revert on error with an alert
+- [x] Show follower count next to the button as muted text
 
 **31c — Bookmark button on posts**
 
-- [ ] In `ForumThreadScreen`, add a bookmark (🔖) button to each post/reply action row (visible to signed-in users only)
-- [ ] Show filled/amber bookmark when `viewer_has_bookmarked` is true; outline when false
-- [ ] On tap: optimistically toggle `viewer_has_bookmarked`, call `togglePostBookmark`; revert on error
-- [ ] Apply to the original post and all reply cards
+- [x] In `ForumThreadScreen`, add a bookmark (🔖) button to each post/reply action row (visible to signed-in users only)
+- [x] Show filled/amber bookmark when `viewer_has_bookmarked` is true; outline when false
+- [x] On tap: optimistically toggle `viewer_has_bookmarked`, call `togglePostBookmark`; revert on error
+- [x] Apply to the original post and all reply cards
 
 **31d — Following and Saved tabs in ForumActivityScreen**
 
-- [ ] Add a "Following" tab to `ForumActivityScreen` alongside Threads / Replies / Votes
+- [x] Add a "Following" tab to `ForumActivityScreen` alongside Threads / Replies / Votes
   - Fetches `getMyFollowedThreads` using `useInfiniteQuery`
   - Each row: thread title (tappable → `ForumThread`), post count, updated date, ✕ unfollow button
   - Tapping ✕ calls `toggleThreadFollow` and removes the row optimistically
-- [ ] Add a "Saved" tab to `ForumActivityScreen`
+- [x] Add a "Saved" tab to `ForumActivityScreen`
   - Fetches `getMyBookmarkedPosts` using `useInfiniteQuery`
   - Each row: post excerpt (first 140 chars of plain text), author, date, (edited) if applicable, "View →" link to `ForumThread` with `postId`, ✕ remove bookmark button
   - Tapping ✕ calls `togglePostBookmark` and removes the row optimistically
-- [ ] Lazy-load: only fetch Following/Saved data when the user first taps that tab (not on mount like the other three tabs)
+- [x] Lazy-load: only fetch Following/Saved data when the user first taps that tab (not on mount like the other three tabs)
 
 **31e — Emulator test steps**
 
