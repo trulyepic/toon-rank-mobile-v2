@@ -1,8 +1,10 @@
 import { api } from "./client";
 import type {
+  CreateForumCategoryRequest,
   CreateForumPostRequest,
   CreateForumThreadRequest,
   EditForumPostRequest,
+  ForumCategory,
   ForumThreadDetail,
   ForumPost,
   ForumPostPage,
@@ -13,7 +15,9 @@ import type {
   ForumVote,
   ForumVoteResponse,
   LockForumThreadRequest,
+  PinForumThreadRequest,
   SeriesRef,
+  UpdateForumCategoryRequest,
   UpdateForumThreadRequest,
   UpdateForumThreadSettingsRequest,
 } from "../types/forum";
@@ -24,10 +28,55 @@ export type ForumMediaFile = {
   type: string;
 };
 
-export async function getForumThreads(page = 1, pageSize = 20, q?: string) {
+export type ForumThreadSort = "activity" | "newest" | "replies";
+
+export async function getForumThreads(
+  page = 1,
+  pageSize = 20,
+  q?: string,
+  sort?: ForumThreadSort,
+  category_slug?: string,
+) {
   const res = await api.get<ForumThreadPage>("/forum/threads-paged", {
-    params: { page, page_size: pageSize, ...(q ? { q } : {}) },
+    params: {
+      page,
+      page_size: pageSize,
+      ...(q ? { q } : {}),
+      ...(sort ? { sort } : {}),
+      ...(category_slug ? { category_slug } : {}),
+    },
   });
+  return res.data;
+}
+
+export async function getForumCategories() {
+  const res = await api.get<ForumCategory[]>("/forum/categories");
+  return res.data;
+}
+
+export async function pinForumThread(threadId: number, pinned: boolean) {
+  const res = await api.patch<Pick<ForumThread, "id" | "is_pinned">>(
+    `/forum/threads/${threadId}/pin`,
+    { pinned } satisfies PinForumThreadRequest,
+  );
+  return res.data;
+}
+
+export async function createForumCategory(payload: CreateForumCategoryRequest) {
+  const res = await api.post<ForumCategory>("/forum/categories", payload);
+  return res.data;
+}
+
+export async function updateForumCategory(
+  id: number,
+  payload: UpdateForumCategoryRequest,
+) {
+  const res = await api.patch<ForumCategory>(`/forum/categories/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteForumCategory(id: number) {
+  const res = await api.delete<{ message: string }>(`/forum/categories/${id}`);
   return res.data;
 }
 

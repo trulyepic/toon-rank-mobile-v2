@@ -1,11 +1,33 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 
-import { getForumThreads } from "../api/forum";
+import {
+  createForumCategory,
+  deleteForumCategory,
+  getForumCategories,
+  getForumThreads,
+  pinForumThread,
+  updateForumCategory,
+  type ForumThreadSort,
+} from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
@@ -23,11 +45,29 @@ import {
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import type { ForumThread } from "../types/forum";
+import type { ForumCategory, ForumThread } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
 
-function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
+const SORT_OPTIONS: { value: ForumThreadSort; label: string }[] = [
+  { value: "activity", label: "Active" },
+  { value: "newest", label: "Newest" },
+  { value: "replies", label: "Most replies" },
+];
+
+function ThreadCard({
+  thread,
+  rank,
+  showCategory,
+  onPinToggle,
+  isAdmin,
+}: {
+  thread: ForumThread;
+  rank?: number;
+  showCategory: boolean;
+  onPinToggle?: (thread: ForumThread) => void;
+  isAdmin: boolean;
+}) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const seriesLabel =
     thread.series_refs.length > 0
@@ -48,10 +88,18 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
       onPress={() => navigation.navigate("ForumThread", { threadId: thread.id })}
       style={({ pressed }) => (pressed ? styles.pressed : null)}
     >
-      <Surface variant="raised" radius="xl" style={styles.threadCard}>
+      <Surface
+        variant="raised"
+        radius="xl"
+        style={[styles.threadCard, thread.is_pinned ? styles.pinnedCard : null]}
+      >
         <View style={styles.threadHeader}>
-          <View style={styles.threadIcon}>
-            <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.text} />
+          <View style={[styles.threadIcon, thread.is_pinned ? styles.pinnedIcon : null]}>
+            <Ionicons
+              name={thread.is_pinned ? "pin" : "chatbubble-ellipses-outline"}
+              size={19}
+              color={thread.is_pinned ? colors.warningText : colors.text}
+            />
           </View>
           <View style={styles.threadTitleWrap}>
             <AppText variant="cardTitle">{thread.title}</AppText>
@@ -62,20 +110,7 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Open ${authorUsername}'s profile`}
-          disabled={!thread.author_username}
-          onPress={(event) => {
-            event.stopPropagation();
-            openAuthorProfile();
-          }}
-          style={({ pressed }) => [
-            styles.metaRow,
-            pressed ? styles.pressedLight : null,
-            !thread.author_username ? styles.disabledPressable : null,
-          ]}
-        >
+        <View style={styles.metaRow}>
           <UserAvatar
             username={authorUsername}
             avatarUrl={thread.author_avatar_url}
@@ -84,16 +119,27 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
           />
           <View style={styles.metaText}>
             <View style={styles.authorNameRow}>
-              <RoleNameText variant="caption" role={thread.author_role}>
-                {authorUsername}
-              </RoleNameText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${authorUsername}'s profile`}
+                disabled={!thread.author_username}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  openAuthorProfile();
+                }}
+                style={({ pressed }) => (pressed ? styles.pressedLight : null)}
+              >
+                <RoleNameText variant="caption" role={thread.author_role}>
+                  {authorUsername}
+                </RoleNameText>
+              </Pressable>
               <RankerBadge rank={rank} />
             </View>
             <AppText variant="caption" tone="muted">
               {formatForumDate(thread.last_post_at || thread.updated_at)}
             </AppText>
           </View>
-        </Pressable>
+        </View>
 
         <ForumSeriesStrip seriesRefs={thread.series_refs} />
 
@@ -104,11 +150,51 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
               {formatForumCount(thread.post_count, "post")}
             </AppText>
           </View>
+          {thread.is_pinned ? (
+            <View style={[styles.badge, styles.pinnedBadge]}>
+              <Ionicons name="pin-outline" size={13} color={colors.warningText} />
+              <AppText variant="caption" style={{ color: colors.warningText }}>
+                Pinned
+              </AppText>
+            </View>
+          ) : null}
           {thread.locked ? (
             <View style={styles.badge}>
               <Ionicons name="lock-closed-outline" size={13} color={colors.warningText} />
               <AppText variant="caption">Locked</AppText>
             </View>
+          ) : null}
+          {showCategory && thread.category_name ? (
+            <View style={styles.badge}>
+              <Ionicons name="folder-outline" size={13} color={colors.textMuted} />
+              <AppText variant="caption" tone="muted">
+                {thread.category_name}
+              </AppText>
+            </View>
+          ) : null}
+          {isAdmin ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={thread.is_pinned ? "Unpin thread" : "Pin thread"}
+              onPress={(event) => {
+                event.stopPropagation();
+                onPinToggle?.(thread);
+              }}
+              style={({ pressed }) => [
+                styles.badge,
+                styles.adminBadge,
+                pressed ? styles.pressedLight : null,
+              ]}
+            >
+              <Ionicons
+                name={thread.is_pinned ? "pin" : "pin-outline"}
+                size={13}
+                color={colors.accentStrong}
+              />
+              <AppText variant="caption" style={{ color: colors.accentStrong }}>
+                {thread.is_pinned ? "Unpin" : "Pin"}
+              </AppText>
+            </Pressable>
           ) : null}
         </View>
       </Surface>
@@ -116,12 +202,222 @@ function ThreadCard({ thread, rank }: { thread: ForumThread; rank?: number }) {
   );
 }
 
+function CategoryManagerModal({
+  visible,
+  categories,
+  onClose,
+  onRefresh,
+}: {
+  visible: boolean;
+  categories: ForumCategory[];
+  onClose: () => void;
+  onRefresh: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createForumCategory({
+        name: newName.trim(),
+        description: newDescription.trim() || null,
+      }),
+    onSuccess: () => {
+      setNewName("");
+      setNewDescription("");
+      void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] });
+      onRefresh();
+    },
+    onError: () =>
+      Alert.alert("Create failed", "A category with that name may already exist."),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (id: number) =>
+      updateForumCategory(id, {
+        name: editName.trim(),
+        description: editDescription.trim() || null,
+      }),
+    onSuccess: () => {
+      setEditingId(null);
+      void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] });
+      onRefresh();
+    },
+    onError: () => Alert.alert("Update failed", "Could not update category."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteForumCategory,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] });
+      onRefresh();
+    },
+    onError: () =>
+      Alert.alert(
+        "Cannot delete",
+        "Re-assign all threads in this category before deleting it.",
+      ),
+  });
+
+  const startEdit = (cat: ForumCategory) => {
+    setEditingId(cat.id);
+    setEditName(cat.name);
+    setEditDescription(cat.description ?? "");
+  };
+
+  const confirmDelete = (cat: ForumCategory) => {
+    Alert.alert(
+      "Delete category",
+      `Delete "${cat.name}"? Threads must be re-assigned first.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteMutation.mutate(cat.id),
+        },
+      ],
+    );
+  };
+
+  return (
+    <Modal transparent visible={visible} animationType="slide">
+      <View style={styles.modalBackdrop}>
+        <Surface radius="xl" style={styles.categoryModal}>
+          <View style={styles.modalHeader}>
+            <AppText variant="sectionTitle">Manage Categories</AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={onClose}
+            >
+              <Ionicons name="close" size={24} color={colors.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.categoryList}>
+            {categories.map((cat) => (
+              <Surface
+                key={cat.id}
+                variant="raised"
+                radius="lg"
+                style={styles.categoryRow}
+              >
+                {editingId === cat.id ? (
+                  <View style={styles.editCategoryForm}>
+                    <TextInput
+                      value={editName}
+                      onChangeText={setEditName}
+                      placeholder="Category name"
+                      placeholderTextColor={colors.textMuted}
+                      style={styles.categoryInput}
+                    />
+                    <TextInput
+                      value={editDescription}
+                      onChangeText={setEditDescription}
+                      placeholder="Description (optional)"
+                      placeholderTextColor={colors.textMuted}
+                      style={styles.categoryInput}
+                    />
+                    <View style={styles.categoryRowActions}>
+                      <AppButton
+                        label={updateMutation.isPending ? "Saving..." : "Save"}
+                        size="sm"
+                        selected
+                        disabled={!editName.trim() || updateMutation.isPending}
+                        onPress={() => updateMutation.mutate(cat.id)}
+                      />
+                      <AppButton
+                        label="Cancel"
+                        size="sm"
+                        variant="ghost"
+                        onPress={() => setEditingId(null)}
+                      />
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.categoryRowContent}>
+                    <View style={styles.categoryRowText}>
+                      <AppText variant="cardTitle">{cat.name}</AppText>
+                      {cat.description ? (
+                        <AppText variant="caption" tone="muted">
+                          {cat.description}
+                        </AppText>
+                      ) : null}
+                      <AppText variant="caption" tone="subtle">
+                        {cat.thread_count} threads
+                      </AppText>
+                    </View>
+                    <View style={styles.categoryRowActions}>
+                      <AppButton
+                        label="Edit"
+                        size="sm"
+                        variant="secondary"
+                        onPress={() => startEdit(cat)}
+                      />
+                      <AppButton
+                        label="Delete"
+                        size="sm"
+                        variant="ghost"
+                        onPress={() => confirmDelete(cat)}
+                      />
+                    </View>
+                  </View>
+                )}
+              </Surface>
+            ))}
+
+            <Surface variant="raised" radius="lg" style={styles.categoryRow}>
+              <AppText variant="cardTitle">Add category</AppText>
+              <TextInput
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="Category name"
+                placeholderTextColor={colors.textMuted}
+                style={styles.categoryInput}
+              />
+              <TextInput
+                value={newDescription}
+                onChangeText={setNewDescription}
+                placeholder="Description (optional)"
+                placeholderTextColor={colors.textMuted}
+                style={styles.categoryInput}
+              />
+              <AppButton
+                label={createMutation.isPending ? "Creating..." : "Create"}
+                size="sm"
+                selected
+                disabled={!newName.trim() || createMutation.isPending}
+                iconLeft={
+                  createMutation.isPending ? (
+                    <ActivityIndicator size="small" color={colors.text} />
+                  ) : undefined
+                }
+                onPress={() => createMutation.mutate()}
+              />
+            </Surface>
+          </ScrollView>
+        </Surface>
+      </View>
+    </Modal>
+  );
+}
+
 export function ForumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+  const queryClient = useQueryClient();
   const topRankMap = useTopRankMap();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [sort, setSort] = useState<ForumThreadSort>("activity");
+  const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -130,10 +426,24 @@ export function ForumScreen() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const categoriesQuery = useQuery({
+    queryKey: ["forum", "categories"],
+    queryFn: getForumCategories,
+    staleTime: 5 * 60 * 1000,
+  });
+  const categories = categoriesQuery.data ?? [];
+  const activeCategory = categories.find((c) => c.slug === activeCategorySlug) ?? null;
+
   const threadsQuery = useInfiniteQuery({
-    queryKey: ["forum", "threads", debouncedQuery],
+    queryKey: ["forum", "threads", debouncedQuery, sort, activeCategorySlug],
     queryFn: ({ pageParam }) =>
-      getForumThreads(pageParam, 20, debouncedQuery || undefined),
+      getForumThreads(
+        pageParam,
+        20,
+        debouncedQuery || undefined,
+        sort,
+        activeCategorySlug ?? undefined,
+      ),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
   });
@@ -143,28 +453,95 @@ export function ForumScreen() {
   const hasThreads = threads.length > 0;
   const hasNextPage = Boolean(threadsQuery.hasNextPage);
 
+  const pinMutation = useMutation({
+    mutationFn: ({ threadId, pinned }: { threadId: number; pinned: boolean }) =>
+      pinForumThread(threadId, pinned),
+    onMutate: async ({ threadId, pinned }) => {
+      await queryClient.cancelQueries({ queryKey: ["forum", "threads"] });
+      queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+        { queryKey: ["forum", "threads"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((t) =>
+                t.id === threadId ? { ...t, is_pinned: pinned } : t,
+              ),
+            })),
+          };
+        },
+      );
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
+      Alert.alert("Pin failed", "Could not update pin status. Try again.");
+    },
+  });
+
+  const handlePinToggle = (thread: ForumThread) => {
+    const nextPinned = !thread.is_pinned;
+    Alert.alert(
+      nextPinned ? "Pin thread?" : "Unpin thread?",
+      nextPinned
+        ? `"${thread.title}" will appear at the top of the thread list.`
+        : `"${thread.title}" will no longer be pinned.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: nextPinned ? "Pin" : "Unpin",
+          onPress: () => pinMutation.mutate({ threadId: thread.id, pinned: nextPinned }),
+        },
+      ],
+    );
+  };
+
+  const changeSort = (newSort: ForumThreadSort) => {
+    setSort(newSort);
+  };
+
+  const changeCategory = (slug: string | null) => {
+    setActiveCategorySlug(slug);
+  };
+
   return (
     <ScreenShell
       title="Forum"
       subtitle="Browse Toon Ranks discussions. Vote and reply with your account."
       rightSlot={
-        <AppButton
-          label="New"
-          size="sm"
-          selected={isSignedIn}
-          iconLeft={
-            <Ionicons
-              name={isSignedIn ? "add" : "log-in-outline"}
-              size={15}
-              color={colors.text}
-            />
-          }
-          onPress={() =>
-            isSignedIn
-              ? navigation.navigate("ForumCreateThread")
-              : navigation.navigate("Login")
-          }
-        />
+        <View style={styles.headerRight}>
+          {isAdmin ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Manage categories"
+              onPress={() => setCategoryModalOpen(true)}
+              style={({ pressed }) => [
+                styles.gearButton,
+                pressed ? styles.pressedLight : null,
+              ]}
+            >
+              <Ionicons name="settings-outline" size={20} color={colors.text} />
+            </Pressable>
+          ) : null}
+          <AppButton
+            label="New"
+            size="sm"
+            selected={isSignedIn}
+            iconLeft={
+              <Ionicons
+                name={isSignedIn ? "add" : "log-in-outline"}
+                size={15}
+                color={colors.text}
+              />
+            }
+            onPress={() =>
+              isSignedIn
+                ? navigation.navigate("ForumCreateThread")
+                : navigation.navigate("Login")
+            }
+          />
+        </View>
       }
     >
       <Surface variant="accent" radius="hero" style={styles.hero}>
@@ -199,10 +576,95 @@ export function ForumScreen() {
         ) : null}
       </View>
 
+      {/* Sort controls */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.pillStrip}
+      >
+        {SORT_OPTIONS.map((option) => (
+          <Pressable
+            key={option.value}
+            onPress={() => changeSort(option.value)}
+            style={[styles.pill, sort === option.value ? styles.pillActive : null]}
+          >
+            <AppText
+              variant="caption"
+              style={sort === option.value ? styles.pillTextActive : styles.pillText}
+            >
+              {option.label}
+            </AppText>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* Category filter strip */}
+      {categories.length > 0 ? (
+        <View style={styles.categorySection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillStrip}
+          >
+            <Pressable
+              onPress={() => changeCategory(null)}
+              style={[
+                styles.pill,
+                activeCategorySlug === null ? styles.pillActive : null,
+              ]}
+            >
+              <AppText
+                variant="caption"
+                style={
+                  activeCategorySlug === null ? styles.pillTextActive : styles.pillText
+                }
+              >
+                All
+              </AppText>
+            </Pressable>
+            {categories.map((cat) => (
+              <Pressable
+                key={cat.slug}
+                onPress={() => changeCategory(cat.slug)}
+                style={[
+                  styles.pill,
+                  activeCategorySlug === cat.slug ? styles.pillActive : null,
+                ]}
+              >
+                <AppText
+                  variant="caption"
+                  style={
+                    activeCategorySlug === cat.slug
+                      ? styles.pillTextActive
+                      : styles.pillText
+                  }
+                >
+                  {cat.name}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={
+                    activeCategorySlug === cat.slug
+                      ? styles.pillCountActive
+                      : styles.pillCount
+                  }
+                >
+                  {cat.thread_count}
+                </AppText>
+              </Pressable>
+            ))}
+          </ScrollView>
+          {activeCategory?.description ? (
+            <AppText variant="caption" tone="muted" style={styles.categoryDescription}>
+              {activeCategory.description}
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
+
       {threadsQuery.isLoading ? (
         <LoadingState message="Loading forum threads..." />
       ) : null}
-
       {threadsQuery.isError ? (
         <ErrorState message="Forum threads could not be loaded. Try again in a moment." />
       ) : null}
@@ -213,7 +675,9 @@ export function ForumScreen() {
           message={
             debouncedQuery
               ? `No threads matched "${debouncedQuery}". Try a different keyword.`
-              : "Public forum threads will appear here once the community starts posting."
+              : activeCategorySlug
+                ? "No threads in this category yet."
+                : "Public forum threads will appear here once the community starts posting."
           }
         />
       ) : null}
@@ -230,6 +694,9 @@ export function ForumScreen() {
                 key={thread.id}
                 thread={thread}
                 rank={rankForUsername(topRankMap, thread.author_username)}
+                showCategory={activeCategorySlug === null}
+                isAdmin={isAdmin}
+                onPinToggle={handlePinToggle}
               />
             ))}
           </View>
@@ -247,6 +714,15 @@ export function ForumScreen() {
           )}
         </View>
       ) : null}
+
+      <CategoryManagerModal
+        visible={categoryModalOpen}
+        categories={categories}
+        onClose={() => setCategoryModalOpen(false)}
+        onRefresh={() =>
+          void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] })
+        }
+      />
     </ScreenShell>
   );
 }
@@ -269,6 +745,21 @@ const styles = StyleSheet.create({
   heroText: {
     flex: 1,
     gap: spacing.xs,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  gearButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   section: {
     gap: spacing.sm,
@@ -293,6 +784,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
   },
+  pillStrip: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    paddingHorizontal: 2,
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  pillActive: {
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accent,
+  },
+  pillText: {
+    color: colors.textMuted,
+  },
+  pillTextActive: {
+    color: colors.text,
+  },
+  pillCount: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  pillCountActive: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  categorySection: {
+    gap: spacing.xs,
+  },
+  categoryDescription: {
+    paddingHorizontal: spacing.xs,
+    fontStyle: "italic",
+  },
   pressed: {
     opacity: 0.86,
     transform: [{ scale: 0.99 }],
@@ -305,6 +837,10 @@ const styles = StyleSheet.create({
   },
   threadCard: {
     gap: spacing.sm,
+  },
+  pinnedCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.warningText,
   },
   threadHeader: {
     flexDirection: "row",
@@ -320,6 +856,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderWidth: 1,
     borderColor: colors.accentBorder,
+  },
+  pinnedIcon: {
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    borderColor: colors.warningText,
   },
   threadTitleWrap: {
     flex: 1,
@@ -357,5 +897,64 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSoft,
     borderWidth: 1,
     borderColor: colors.borderSoft,
+  },
+  pinnedBadge: {
+    borderColor: colors.warningText,
+    backgroundColor: "rgba(245, 158, 11, 0.10)",
+  },
+  adminBadge: {
+    borderColor: colors.accentBorder,
+  },
+  // Category manager modal
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  categoryModal: {
+    maxHeight: "85%",
+    gap: spacing.md,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  categoryList: {
+    gap: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
+  categoryRow: {
+    gap: spacing.sm,
+  },
+  categoryRowContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  categoryRowText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  categoryRowActions: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    flexWrap: "wrap",
+  },
+  editCategoryForm: {
+    gap: spacing.sm,
+  },
+  categoryInput: {
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text,
+    backgroundColor: colors.backgroundSoft,
+    fontSize: 15,
   },
 });

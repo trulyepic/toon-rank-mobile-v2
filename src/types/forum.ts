@@ -22,6 +22,38 @@ export interface ForumThread {
   series_refs: SeriesRef[];
   locked: boolean;
   latest_first: boolean;
+  is_pinned?: boolean;
+  category_id?: number | null;
+  category_name?: string | null;
+  view_count?: number;
+}
+
+export interface ForumCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  position: number;
+  thread_count: number;
+}
+
+export interface PinForumThreadRequest {
+  pinned: boolean;
+}
+
+export interface CreateForumCategoryRequest {
+  name: string;
+  slug?: string;
+  description?: string | null;
+  position?: number;
+}
+
+export interface UpdateForumCategoryRequest {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  position?: number;
+  visible?: boolean;
 }
 
 export interface ForumPost {
@@ -83,6 +115,7 @@ export interface CreateForumThreadRequest {
   title: string;
   first_post_markdown: string;
   series_ids?: number[];
+  category_id?: number | null;
 }
 
 export interface CreateForumPostRequest {
@@ -119,6 +152,7 @@ export interface UpdateForumThreadRequest {
   title: string;
   first_post_markdown: string;
   series_ids?: number[];
+  category_id?: number | null;
 }
 
 export interface LockForumThreadRequest {

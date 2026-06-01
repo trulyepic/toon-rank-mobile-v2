@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
@@ -26,8 +27,10 @@ import {
   deleteForumPostMine,
   deleteForumThread,
   editForumPost,
+  getForumCategories,
   getForumThreadPosts,
   lockForumThread,
+  pinForumThread,
   setForumPostVote,
   updateForumThread,
   updateForumThreadSettings,
@@ -54,6 +57,7 @@ import {
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type {
+  ForumCategory,
   ForumPost,
   ForumThreadPostsPage,
   ForumVote,
@@ -151,19 +155,7 @@ function PostCard({
         depth > 0 ? { marginLeft: Math.min(depth, 4) * 14 } : null,
       ]}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
-        disabled={!post.author_username}
-        onPress={() => {
-          if (post.author_username) onAuthorPress?.(post.author_username);
-        }}
-        style={({ pressed }) => [
-          styles.postHeader,
-          pressed ? styles.pressedBadge : null,
-          !post.author_username ? styles.disabledBadge : null,
-        ]}
-      >
+      <View style={styles.postHeader}>
         <UserAvatar
           username={post.author_username || "Reader"}
           avatarUrl={post.author_avatar_url}
@@ -172,19 +164,37 @@ function PostCard({
         />
         <View style={styles.postAuthor}>
           <View style={styles.authorLine}>
-            <RoleNameText variant="cardTitle" role={post.author_role}>
-              {post.author_username || "Unknown reader"}
-            </RoleNameText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
+              disabled={!post.author_username}
+              onPress={() => {
+                if (post.author_username) onAuthorPress?.(post.author_username);
+              }}
+              style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
+            >
+              <RoleNameText variant="cardTitle" role={post.author_role}>
+                {post.author_username || "Unknown reader"}
+              </RoleNameText>
+            </Pressable>
             <RankerBadge rank={rank} />
             <View style={styles.replyLabel}>
               <AppText variant="caption">{label}</AppText>
             </View>
           </View>
-          <AppText variant="caption" tone="muted">
-            {formatForumDate(post.created_at)}
-          </AppText>
+          <View style={styles.postDateRow}>
+            <AppText variant="caption" tone="muted">
+              {formatForumDate(post.created_at)}
+            </AppText>
+            {new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() >
+            10000 ? (
+              <AppText variant="caption" tone="muted" style={styles.editedLabel}>
+                (edited)
+              </AppText>
+            ) : null}
+          </View>
         </View>
-      </Pressable>
+      </View>
 
       {isEditing ? (
         <View style={styles.editBlock}>
@@ -602,6 +612,7 @@ export function ForumThreadScreen() {
   const [isEditingThread, setIsEditingThread] = useState(false);
   const [editThreadTitle, setEditThreadTitle] = useState("");
   const [editThreadBody, setEditThreadBody] = useState("");
+  const [editThreadCategoryId, setEditThreadCategoryId] = useState<number | null>(null);
   const { threadId, postId } = route.params;
   const scrollViewRef = useRef<ScrollView>(null);
   const replyInputRef = useRef<TextInput | null>(null);
@@ -775,15 +786,18 @@ export function ForumThreadScreen() {
       title,
       body,
       originalPostId,
+      categoryId,
     }: {
       title: string;
       body: string;
       originalPostId: number;
+      categoryId?: number | null;
     }) =>
       updateForumThread(threadId, {
         title,
         first_post_markdown: body,
         series_ids: extractForumSeriesIds(body),
+        category_id: categoryId ?? null,
       }),
     onSuccess: (updatedThread, variables) => {
       setIsEditingThread(false);
@@ -879,6 +893,39 @@ export function ForumThreadScreen() {
     },
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: ["forum", "categories"],
+    queryFn: getForumCategories,
+    staleTime: 5 * 60 * 1000,
+    enabled: isAdmin,
+  });
+  const categories: ForumCategory[] = categoriesQuery.data ?? [];
+
+  const pinMutation = useMutation({
+    mutationFn: (pinned: boolean) => pinForumThread(threadId, pinned),
+    onSuccess: (result) => {
+      queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
+        queryKey,
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            pages: current.pages.map((page) => ({
+              ...page,
+              thread: { ...page.thread, is_pinned: result.is_pinned },
+            })),
+          };
+        },
+      );
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Pin not updated",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
   const pages = postsQuery.data?.pages ?? [];
   const thread = pages[0]?.thread;
   const posts = pages
@@ -945,6 +992,7 @@ export function ForumThreadScreen() {
     if (!thread || !originalPost) return;
     setEditThreadTitle(thread.title);
     setEditThreadBody(originalPost.content_markdown);
+    setEditThreadCategoryId(thread.category_id ?? null);
     setIsEditingThread(true);
   };
 
@@ -952,6 +1000,7 @@ export function ForumThreadScreen() {
     setIsEditingThread(false);
     setEditThreadTitle("");
     setEditThreadBody("");
+    setEditThreadCategoryId(null);
   };
 
   const handleEditThreadSave = () => {
@@ -963,6 +1012,7 @@ export function ForumThreadScreen() {
       title: trimmedTitle,
       body: trimmedBody,
       originalPostId: originalPost.id,
+      categoryId: editThreadCategoryId,
     });
   };
 
@@ -1176,58 +1226,98 @@ export function ForumThreadScreen() {
 
       {thread && !isEditingThread ? (
         <Surface variant="accent" radius="hero" style={styles.hero}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.text} />
+          {/* Title */}
+          <AppText variant="sectionTitle">{thread.title}</AppText>
+
+          {/* Author row */}
+          <View style={styles.heroAuthorRow}>
+            <UserAvatar
+              username={thread.author_username || "Unknown"}
+              avatarUrl={thread.author_avatar_url}
+              avatarPreset={thread.author_avatar_preset}
+              size="sm"
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${thread.author_username || "author"}'s profile`}
+              disabled={!thread.author_username}
+              onPress={() => openPublicProfile(thread.author_username)}
+              style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
+            >
+              <RoleNameText variant="caption" role={thread.author_role}>
+                {thread.author_username || "Unknown"}
+              </RoleNameText>
+            </Pressable>
+            <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
+            <AppText variant="caption" tone="muted">
+              · {formatForumDate(thread.created_at)}
+            </AppText>
           </View>
-          <View style={styles.heroText}>
-            <AppText variant="sectionTitle">{thread.title}</AppText>
-            <View style={styles.startedByLine}>
-              <AppText tone="muted">Started by</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${thread.author_username || "author"}'s profile`}
-                disabled={!thread.author_username}
-                onPress={() => openPublicProfile(thread.author_username)}
-                style={({ pressed }) => [
-                  styles.authorChipPressable,
-                  pressed ? styles.pressedBadge : null,
-                ]}
-              >
-                <RoleNameText variant="caption" role={thread.author_role}>
-                  {thread.author_username || "Unknown"}
-                </RoleNameText>
-                <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
-              </Pressable>
-              <AppText tone="muted">
-                / {formatForumCount(thread.post_count, "post")} / Last active{" "}
-                {formatForumDate(thread.last_post_at || thread.updated_at)}
+
+          {/* Stats + status chips */}
+          <View style={styles.heroStats}>
+            <View style={styles.threadFlag}>
+              <Ionicons
+                name="chatbubbles-outline"
+                size={13}
+                color={colors.accentStrong}
+              />
+              <AppText variant="caption">
+                {formatForumCount(thread.post_count, "reply", "replies")}
               </AppText>
             </View>
-            <View style={styles.threadFlags}>
-              {thread.locked ? (
-                <View style={[styles.threadFlag, styles.lockedFlag]}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={13}
-                    color={colors.warningText}
-                  />
-                  <AppText variant="caption" style={styles.warningText}>
-                    Locked
-                  </AppText>
-                </View>
-              ) : null}
-              {thread.latest_first ? (
-                <View style={styles.threadFlag}>
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={13}
-                    color={colors.accentStrong}
-                  />
-                  <AppText variant="caption">Latest updates first</AppText>
-                </View>
-              ) : null}
-            </View>
-            {canManageThread ? (
+            {thread.view_count != null && thread.view_count > 0 ? (
+              <View style={styles.threadFlag}>
+                <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
+                <AppText variant="caption" tone="muted">
+                  {thread.view_count.toLocaleString()} views
+                </AppText>
+              </View>
+            ) : null}
+            {thread.category_name ? (
+              <View style={styles.threadFlag}>
+                <Ionicons name="folder-outline" size={13} color={colors.textMuted} />
+                <AppText variant="caption" tone="muted">
+                  {thread.category_name}
+                </AppText>
+              </View>
+            ) : null}
+            {thread.is_pinned ? (
+              <View style={[styles.threadFlag, styles.pinnedFlag]}>
+                <Ionicons name="pin-outline" size={13} color={colors.warningText} />
+                <AppText variant="caption" style={styles.warningText}>
+                  Pinned
+                </AppText>
+              </View>
+            ) : null}
+            {thread.locked ? (
+              <View style={[styles.threadFlag, styles.lockedFlag]}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={13}
+                  color={colors.warningText}
+                />
+                <AppText variant="caption" style={styles.warningText}>
+                  Locked
+                </AppText>
+              </View>
+            ) : null}
+            {thread.latest_first ? (
+              <View style={styles.threadFlag}>
+                <Ionicons
+                  name="swap-vertical-outline"
+                  size={13}
+                  color={colors.accentStrong}
+                />
+                <AppText variant="caption">Latest first</AppText>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Admin / author actions — visually separated */}
+          {canManageThread ? (
+            <View style={styles.heroActionsRow}>
+              <View style={styles.heroDivider} />
               <View style={styles.threadActions}>
                 <Pressable
                   onPress={handleEditThreadStart}
@@ -1293,17 +1383,102 @@ export function ForumThreadScreen() {
                         Latest first
                       </AppText>
                     </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        const nextPinned = !thread.is_pinned;
+                        Alert.alert(
+                          nextPinned ? "Pin thread?" : "Unpin thread?",
+                          nextPinned
+                            ? "This thread will appear at the top of the thread list."
+                            : "This thread will no longer be pinned.",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: nextPinned ? "Pin" : "Unpin",
+                              onPress: () => pinMutation.mutate(nextPinned),
+                            },
+                          ],
+                        );
+                      }}
+                      disabled={pinMutation.isPending}
+                      style={({ pressed }) => [
+                        styles.replyAction,
+                        thread.is_pinned ? styles.activeThreadAction : null,
+                        pressed ? styles.pressedBadge : null,
+                      ]}
+                    >
+                      <Ionicons
+                        name={thread.is_pinned ? "pin" : "pin-outline"}
+                        size={13}
+                        color={thread.is_pinned ? colors.accentStrong : colors.text}
+                      />
+                      <AppText
+                        variant="caption"
+                        tone={thread.is_pinned ? "accent" : undefined}
+                      >
+                        {thread.is_pinned ? "Pinned" : "Pin"}
+                      </AppText>
+                    </Pressable>
                   </>
                 ) : null}
               </View>
-            ) : null}
-          </View>
+            </View>
+          ) : null}
         </Surface>
       ) : null}
 
       {isEditingThread ? (
         <Surface radius="xl" style={styles.threadEditCard}>
           <AppText variant="cardTitle">Edit thread</AppText>
+          {isAdmin && categories.length > 0 ? (
+            <View style={styles.editCategorySection}>
+              <AppText variant="caption">Category (optional)</AppText>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pillStrip}
+              >
+                <Pressable
+                  onPress={() => setEditThreadCategoryId(null)}
+                  style={[
+                    styles.categoryPill,
+                    editThreadCategoryId === null ? styles.categoryPillActive : null,
+                  ]}
+                >
+                  <AppText
+                    variant="caption"
+                    style={
+                      editThreadCategoryId === null
+                        ? styles.pillTextActive
+                        : styles.pillText
+                    }
+                  >
+                    None
+                  </AppText>
+                </Pressable>
+                {categories.map((cat) => {
+                  const active = editThreadCategoryId === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => setEditThreadCategoryId(active ? null : cat.id)}
+                      style={[
+                        styles.categoryPill,
+                        active ? styles.categoryPillActive : null,
+                      ]}
+                    >
+                      <AppText
+                        variant="caption"
+                        style={active ? styles.pillTextActive : styles.pillText}
+                      >
+                        {cat.name}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
           <View style={styles.fieldHeader}>
             <AppText variant="caption">Title</AppText>
             <AppText variant="caption" tone="subtle">
@@ -1629,38 +1804,26 @@ function getDownvoteCount(post: ForumPost) {
 
 const styles = StyleSheet.create({
   hero: {
-    flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  heroIcon: {
-    width: 52,
-    height: 52,
+  heroAuthorRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: colors.accent,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-  },
-  heroText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  startedByLine: {
-    flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "center",
     gap: spacing.xs,
   },
-  authorChipPressable: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  threadFlags: {
+  heroStats: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.xs,
+  },
+  heroActionsRow: {
+    gap: spacing.sm,
+  },
+  heroDivider: {
+    height: 1,
+    backgroundColor: colors.accentBorder,
+    marginVertical: spacing.xs,
   },
   threadFlag: {
     flexDirection: "row",
@@ -1673,6 +1836,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentSoft,
     borderWidth: 1,
     borderColor: colors.accent,
+  },
+  pinnedFlag: {
+    backgroundColor: colors.warningSurface,
+    borderColor: colors.warningBorder,
   },
   lockedFlag: {
     backgroundColor: colors.warningSurface,
@@ -1951,5 +2118,39 @@ const styles = StyleSheet.create({
   },
   pressedLight: {
     opacity: 0.6,
+  },
+  postDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  editedLabel: {
+    fontStyle: "italic",
+  },
+  editCategorySection: {
+    gap: spacing.xs,
+  },
+  pillStrip: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    paddingHorizontal: 2,
+  },
+  categoryPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  categoryPillActive: {
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accent,
+  },
+  pillText: {
+    color: colors.textMuted,
+  },
+  pillTextActive: {
+    color: colors.text,
   },
 });
