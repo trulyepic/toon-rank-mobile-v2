@@ -26,6 +26,8 @@ export interface ForumThread {
   category_id?: number | null;
   category_name?: string | null;
   view_count?: number;
+  has_unread?: boolean;
+  unread_count?: number;
   viewer_is_following?: boolean;
   follower_count?: number;
 }

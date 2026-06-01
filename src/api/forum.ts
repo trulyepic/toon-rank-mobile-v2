@@ -186,6 +186,12 @@ export async function updateForumThreadSettings(
   return res.data;
 }
 
+export async function markThreadRead(threadId: number, lastSeenPostId: number) {
+  await api.post(`/forum/threads/${threadId}/mark-read`, {
+    last_seen_post_id: lastSeenPostId,
+  });
+}
+
 export async function toggleThreadFollow(threadId: number) {
   const res = await api.post<{ following: boolean; follower_count: number }>(
     `/forum/threads/${threadId}/follow`,

@@ -2274,22 +2274,22 @@ The backend only populates `has_unread` / `unread_count` when the request includ
 
 **34a — API layer**
 
-- [ ] Add `markThreadRead(threadId: number, lastSeenPostId: number): Promise<void>` → `POST /forum/threads/{id}/mark-read` to `src/api/forum.ts`
-- [ ] Add `has_unread?: boolean` and `unread_count?: number` to the `ForumThread` type in `src/types/forum.ts`
+- [x] Add `markThreadRead(threadId: number, lastSeenPostId: number): Promise<void>` → `POST /forum/threads/{id}/mark-read` to `src/api/forum.ts`
+- [x] Add `has_unread?: boolean` and `unread_count?: number` to the `ForumThread` type in `src/types/forum.ts`
 
 **34b — Unread badge on thread list**
 
-- [ ] In `ForumScreen` thread rows, when the signed-in viewer has `thread.has_unread === true`:
+- [x] In `ForumScreen` thread rows, when the signed-in viewer has `thread.has_unread === true`:
   - Show a green "N new" pill chip next to the thread title (where N is `thread.unread_count`)
   - Render the thread title in bold font weight (vs normal for fully-read threads)
-- [ ] When signed out, never show unread indicators
+- [x] When signed out, never show unread indicators
 
 **34c — Mark thread as read**
 
-- [ ] In `ForumThreadScreen`, after each page of posts finishes loading, call `markThreadRead(threadId, lastPostId)` where `lastPostId` is the `id` of the last post in the current loaded set
-- [ ] Silent fail — never show an error to the user if this call fails; it is a background signal
-- [ ] Call again when the user loads more posts (the cursor only advances, so calling with an earlier post id is a no-op on the backend)
-- [ ] Only call when signed in (`isSignedIn` check before the call)
+- [x] In `ForumThreadScreen`, after each page of posts finishes loading, call `markThreadRead(threadId, lastPostId)` where `lastPostId` is the `id` of the last post in the current loaded set
+- [x] Silent fail — never show an error to the user if this call fails; it is a background signal
+- [x] Call again when the user loads more posts (the cursor only advances, so calling with an earlier post id is a no-op on the backend)
+- [x] Only call when signed in (`isSignedIn` check before the call)
 
 **34d — Emulator test steps**
 

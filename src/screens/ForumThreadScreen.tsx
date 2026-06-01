@@ -31,6 +31,7 @@ import {
   getForumCategories,
   getForumThreadPosts,
   lockForumThread,
+  markThreadRead,
   pinForumThread,
   setForumPostVote,
   reportPost,
@@ -63,6 +64,7 @@ import { colors, radii, spacing } from "../theme/tokens";
 import type {
   ForumCategory,
   ForumPost,
+  ForumThread,
   ForumThreadPostsPage,
   ForumVote,
   ForumVoteResponse,
@@ -1185,6 +1187,35 @@ export function ForumThreadScreen() {
     }, 200);
     return () => clearTimeout(timer);
   }, [posts, postId]);
+
+  // Silently mark thread as read when posts load — cursor only advances
+  useEffect(() => {
+    if (!isSignedIn || posts.length === 0) return;
+    const lastPost = posts[posts.length - 1];
+    if (!lastPost) return;
+    void markThreadRead(threadId, lastPost.id)
+      .then(() => {
+        // Clear the unread badge in the thread list cache immediately
+        queryClient.setQueriesData<{ pages: { items: ForumThread[] }[] }>(
+          { queryKey: ["forum", "threads"] },
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map((t) =>
+                  t.id === threadId ? { ...t, has_unread: false, unread_count: 0 } : t,
+                ),
+              })),
+            };
+          },
+        );
+      })
+      .catch(() => {
+        // silent — never surface mark-read errors to the user
+      });
+  }, [posts, isSignedIn, threadId, queryClient]);
 
   const handleEditThreadStart = () => {
     if (!thread || !originalPost) return;
