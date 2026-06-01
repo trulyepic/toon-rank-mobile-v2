@@ -2324,27 +2324,27 @@ Purpose: extend the existing thread search (Phase 13) with post-content search a
 
 **35a — "Search inside posts" toggle**
 
-- [ ] Add `searchPosts: boolean` state (default `false`) to `ForumScreen`
-- [ ] Add a "Search inside posts" toggle switch or checkbox next to the existing search input — only visible when the search field is non-empty
-- [ ] When enabled, pass `search_posts=true` to `getForumThreads`; when disabled, omit it (default behavior)
-- [ ] Reset to page 1 when toggle changes
+- [x] Add `searchPosts: boolean` state (default `false`) to `ForumScreen`
+- [x] Add a "Search inside posts" toggle switch or checkbox next to the existing search input — only visible when the search field is non-empty
+- [x] When enabled, pass `search_posts=true` to `getForumThreads`; when disabled, omit it (default behavior)
+- [x] Reset to page 1 when toggle changes
 
 **35b — Post search within a thread**
 
-- [ ] Add `searchPostsInThread(threadId: number, q: string, page: number): Promise<ForumPostPage>` → `GET /forum/threads/{id}/posts/search` to `src/api/forum.ts`
-- [ ] In `ForumThreadScreen`, add a search icon button in the thread header that toggles a search input
-- [ ] Typing in the search input fetches matching posts from that thread; shows results in a separate list below the search bar (not mixed with the normal post list)
-- [ ] Tapping a search result navigates (scrolls) to that post; the search input can be dismissed to return to the normal view
+- [x] Add `searchPostsInThread(threadId: number, q: string, page: number): Promise<ForumPostPage>` → `GET /forum/threads/{id}/posts/search` to `src/api/forum.ts`
+- [x] In `ForumThreadScreen`, add a search icon button in the thread header that toggles a search input
+- [x] Typing in the search input fetches matching posts from that thread; shows results in a separate list below the search bar (not mixed with the normal post list)
+- [x] Tapping a search result navigates (scrolls) to that post; the search input can be dismissed to return to the normal view
 
 **35c — User @-mention autocomplete in reply composer**
 
-- [ ] Add `searchUsers(q: string, limit: number): Promise<Array<{ username: string; avatar_url: string | null; avatar_preset: string | null }>>` → `GET /users/search` to `src/api/users.ts` (create if it doesn't exist)
-- [ ] The mobile reply composer already supports `@` to mention series (via `/forum/series-search`). Extend the `@` detection to also search users in parallel:
+- [x] Add `searchUsers(q: string, limit: number): Promise<Array<{ username: string; avatar_url: string | null; avatar_preset: string | null }>>` → `GET /users/search` to `src/api/users.ts` (create if it doesn't exist)
+- [x] The mobile reply composer already supports `@` to mention series (via `/forum/series-search`). Extend the `@` detection to also search users in parallel:
   - When `@token` is typed, fire both `forumSeriesSearch(token)` and `searchUsers(token, 5)` concurrently
   - Show results in the existing autocomplete dropdown in two labeled sections: "Series" (existing behavior) and "Users" (new)
   - Selecting a series inserts `[Title](series:id)` as before
   - Selecting a user inserts `@username` as plain text (the backend's `extract_mentions` function will pick it up and fire a POST_MENTION notification)
-- [ ] Apply to both the thread-view reply composer and the thread creation first-post textarea
+- [x] Apply to both the thread-view reply composer and the thread creation first-post textarea
 
 **35d — Emulator test steps**
 

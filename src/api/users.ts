@@ -29,3 +29,16 @@ export async function removeMyFavorite(seriesId: number) {
   const res = await api.delete<FavoriteSeries[]>(`/auth/me/favourites/${seriesId}`);
   return res.data;
 }
+
+export interface UserSearchResult {
+  username: string;
+  avatar_url: string | null;
+  avatar_preset: string | null;
+}
+
+export async function searchUsers(q: string, limit = 8) {
+  const res = await api.get<UserSearchResult[]>("/users/search", {
+    params: { q, limit },
+  });
+  return res.data;
+}

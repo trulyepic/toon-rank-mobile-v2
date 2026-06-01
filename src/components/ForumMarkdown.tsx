@@ -228,6 +228,20 @@ function preprocessHtml(src: string): string {
   return s;
 }
 
+// ─── @mention chip ──────────────────────────────────────────────────────────
+
+function MentionChip({ username }: { username: string }) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  return (
+    <Text
+      style={styles.mentionChip}
+      onPress={() => navigation.navigate("PublicProfile", { username })}
+    >
+      @{username}
+    </Text>
+  );
+}
+
 // ─── Inline token renderer ───────────────────────────────────────────────────
 
 type InlineToken =
@@ -236,11 +250,12 @@ type InlineToken =
   | { k: "i"; v: string }
   | { k: "c"; v: string }
   | { k: "s"; v: string }
-  | { k: "a"; v: string; url: string };
+  | { k: "a"; v: string; url: string }
+  | { k: "mention"; v: string };
 
-// Groups: 1=**bold** 2=__bold__ 3=~~strike~~ 4=`code` 5+6=[label](url) 7=*italic*
+// Groups: 1=**bold** 2=__bold__ 3=~~strike~~ 4=`code` 5+6=[label](url) 7=*italic* 8=@mention
 const inlinePattern =
-  /\*\*([\s\S]*?)\*\*|__([\s\S]*?)__|~~([\s\S]*?)~~|`([^`\n]+)`|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*([\s\S]*?)\*/g;
+  /\*\*([\s\S]*?)\*\*|__([\s\S]*?)__|~~([\s\S]*?)~~|`([^`\n]+)`|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*([\s\S]*?)\*|(?<![[\w])@([A-Za-z0-9_-]{3,20})(?![[\w])/g;
 
 function parseInline(src: string): InlineToken[] {
   const out: InlineToken[] = [];
@@ -256,6 +271,7 @@ function parseInline(src: string): InlineToken[] {
     else if (m[5] !== undefined && m[6] !== undefined)
       out.push({ k: "a", v: m[5], url: m[6] });
     else if (m[7] !== undefined) out.push({ k: "i", v: m[7] });
+    else if (m[8] !== undefined) out.push({ k: "mention", v: m[8] });
     pos = at + m[0].length;
   }
 
@@ -303,6 +319,7 @@ function InlineText({ text, extra }: { text: string; extra?: object }) {
               {token.v}
             </Text>
           );
+        if (token.k === "mention") return <MentionChip key={i} username={token.v} />;
         return token.v;
       })}
     </Text>
@@ -644,6 +661,13 @@ const styles = StyleSheet.create({
   mdLink: {
     color: colors.accentStrong,
     textDecorationLine: "underline",
+  },
+  mentionChip: {
+    color: colors.accentStrong,
+    fontWeight: "700",
+    backgroundColor: colors.accentSoft,
+    borderRadius: 4,
+    paddingHorizontal: 2,
   },
   mdInlineCode: {
     fontFamily: MONOSPACE,

@@ -47,6 +47,18 @@ export function insertForumMention(
   return `${prefix}[${title}](series:${seriesId})${needsTrailingSpace ? " " : ""}${suffix}`;
 }
 
+export function insertUserMention(
+  text: string,
+  mention: ActiveMention,
+  username: string,
+) {
+  const prefix = text.slice(0, mention.start);
+  const suffix = text.slice(mention.end);
+  const needsTrailingSpace = suffix.length > 0 && !suffix.startsWith(" ");
+
+  return `${prefix}@${username}${needsTrailingSpace ? " " : ""}${suffix}`;
+}
+
 export function extractForumSeriesIds(text: string) {
   const ids = new Set<number>();
   const matcher = /(?:series:\s*|\/series\/)(\d+)/gi;

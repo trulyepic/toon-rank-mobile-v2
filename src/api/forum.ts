@@ -37,6 +37,7 @@ export async function getForumThreads(
   q?: string,
   sort?: ForumThreadSort,
   category_slug?: string,
+  searchPosts?: boolean,
 ) {
   const res = await api.get<ForumThreadPage>("/forum/threads-paged", {
     params: {
@@ -45,6 +46,7 @@ export async function getForumThreads(
       ...(q ? { q } : {}),
       ...(sort ? { sort } : {}),
       ...(category_slug ? { category_slug } : {}),
+      ...(searchPosts ? { search_posts: true } : {}),
     },
   });
   return res.data;
@@ -183,6 +185,13 @@ export async function updateForumThreadSettings(
     `/forum/threads/${threadId}/settings`,
     settings,
   );
+  return res.data;
+}
+
+export async function searchPostsInThread(threadId: number, q: string, page = 1) {
+  const res = await api.get<ForumPostPage>(`/forum/threads/${threadId}/posts/search`, {
+    params: { q, page, page_size: 20 },
+  });
   return res.data;
 }
 
