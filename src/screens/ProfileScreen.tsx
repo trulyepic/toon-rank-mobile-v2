@@ -28,7 +28,7 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { resetMyAvatar, setAvatarPreset, uploadAvatar } from "../api/auth";
+import { resetMyAvatar, setAvatarPreset, updateMyUsername, uploadAvatar } from "../api/auth";
 import { searchSeries } from "../api/series";
 import {
   getMyFavorites,
@@ -131,6 +131,9 @@ export function ProfileScreen() {
   const [favoriteSearchOpen, setFavoriteSearchOpen] = useState(false);
   const [favoriteQuery, setFavoriteQuery] = useState("");
   const [debouncedFavoriteQuery, setDebouncedFavoriteQuery] = useState("");
+  const [usernameModalOpen, setUsernameModalOpen] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const publicProfileQuery = useQuery({
     queryKey: ["users", "public-profile", user?.username],
     queryFn: () => getPublicProfile(user?.username ?? ""),
@@ -223,6 +226,46 @@ export function ProfileScreen() {
     },
   });
 
+  const USERNAME_REGEX = /^[A-Za-z0-9_-]{3,20}$/;
+
+  const usernameMutation = useMutation({
+    mutationFn: (newUsername: string) => updateMyUsername(newUsername),
+    onSuccess: (data) => {
+      void updateUser({ username: data.username });
+      setUsernameModalOpen(false);
+      setUsernameInput("");
+      setUsernameError("");
+      Alert.alert("Username updated", `Your username is now "${data.username}".`);
+    },
+    onError: (error: unknown) => {
+      const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
+      if (axiosError.response?.status === 409) {
+        setUsernameError("That username is already taken.");
+      } else if (axiosError.response?.status === 429) {
+        setUsernameError("Too many attempts. Please wait before trying again.");
+      } else {
+        setUsernameError(
+          axiosError.response?.data?.detail ?? "Could not update username. Try again.",
+        );
+      }
+    },
+  });
+
+  const openUsernameModal = () => {
+    setUsernameInput(user?.username ?? "");
+    setUsernameError("");
+    setUsernameModalOpen(true);
+  };
+
+  const submitUsername = () => {
+    const trimmed = usernameInput.trim();
+    if (!USERNAME_REGEX.test(trimmed)) {
+      setUsernameError("3–20 characters — letters, numbers, underscores, or hyphens only.");
+      return;
+    }
+    usernameMutation.mutate(trimmed);
+  };
+
   const addFavorite = (seriesId: number) => {
     if (favorites.length >= MAX_FAVORITES) {
       Alert.alert("Favorite limit reached", "You can pin up to 15 favorite series.");
@@ -291,6 +334,18 @@ export function ProfileScreen() {
           titleFallback="Guest reader"
           avatarSize="xl"
           centered
+          nameAccessory={
+            isSignedIn ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Edit username"
+                onPress={openUsernameModal}
+                style={({ pressed }) => [styles.usernameEditButton, pressed ? styles.pressed : null]}
+              >
+                <Ionicons name="pencil-outline" size={14} color={colors.textMuted} />
+              </Pressable>
+            ) : null
+          }
           avatarAccessory={
             isSignedIn ? (
               <Pressable
@@ -535,6 +590,65 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      <Modal transparent visible={usernameModalOpen} animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <Surface radius="xl" style={styles.usernameModal}>
+            <View style={styles.modalHeader}>
+              <AppText variant="sectionTitle">Change username</AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                onPress={() => {
+                  setUsernameModalOpen(false);
+                  setUsernameError("");
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+              placeholder="New username"
+              placeholderTextColor={colors.textMuted}
+              style={[styles.usernameInput, usernameError ? styles.usernameInputError : null]}
+              value={usernameInput}
+              onChangeText={(text) => {
+                setUsernameInput(text);
+                if (usernameError) setUsernameError("");
+              }}
+              onSubmitEditing={submitUsername}
+              returnKeyType="done"
+              maxLength={20}
+            />
+            <AppText variant="caption" tone="muted">
+              3–20 characters — letters, numbers, underscores, or hyphens.
+            </AppText>
+            {usernameError ? (
+              <AppText tone="danger" variant="caption">
+                {usernameError}
+              </AppText>
+            ) : null}
+            <AppButton
+              label="Save"
+              variant="primary"
+              disabled={
+                !usernameInput.trim() ||
+                usernameInput.trim() === user?.username ||
+                usernameMutation.isPending
+              }
+              onPress={submitUsername}
+              iconLeft={
+                usernameMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : undefined
+              }
+            />
+          </Surface>
+        </View>
+      </Modal>
+
       <Modal transparent visible={favoriteSearchOpen} animationType="fade">
         <View style={styles.modalBackdrop}>
           <Surface radius="xl" style={styles.favoriteModal}>
@@ -777,6 +891,32 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+  },
+  usernameEditButton: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+  },
+  usernameModal: {
+    gap: spacing.md,
+  },
+  usernameInput: {
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.backgroundSoft,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text,
+    fontSize: 16,
+  },
+  usernameInputError: {
+    borderColor: colors.danger ?? colors.accentStrong,
   },
   statChips: {
     flexDirection: "row",

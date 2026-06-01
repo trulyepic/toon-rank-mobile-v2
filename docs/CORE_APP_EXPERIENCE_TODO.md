@@ -1817,9 +1817,9 @@ is updated immediately and a toast confirms the change.
 
 **29a — API layer**
 
-- [ ] Add `updateMyUsername(newUsername: string): Promise<UsernameUpdateOut>` →
+- [x] Add `updateMyUsername(newUsername: string): Promise<UsernameUpdateOut>` →
       `PATCH /auth/me/username` with body `{ new_username: newUsername }` to `src/api/auth.ts`
-- [ ] Add `UsernameUpdateOut` type to `src/types/account.ts`:
+- [x] Add `UsernameUpdateOut` type to `src/types/account.ts`:
   ```ts
   export interface UsernameUpdateOut {
     id: number;
@@ -1829,20 +1829,20 @@ is updated immediately and a toast confirms the change.
     avatar_preset: string | null;
   }
   ```
-- [ ] Handle 409 (username taken) and 429 (rate limited) errors with readable messages
+- [x] Handle 409 (username taken) and 429 (rate limited) errors with readable messages
 
 **29b — UI**
 
-- [ ] Add a small edit/pencil icon button next to the username text on `ProfileScreen`
-- [ ] Tapping it opens a bottom sheet or modal with a single "New username" text input
-- [ ] Input is pre-filled with the current username; user clears and types the new one
-- [ ] Inline validation before submit: enforce the `^[A-Za-z0-9_-]{3,20}$` rule client-side
+- [x] Add a small edit/pencil icon button next to the username text on `ProfileScreen`
+- [x] Tapping it opens a bottom sheet or modal with a single "New username" text input
+- [x] Input is pre-filled with the current username; user clears and types the new one
+- [x] Inline validation before submit: enforce the `^[A-Za-z0-9_-]{3,20}$` rule client-side
       and show a helper text ("3–20 characters — letters, numbers, underscores, or hyphens")
-- [ ] Save button is disabled until the input is non-empty and different from the current username
-- [ ] On success: call `updateUser` with the returned username so all surfaces update immediately;
+- [x] Save button is disabled until the input is non-empty and different from the current username
+- [x] On success: call `updateUser` with the returned username so all surfaces update immediately;
       show a success toast; close the modal
-- [ ] On error: show the backend detail message inline (e.g. "That username is already taken.")
-- [ ] Show a loading state on the Save button while the request is in flight
+- [x] On error: show the backend detail message inline (e.g. "That username is already taken.")
+- [x] Show a loading state on the Save button while the request is in flight
 
 **29c — Emulator test steps**
 
