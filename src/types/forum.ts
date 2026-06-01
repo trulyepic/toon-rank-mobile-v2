@@ -99,6 +99,17 @@ export interface ForumVoteResponse {
   downvote_count: number;
 }
 
+export interface ForumMediaUploadResponse {
+  id: number;
+  url: string;
+  mime: string;
+  width?: number | null;
+  height?: number | null;
+  size: number;
+  thread_id: number;
+  post_id?: number | null;
+}
+
 export interface EditForumPostRequest {
   content_markdown: string;
   series_ids?: number[];

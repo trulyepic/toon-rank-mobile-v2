@@ -12,6 +12,7 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -30,6 +31,7 @@ import {
   setForumPostVote,
   updateForumThread,
   updateForumThreadSettings,
+  uploadForumMedia,
 } from "../api/forum";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -64,6 +66,11 @@ import {
   getActiveForumMention,
   insertForumMention,
 } from "../utils/forumMentions";
+import {
+  appendForumMediaMarkdown,
+  pickForumMediaAttachment,
+  type ForumMediaAttachment,
+} from "../utils/forumMedia";
 import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
@@ -317,6 +324,9 @@ function InlineComposer({
   isPending,
   activeMention,
   onMentionSelect,
+  attachment,
+  onPickAttachment,
+  onRemoveAttachment,
 }: {
   replyToPost: ForumPost;
   replyText: string;
@@ -326,9 +336,13 @@ function InlineComposer({
   isPending: boolean;
   activeMention: ActiveMention | null;
   onMentionSelect: (series: SeriesRef) => void;
+  attachment: ForumMediaAttachment | null;
+  onPickAttachment: () => void;
+  onRemoveAttachment: () => void;
 }) {
   const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
-  const canSubmit = replyText.trim().length > 0 && !isOverLimit && !isPending;
+  const canSubmit =
+    (replyText.trim().length > 0 || attachment) && !isOverLimit && !isPending;
 
   return (
     <Surface variant="raised" radius="xl" style={styles.inlineComposer}>
@@ -359,6 +373,12 @@ function InlineComposer({
         style={styles.replyInput}
       />
       <ForumMentionSuggestions mention={activeMention} onSelect={onMentionSelect} />
+      <ForumAttachmentPicker
+        attachment={attachment}
+        disabled={isPending}
+        onPick={onPickAttachment}
+        onRemove={onRemoveAttachment}
+      />
       <View style={styles.inlineComposerActions}>
         <AppButton
           label={isPending ? "Posting..." : "Post reply"}
@@ -380,6 +400,56 @@ function InlineComposer({
         />
       </View>
     </Surface>
+  );
+}
+
+function ForumAttachmentPicker({
+  attachment,
+  disabled,
+  onPick,
+  onRemove,
+}: {
+  attachment: ForumMediaAttachment | null;
+  disabled: boolean;
+  onPick: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View style={styles.attachmentBlock}>
+      {attachment ? (
+        <View style={styles.attachmentPreview}>
+          <Image source={{ uri: attachment.uri }} style={styles.attachmentImage} />
+          <View style={styles.attachmentInfo}>
+            <AppText variant="caption" numberOfLines={1}>
+              {attachment.name}
+            </AppText>
+            <AppText variant="caption" tone="subtle">
+              {attachment.type}
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Remove attachment"
+            disabled={disabled}
+            onPress={onRemove}
+            style={({ pressed }) => [
+              styles.removeAttachmentButton,
+              disabled ? styles.disabledBadge : null,
+              pressed && !disabled ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="close" size={18} color={colors.text} />
+          </Pressable>
+        </View>
+      ) : null}
+      <AppButton
+        label={attachment ? "Replace image/GIF" : "Attach image/GIF"}
+        variant="ghost"
+        disabled={disabled}
+        onPress={onPick}
+        iconLeft={<Ionicons name="image-outline" size={15} color={colors.text} />}
+      />
+    </View>
   );
 }
 
@@ -505,6 +575,9 @@ export function ForumThreadScreen() {
   const topRankMap = useTopRankMap();
   const isAdmin = user?.role === "ADMIN";
   const [replyText, setReplyText] = useState("");
+  const [replyAttachment, setReplyAttachment] = useState<ForumMediaAttachment | null>(
+    null,
+  );
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -558,17 +631,28 @@ export function ForumThreadScreen() {
     mutationFn: ({
       contentMarkdown,
       parentId,
+      attachment,
     }: {
       contentMarkdown: string;
       parentId?: number | null;
+      attachment?: ForumMediaAttachment | null;
     }) =>
-      createForumPost(threadId, {
-        content_markdown: contentMarkdown,
-        parent_id: parentId ?? null,
-        series_ids: extractForumSeriesIds(contentMarkdown),
-      }),
+      Promise.resolve()
+        .then(async () => {
+          if (!attachment) return contentMarkdown;
+          const media = await uploadForumMedia(threadId, attachment);
+          return appendForumMediaMarkdown(contentMarkdown || "Image", media.url);
+        })
+        .then((finalMarkdown) =>
+          createForumPost(threadId, {
+            content_markdown: finalMarkdown,
+            parent_id: parentId ?? null,
+            series_ids: extractForumSeriesIds(finalMarkdown),
+          }),
+        ),
     onSuccess: async (createdPost) => {
       setReplyText("");
+      setReplyAttachment(null);
       setReplyTarget(null);
       queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
         queryKey,
@@ -805,7 +889,7 @@ export function ForumThreadScreen() {
   const canSubmitReply =
     isSignedIn &&
     canReplyToThread &&
-    trimmedReply.length > 0 &&
+    (trimmedReply.length > 0 || replyAttachment) &&
     trimmedReply.length <= REPLY_MAX_LENGTH &&
     !replyMutation.isPending;
 
@@ -932,8 +1016,11 @@ export function ForumThreadScreen() {
       return;
     }
 
-    if (!trimmedReply) {
-      Alert.alert("Write a reply first", "Add a message before posting.");
+    if (!trimmedReply && !replyAttachment) {
+      Alert.alert(
+        "Write a reply first",
+        "Add a message or attach an image before posting.",
+      );
       return;
     }
 
@@ -948,6 +1035,7 @@ export function ForumThreadScreen() {
     replyMutation.mutate({
       contentMarkdown: trimmedReply,
       parentId: replyTarget?.id ?? null,
+      attachment: replyAttachment,
     });
   };
   const handleStartReply = (post: ForumPost) => {
@@ -969,6 +1057,7 @@ export function ForumThreadScreen() {
     }
 
     setReplyTarget(post);
+    setReplyAttachment(null);
   };
   const openPublicProfile = (username?: string | null) => {
     if (!username) return;
@@ -1009,6 +1098,10 @@ export function ForumThreadScreen() {
         : current,
     );
   };
+  const handlePickReplyAttachment = async () => {
+    const picked = await pickForumMediaAttachment();
+    if (picked) setReplyAttachment(picked);
+  };
   const renderInlineComposer = (post: ForumPost): ReactNode => {
     if (replyTarget?.id !== post.id) return null;
     return (
@@ -1020,10 +1113,14 @@ export function ForumThreadScreen() {
         onCancel={() => {
           setReplyTarget(null);
           setReplyText("");
+          setReplyAttachment(null);
         }}
         isPending={replyMutation.isPending}
         activeMention={activeMention}
         onMentionSelect={handleMentionSelect}
+        attachment={replyAttachment}
+        onPickAttachment={handlePickReplyAttachment}
+        onRemoveAttachment={() => setReplyAttachment(null)}
       />
     );
   };
@@ -1411,9 +1508,15 @@ export function ForumThreadScreen() {
               />
               <View style={styles.composerActions}>
                 <AppText variant="caption" tone="muted" style={styles.composerHint}>
-                  Markdown is supported. Type @ to reference a series. Image uploads are
-                  next.
+                  Markdown is supported. Type @ to reference a series. Image and GIF
+                  uploads are supported.
                 </AppText>
+                <ForumAttachmentPicker
+                  attachment={replyAttachment}
+                  disabled={replyMutation.isPending}
+                  onPick={handlePickReplyAttachment}
+                  onRemove={() => setReplyAttachment(null)}
+                />
                 <AppButton
                   label={replyMutation.isPending ? "Posting..." : "Post reply"}
                   disabled={!canSubmitReply}
@@ -1601,6 +1704,39 @@ const styles = StyleSheet.create({
   },
   composerHint: {
     flexShrink: 1,
+  },
+  attachmentBlock: {
+    gap: spacing.sm,
+  },
+  attachmentPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.backgroundSoft,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  attachmentImage: {
+    width: 58,
+    height: 58,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceRaised,
+  },
+  attachmentInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  removeAttachmentButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   signInPrompt: {
     gap: spacing.sm,
