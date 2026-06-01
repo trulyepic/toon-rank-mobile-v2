@@ -326,16 +326,15 @@ function PostCard({
         ) : null}
       </View>
 
-      {/* Secondary actions bottom sheet */}
-      <Modal transparent visible={sheetVisible} animationType="slide">
+      {/* Secondary actions — compact bottom sheet (Reddit/Apollo style) */}
+      <Modal transparent visible={sheetVisible} animationType="fade">
         <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)} />
-        <Surface radius="xl" style={styles.actionSheet}>
-          <View style={styles.sheetHandle} />
+        <View style={styles.actionSheet}>
           {onBookmark ? (
             <Pressable
               style={({ pressed }) => [
                 styles.sheetRow,
-                pressed ? styles.pressedBadge : null,
+                pressed ? styles.sheetRowPressed : null,
               ]}
               onPress={() => {
                 setSheetVisible(false);
@@ -344,69 +343,73 @@ function PostCard({
             >
               <Ionicons
                 name={isBookmarked ? "bookmark" : "bookmark-outline"}
-                size={20}
+                size={17}
                 color={isBookmarked ? colors.credText : colors.text}
               />
-              <AppText>{isBookmarked ? "Remove bookmark" : "Save post"}</AppText>
+              <AppText variant="caption">
+                {isBookmarked ? "Remove bookmark" : "Save post"}
+              </AppText>
             </Pressable>
           ) : null}
           {canReport ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.sheetRow,
-                pressed ? styles.pressedBadge : null,
-              ]}
-              onPress={() => {
-                setSheetVisible(false);
-                onReport?.(post);
-              }}
-            >
-              <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
-              <AppText tone="muted">Report post</AppText>
-            </Pressable>
+            <>
+              <View style={styles.sheetDivider} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.sheetRow,
+                  pressed ? styles.sheetRowPressed : null,
+                ]}
+                onPress={() => {
+                  setSheetVisible(false);
+                  onReport?.(post);
+                }}
+              >
+                <Ionicons name="flag-outline" size={17} color={colors.textMuted} />
+                <AppText variant="caption" tone="muted">
+                  Report
+                </AppText>
+              </Pressable>
+            </>
           ) : null}
           {canEdit ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.sheetRow,
-                pressed ? styles.pressedBadge : null,
-              ]}
-              onPress={() => {
-                setSheetVisible(false);
-                onEditStart(post);
-              }}
-            >
-              <Ionicons name="pencil-outline" size={20} color={colors.text} />
-              <AppText>Edit</AppText>
-            </Pressable>
+            <>
+              <View style={styles.sheetDivider} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.sheetRow,
+                  pressed ? styles.sheetRowPressed : null,
+                ]}
+                onPress={() => {
+                  setSheetVisible(false);
+                  onEditStart(post);
+                }}
+              >
+                <Ionicons name="pencil-outline" size={17} color={colors.text} />
+                <AppText variant="caption">Edit</AppText>
+              </Pressable>
+            </>
           ) : null}
           {canDelete ? (
-            <Pressable
-              style={({ pressed }) => [
-                styles.sheetRow,
-                pressed ? styles.pressedBadge : null,
-              ]}
-              onPress={() => {
-                setSheetVisible(false);
-                onDelete(post);
-              }}
-            >
-              <Ionicons name="trash-outline" size={20} color={colors.danger} />
-              <AppText tone="danger">Delete</AppText>
-            </Pressable>
+            <>
+              <View style={styles.sheetDivider} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.sheetRow,
+                  pressed ? styles.sheetRowPressed : null,
+                ]}
+                onPress={() => {
+                  setSheetVisible(false);
+                  onDelete(post);
+                }}
+              >
+                <Ionicons name="trash-outline" size={17} color={colors.danger} />
+                <AppText variant="caption" tone="danger">
+                  Delete
+                </AppText>
+              </Pressable>
+            </>
           ) : null}
-          <Pressable
-            style={({ pressed }) => [
-              styles.sheetCancelRow,
-              pressed ? styles.pressedBadge : null,
-            ]}
-            onPress={() => setSheetVisible(false)}
-          >
-            <AppText tone="muted" align="center">
-              Cancel
-            </AppText>
-          </Pressable>
-        </Surface>
+        </View>
       </Modal>
     </Surface>
   );
@@ -2439,34 +2442,32 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   actionSheet: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    gap: 0,
+    backgroundColor: colors.surfaceRaised,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: colors.borderSoft,
+    overflow: "hidden",
     paddingBottom: spacing.lg,
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderSoft,
-    alignSelf: "center",
-    marginBottom: spacing.sm,
   },
   sheetRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
   },
-  sheetCancelRow: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSoft,
+  sheetRowPressed: {
+    backgroundColor: colors.backgroundSoft,
+  },
+  sheetDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderSoft,
+    marginHorizontal: spacing.md,
   },
   reportModalBackdrop: {
     flex: 1,
