@@ -20,6 +20,9 @@ import { ReportIssueScreen } from "../screens/ReportIssueScreen";
 import { IssueTrackerScreen } from "../screens/IssueTrackerScreen";
 import { AdminReportQueueScreen } from "../screens/AdminReportQueueScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
+import { AboutScreen } from "../screens/AboutScreen";
+import { HowRankingsWorkScreen } from "../screens/HowRankingsWorkScreen";
+import { NotFoundScreen } from "../screens/NotFoundScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
@@ -41,6 +44,9 @@ export type RootStackParamList = {
   IssueTracker: undefined;
   AdminReportQueue: undefined;
   Notifications: undefined;
+  About: undefined;
+  HowRankingsWork: undefined;
+  NotFound: undefined;
   Settings: undefined;
 };
 
@@ -67,6 +73,9 @@ export function RootNavigator() {
       <Stack.Screen name="IssueTracker" component={IssueTrackerScreen} />
       <Stack.Screen name="AdminReportQueue" component={AdminReportQueueScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="HowRankingsWork" component={HowRankingsWorkScreen} />
+      <Stack.Screen name="NotFound" component={NotFoundScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );

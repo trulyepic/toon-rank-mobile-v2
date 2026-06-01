@@ -106,6 +106,7 @@ function SeriesRatingCard({ item }: { item: MySeriesVote }) {
 // ─── Main section ─────────────────────────────────────────────────────────────
 
 export function SeriesRatingsSection() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const query = useInfiniteQuery({
     queryKey: ["series", "me", "votes"],
     queryFn: ({ pageParam }) => getMySeriesVotes(pageParam as number, PAGE_SIZE),
@@ -131,6 +132,16 @@ export function SeriesRatingsSection() {
 
   return (
     <View style={styles.root}>
+      <Pressable
+        onPress={() => navigation.navigate("HowRankingsWork")}
+        style={({ pressed }) => [styles.infoRow, pressed ? styles.infoRowPressed : null]}
+      >
+        <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} />
+        <AppText variant="caption" tone="muted">
+          Scores are locked after voting · 1–10 per category
+        </AppText>
+        <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+      </Pressable>
       <View style={styles.list}>
         {items.map((item) => (
           <SeriesRatingCard key={item.series_id} item={item} />
@@ -237,5 +248,14 @@ const styles = StyleSheet.create({
   pillScore: {
     fontSize: 11,
     fontWeight: "800",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  infoRowPressed: {
+    opacity: 0.7,
   },
 });

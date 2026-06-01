@@ -27,3 +27,7 @@ export const LEGAL_URLS = {
 };
 
 export const SUPPORT_EMAIL = "support@toonranks.com";
+
+export const SOCIAL_URLS = {
+  instagram: "https://instagram.com/toonranks",
+};
