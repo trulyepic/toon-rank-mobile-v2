@@ -78,13 +78,13 @@ loading/error/empty states:
 These are being worked next, in order. **Phase 28.5 (admin pending titles + role management) is
 deferred to much later** by product decision.
 
-| Phase    | What it adds                                                                      | Status   |
-| -------- | --------------------------------------------------------------------------------- | -------- |
-| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done  |
-| **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done  |
-| **40**   | Admin issue triage controls (status change + delete)                              | ✅ Done  |
-| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned  |
-| **28.5** | Admin pending titles review + user role management                                | Deferred |
+| Phase    | What it adds                                                                      | Status                                             |
+| -------- | --------------------------------------------------------------------------------- | -------------------------------------------------- |
+| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done                                            |
+| **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done                                            |
+| **40**   | Admin issue triage controls (status change + delete)                              | ✅ Done                                            |
+| **41**   | Scheme deep links (series, threads, profiles, leaderboard, issues) + fallback     | ✅ Done (scheme slice; Universal Links → Phase 16) |
+| **28.5** | Admin pending titles review + user role management                                | Deferred                                           |
 
 ### Minor open items inside core phases
 
@@ -2785,38 +2785,78 @@ Purpose: map every current website route to a mobile behavior so shared links, e
 
 The website currently has public and account routes for home, auth, verification, reset password, type pages, series detail, compare, account, public user profiles, leaderboard, reading lists, public lists, submissions, pending titles, admin reports, issues, report issue, forum, forum threads, public info pages, and not found.
 
+> **Scope (June 2026): focused scheme-based slice.** This phase shipped `toonranks://` deep links
+> for the screens that already exist natively, plus a NotFound fallback, a route parity table, and
+> parse tests. **Universal Links / App Links (https links opening the app) and the password-reset
+> email deep link are deferred to Phase 16**, because they require the app to be live in the stores
+> with `apple-app-site-association` / `assetlinks.json` served from toonranks.com before they can be
+> verified end-to-end. The config lives in `src/navigation/linking.ts`.
+
 ### Current mobile status
 
-- [x] Mobile linking currently handles `toonranks://lists/:token` for public reading lists.
+- [x] Mobile linking handles `toonranks://lists/:token` for public reading lists.
 - [x] Native routes already exist for series detail, login, signup, check email, reading lists, public reading list, forum threads, forum activity, profile, report issue, and settings.
-- [ ] Native routes do not yet exist for verify email, reset password, leaderboard, public user profile, issue tracker, admin reports, public info pages, or not-found fallback.
-- [ ] Password reset emails currently link to the website's `/reset-password` page; mobile has no
-      deep link handler for this route, so tapping the email link on a mobile device does not open
-      the app. Phase 2.6 opens the website forgot-password flow in an in-app browser, but does not
-      handle the return deep link when the reset email is tapped.
-- [ ] Deep linking is not yet mapped for most native routes.
+- [x] Scheme deep links now also cover series detail, forum thread (+ post anchor), public profile, leaderboard, issue tracker, and report issue, with a NotFound wildcard fallback.
+- [ ] Verify email and reset password deep links remain deferred to Phase 16 (need store-live Universal/App Links).
+- [x] Deep linking is now mapped for the high-value native routes.
 
 ### Work items
 
-- [ ] Create a route parity table in this document or a dedicated mobile docs file with columns: Web route, Mobile behavior, Auth required, Status.
-- [ ] Support deep links for high-value user-facing routes: series detail, forum thread, forum post anchor, public list, public profile, leaderboard, login, signup, verify email, reset password, and report issue.
-- [ ] **Reset-password deep link (confirmed gap):** Add a `toonranks://auth/reset-password?token=…`
-      deep link handler that opens a native `ResetPasswordScreen` (or hands off gracefully to the
-      in-app browser) so that password reset emails route back into the app on mobile. Pair this
-      with the existing Phase 2.6 forgot-password in-app browser entry point and Phase 16
-      (email verification redirect) so the full auth recovery flow is consistent.
-- [ ] Open low-value or desktop-heavy routes in the production website when native parity is not worth building yet.
-- [ ] Add a native fallback screen for unsupported or expired links.
-- [ ] Verify email templates and notification payloads point to links that mobile can either handle directly or gracefully hand off to the website.
-- [ ] Add tests for deep-link parsing where practical.
+- [x] Create a route parity table (below): Web route → Mobile behavior → Auth → Status.
+- [x] Support deep links for high-value user-facing routes: series detail, forum thread (+ post
+      anchor via `?postId=`), public list, public profile, leaderboard, issue tracker, and report
+      issue. (Login/signup/verify/reset deferred — see scope note.)
+- [ ] **Reset-password deep link — deferred to Phase 16.** Needs the reset email to emit a link the
+      app can claim (Universal/App Links), which requires a store-live signed build. Tracked there.
+- [x] Open low-value or desktop-heavy routes in the production website when native parity is not
+      worth building yet (e.g. submissions/pending-titles stay web/admin-only for now).
+- [x] Add a native fallback screen for unsupported or expired links (`NotFoundScreen`, wired as the
+      `"*"` linking fallback; offers a "Go to Home" reset).
+- [ ] Verify email templates / notification payloads point to app-handleable links — deferred to
+      Phase 16 alongside the email-link work.
+- [x] Add tests for deep-link parsing (`src/navigation/linking.test.ts` — path mappings, numeric
+      `parse` coercion, and the wildcard fallback).
+
+### Route parity table
+
+| Web route                                     | Mobile behavior                                       | Auth | Status                 |
+| --------------------------------------------- | ----------------------------------------------------- | ---- | ---------------------- |
+| `/series/:id`                                 | `toonranks://series/:seriesId` → SeriesDetail         | No   | ✅ Deep-linked         |
+| `/forum/:threadId`                            | `toonranks://forum/:threadId(?postId=)` → ForumThread | No   | ✅ Deep-linked         |
+| `/user/:username`                             | `toonranks://profile/:username` → PublicProfile       | No   | ✅ Deep-linked         |
+| `/lists/:token`                               | `toonranks://lists/:token` → PublicReadingList        | No   | ✅ Deep-linked         |
+| `/leaderboard`                                | `toonranks://leaderboard` → Leaderboard               | No   | ✅ Deep-linked         |
+| `/issues`                                     | `toonranks://issues` → IssueTracker                   | No   | ✅ Deep-linked         |
+| `/report-issue`                               | `toonranks://report-issue` → ReportIssue              | No   | ✅ Deep-linked         |
+| unknown / expired path                        | NotFound fallback (`"*"`) with "Go to Home"           | No   | ✅ Handled             |
+| `/verify`, `/reset-password`                  | In-app browser today; native deep link in Phase 16    | No   | ⏳ Deferred (Phase 16) |
+| `/submissions`, `/pending-titles`, `/admin/*` | Web/admin-only for now                                | Yes  | ↪ Web for now          |
 
 ### Emulator test steps
 
-1. Open a series deep link and confirm it lands on `SeriesDetailScreen`.
-2. Open a forum thread link and confirm it lands on `ForumThreadScreen`.
-3. Open a public reading list link and confirm it lands on the public list screen.
-4. Open a public user profile link and confirm it lands on the profile screen.
-5. Open an unsupported route and confirm the fallback screen gives a clear way back.
+**Setup (once):**
+
+1. Start the app on the device/emulator: `npm run android` (or `npm run ios`). Leave it open on the
+   Home screen.
+2. Deep links are fired from a **second terminal** while the app stays open, using
+   `npx uri-scheme open "<url>" --android` (use `--ios` on a Mac simulator). Alternatively, paste the
+   `toonranks://…` URL into a note on the device and tap it.
+3. Replace `<token>` / `<username>` and the example IDs with real values from your environment.
+
+**Run each command in a second terminal and confirm the result:**
+
+| #   | Command                                                          | Expected result                                                    |
+| --- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | `npx uri-scheme open "toonranks://series/209" --android`         | Opens **Series Detail** for series 209.                            |
+| 2   | `npx uri-scheme open "toonranks://forum/12?postId=34" --android` | Opens **Forum thread 12** and scrolls to post 34.                  |
+| 3   | `npx uri-scheme open "toonranks://lists/<token>" --android`      | Opens the **public reading list** for that share token.            |
+| 4   | `npx uri-scheme open "toonranks://profile/<username>" --android` | Opens that user's **public profile**.                              |
+| 5   | `npx uri-scheme open "toonranks://leaderboard" --android`        | Opens the **Leaderboard** screen.                                  |
+| 6   | `npx uri-scheme open "toonranks://issues" --android`             | Opens the **Issue Tracker** screen.                                |
+| 7   | `npx uri-scheme open "toonranks://report-issue" --android`       | Opens the **Report an Issue** screen.                              |
+| 8   | `npx uri-scheme open "toonranks://does-not-exist" --android`     | Opens the **Page Not Found** screen; "Go to Home" returns to tabs. |
+
+Links 1–4 need real IDs/tokens that exist in your data; links 5–8 take no parameters and work as-is.
 
 Done means frontend route additions are less likely to quietly leave the mobile app behind.
 
