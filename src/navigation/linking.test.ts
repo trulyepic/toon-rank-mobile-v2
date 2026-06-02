@@ -31,8 +31,13 @@ describe("deep link config", () => {
     expect(pathOf("ReportIssue")).toBe("report-issue");
   });
 
-  it("uses a wildcard NotFound fallback for unmatched links", () => {
-    expect(pathOf("NotFound")).toBe("*");
+  it("does NOT register a wildcard catch-all (it would hijack cold starts)", () => {
+    const screens = (linking.config?.screens ?? {}) as Record<string, ScreenConfig>;
+    const paths = Object.values(screens).map((s) =>
+      typeof s === "string" ? s : s?.path,
+    );
+    expect(paths).not.toContain("*");
+    expect(screens.NotFound).toBeUndefined();
   });
 
   it("coerces numeric series id from the path string to a number", () => {

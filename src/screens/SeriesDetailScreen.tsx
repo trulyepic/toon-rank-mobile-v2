@@ -19,6 +19,7 @@ import {
   SaveToListSheet,
   ScreenShell,
   SectionHeader,
+  SeriesStatusBadge,
   Surface,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -335,7 +336,7 @@ export function SeriesDetailScreen() {
           <View style={styles.metaPanel}>
             <View style={styles.chipRow}>
               {type ? <Chip label={type} tone="accent" /> : null}
-              {status ? <Chip label={status.replace("_", " ")} tone="neutral" /> : null}
+              <SeriesStatusBadge status={status} size="md" />
             </View>
 
             <View style={styles.scoreCard}>
