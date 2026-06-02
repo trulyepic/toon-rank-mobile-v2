@@ -14,24 +14,30 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { searchSeries } from "../api/series";
+import { getMyReadingLists } from "../api/readingLists";
 import {
   AppButton,
   AppText,
   CoverImage,
   EmptyState,
   LoadingState,
+  SaveToListSheet,
   ScreenShell,
   Surface,
 } from "../components";
+import { useAuth } from "../auth/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
+import {
+  filterSeriesByType,
+  isSeriesInAnyList,
+  TITLE_TYPE_FILTERS,
+  type TitleTypeFilter,
+} from "../utils/seriesBrowse";
 
 const MIN_SEARCH_LENGTH = 2;
-
-const typeFilters = ["All", "Manga", "Manhwa", "Manhua"] as const;
-type TypeFilter = (typeof typeFilters)[number];
 
 function getScoreTone(score: number) {
   if (score >= 8) return colors.success;
@@ -46,12 +52,18 @@ function SearchResultCard({
   selectedForCompare,
   canAddMore,
   onToggleCompare,
+  showSave,
+  saved,
+  onSave,
 }: {
   item: RankedSeries;
   onPress: () => void;
   selectedForCompare: boolean;
   canAddMore: boolean;
   onToggleCompare: () => void;
+  showSave: boolean;
+  saved: boolean;
+  onSave: () => void;
 }) {
   const styles = getStyles();
   const compareDisabled = !selectedForCompare && !canAddMore;
@@ -116,6 +128,29 @@ function SearchResultCard({
           }
           style={styles.compareButton}
         />
+        {showSave ? (
+          <Pressable
+            onPress={onSave}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              saved
+                ? `${item.title} is in a reading list. Manage lists`
+                : `Save ${item.title} to a reading list`
+            }
+            style={({ pressed }) => [
+              styles.saveIconButton,
+              saved ? styles.saveIconButtonSaved : null,
+              pressed ? styles.saveIconButtonPressed : null,
+            ]}
+          >
+            <Ionicons
+              name={saved ? "bookmark" : "bookmark-outline"}
+              size={16}
+              color={colors.accentStrong}
+            />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -125,9 +160,11 @@ export function SearchScreen() {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
+  const { isSignedIn } = useAuth();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [activeType, setActiveType] = useState<TypeFilter>("All");
+  const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
+  const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -144,12 +181,13 @@ export function SearchScreen() {
     enabled: hasSearchQuery,
   });
   const allResults = data ?? [];
-  const results =
-    activeType === "All"
-      ? allResults
-      : allResults.filter(
-          (item) => item.type?.toUpperCase() === activeType.toUpperCase(),
-        );
+  const results = filterSeriesByType(allResults, activeType);
+
+  const readingListsQuery = useQuery({
+    queryKey: ["reading-lists", "me"],
+    queryFn: getMyReadingLists,
+    enabled: isSignedIn,
+  });
   const showSearchingOverlay = isFetching && !isLoading && allResults.length > 0;
 
   return (
@@ -184,7 +222,7 @@ export function SearchScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.typeRail}
       >
-        {typeFilters.map((filter) => {
+        {TITLE_TYPE_FILTERS.map((filter) => {
           const selected = activeType === filter;
           return (
             <Pressable
@@ -285,6 +323,9 @@ export function SearchScreen() {
                 selectedForCompare={isSelected(item.id)}
                 canAddMore={canAddMore}
                 onToggleCompare={() => toggleCompare(item)}
+                showSave={isSignedIn}
+                saved={isSeriesInAnyList(readingListsQuery.data, item.id)}
+                onSave={() => setSaveSeriesId(item.id)}
               />
             )}
             ListEmptyComponent={
@@ -299,6 +340,14 @@ export function SearchScreen() {
             }
           />
         </>
+      ) : null}
+
+      {saveSeriesId != null ? (
+        <SaveToListSheet
+          seriesId={saveSeriesId}
+          visible={saveSeriesId != null}
+          onClose={() => setSaveSeriesId(null)}
+        />
       ) : null}
     </ScreenShell>
   );
@@ -439,7 +488,27 @@ function getStyles() {
       minWidth: 0,
     },
     resultActionRow: {
-      alignItems: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    saveIconButton: {
+      width: 34,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+    },
+    saveIconButtonSaved: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    saveIconButtonPressed: {
+      opacity: 0.85,
+      transform: [{ scale: 0.96 }],
     },
     resultTitle: {
       color: colors.text,
@@ -470,7 +539,6 @@ function getStyles() {
       lineHeight: 20,
     },
     compareButton: {
-      marginTop: spacing.xs,
       alignSelf: "flex-start",
     },
     notice: {

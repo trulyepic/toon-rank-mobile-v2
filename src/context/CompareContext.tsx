@@ -8,6 +8,9 @@ import {
 } from "react";
 
 import type { RankedSeries } from "../types/series";
+import { canAddToCompare, computeNextCompare, MAX_COMPARE_ITEMS } from "../utils/compare";
+
+export { MAX_COMPARE_ITEMS };
 
 type CompareContextValue = {
   compareItems: RankedSeries[];
@@ -19,24 +22,11 @@ type CompareContextValue = {
 
 const CompareContext = createContext<CompareContextValue | null>(null);
 
-export const MAX_COMPARE_ITEMS = 4;
-
 export function CompareProvider({ children }: PropsWithChildren) {
   const [compareItems, setCompareItems] = useState<RankedSeries[]>([]);
 
   const toggleCompare = useCallback((series: RankedSeries) => {
-    setCompareItems((current) => {
-      const exists = current.some((item) => item.id === series.id);
-      if (exists) {
-        return current.filter((item) => item.id !== series.id);
-      }
-
-      if (current.length >= MAX_COMPARE_ITEMS) {
-        return current;
-      }
-
-      return [...current, series];
-    });
+    setCompareItems((current) => computeNextCompare(current, series));
   }, []);
 
   const isSelected = useCallback(
@@ -52,7 +42,7 @@ export function CompareProvider({ children }: PropsWithChildren) {
       toggleCompare,
       isSelected,
       clearCompare,
-      canAddMore: compareItems.length < MAX_COMPARE_ITEMS,
+      canAddMore: canAddToCompare(compareItems),
     }),
     [clearCompare, compareItems, isSelected, toggleCompare],
   );

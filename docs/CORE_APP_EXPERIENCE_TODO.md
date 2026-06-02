@@ -24,6 +24,75 @@ Rankers/Cred Point parity, public profiles, and the remaining forum parity slice
 (categories/sort, reporting, follows/bookmarks, notifications, read state, and richer composer
 tools).
 
+## Status Summary (current)
+
+_Last reviewed: June 2026, after auditing the app code against this roadmap._
+
+### Fully complete (Phases 1–37 + 28)
+
+All core product features are implemented with real API integration, React Query state, and
+loading/error/empty states:
+
+| Area                                                                           | Status  |
+| ------------------------------------------------------------------------------ | ------- |
+| Auth (native login, signup, Google Sign-In, refresh tokens, forgot password)   | ✅ Done |
+| Series rankings, search, genre filter, series detail                           | ✅ Done |
+| Voting (1–10 per category, locked after vote, signed-out guard)                | ✅ Done |
+| Reading lists (view, create, delete, add/remove items, chapter tracking)       | ✅ Done |
+| Reading list sharing (public/private toggle, share sheet, share link)          | ✅ Done |
+| Reading list filter/sort (type, status, score, sort order)                     | ✅ Done |
+| Public reading list viewer + deep link (`toonranks://lists/:token`)            | ✅ Done |
+| Compare (up to 4 series, side-by-side)                                         | ✅ Done |
+| Forum (threads, replies, nested replies, markdown/media, up/down votes)        | ✅ Done |
+| Forum thread management (edit, delete, lock, pin, latest-first, categories)    | ✅ Done |
+| Forum search (thread search, post-content search, user @-mention autocomplete) | ✅ Done |
+| Forum image/GIF upload                                                         | ✅ Done |
+| Forum follow threads, bookmark posts                                           | ✅ Done |
+| Forum post reporting + admin report queue                                      | ✅ Done |
+| Forum unread badges + mark-read tracking                                       | ✅ Done |
+| Forum activity screen (Threads / Replies / Votes / Following / Saved tabs)     | ✅ Done |
+| Notifications (bell, unread badge, mark-read, mark-all-read)                   | ✅ Done |
+| Profile (avatar upload/reset, preset picker, username change, pinned faves)    | ✅ Done |
+| Series ratings on profile                                                      | ✅ Done |
+| Leaderboard + Cred Points + ranker badges in forum                             | ✅ Done |
+| Public profiles (avatar, role, CP/rank chips, pinned favorites, public lists)  | ✅ Done |
+| Settings (delete account, change password via in-app browser)                  | ✅ Done |
+| Issue reporting + public issue tracker                                         | ✅ Done |
+| About, How Rankings Work, NotFound screens                                     | ✅ Done |
+| Theme picker (Violet / Classic / Amber, persisted)                             | ✅ Done |
+| Contributor series submission + My Submissions                                 | ✅ Done |
+| App store config (bundle IDs, splash/icon assets, iOS encryption declaration)  | ✅ Done |
+| Android production build (APK/AAB confirmed)                                   | ✅ Done |
+
+### Blocked on external prerequisites (not code gaps)
+
+| Item                                                  | Blocker                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| iOS production build + TestFlight (Phase 19b)         | Apple Developer account ($99/yr)                        |
+| App Store Connect listing, screenshots, age rating    | Apple Developer account                                 |
+| Google Play Console listing, screenshots, data safety | Google Play Developer account ($25)                     |
+| Phase 16 — email verification deep link back to app   | App live in stores + Universal/App Links verified first |
+
+### Remaining enhancement phases (not core — optional for MVP)
+
+These are being worked next, in order. **Phase 28.5 (admin pending titles + role management) is
+deferred to much later** by product decision.
+
+| Phase    | What it adds                                                                      | Status   |
+| -------- | --------------------------------------------------------------------------------- | -------- |
+| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done  |
+| **39**   | Forum draft persistence, quote-reply button, reading-list insertion in composer   | Next     |
+| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned  |
+| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned  |
+| **28.5** | Admin pending titles review + user role management                                | Deferred |
+
+### Minor open items inside core phases
+
+| Item                                          | Notes                                                     |
+| --------------------------------------------- | --------------------------------------------------------- |
+| Phase 5.5 — markdown regression tests         | Two test items never written                              |
+| Phase 21 — session info / revoke-all-sessions | Backend `DELETE /auth/sessions` may not be live; deferred |
+
 ## Design Direction — Violet/Indigo Theme (Option A)
 
 **Decision (June 2026):** Replace the generic blue-navy colour palette with a deep violet/indigo
@@ -197,7 +266,7 @@ Purpose: make mobile saved lists useful, not only a preview.
 - [x] Add edit left-off chapter.
 - [x] Add create list if the backend limit allows it.
 - [x] Show list limits and backend validation errors clearly.
-- [ ] Keep public/private share controls for a later slice unless needed immediately.
+- [x] Public/private share controls implemented in Phase 14 (share toggle, share link, unshare).
 
 Done means a signed-in mobile user can see and manage the same saved titles they use on the website.
 
@@ -1746,11 +1815,13 @@ prompt, but no native form covers this step.
 
 ---
 
-## Phase 28.5: Admin — Pending Titles Review (Future Work)
+## Phase 28.5: Admin — Pending Titles Review (Deferred to much later)
 
-> **Status: Future work.** Do not start this phase until Phase 28 is complete and the contributor
-> submission flow is live. This phase covers the admin counterpart — reviewing, approving, or
-> rejecting pending submissions — so admins do not need to use the website for this workflow.
+> **Status: Deferred to much later (product decision, June 2026).** Even though Phase 28 (contributor
+> submission) is now complete, the admin counterpart is intentionally pushed back behind the Phase
+> 38–41 enhancement sweep. Do not pick this up until the enhancement phases are done and the product
+> owner re-prioritises it. This phase covers reviewing, approving, or rejecting pending submissions
+> and managing user roles — admins can continue to use the website for this workflow in the meantime.
 
 Suggested branch: `mobile-admin-pending-titles`
 
@@ -2529,17 +2600,35 @@ Mobile already has Home, Search, Compare, and Reading Lists, but this phase shou
 - [x] Search already has text search, type filters, and compare buttons.
 - [x] Compare already has a dedicated tab, max-four selection rule, remove actions, clear action, and overflow-safe comparison rows.
 - [x] Series detail already supports signed-in reading-list saves.
-- [ ] Ranking/search cards do not yet have a full reading-list action flow like the website cards.
-- [ ] Deep-linkable type pages are not implemented; Home filter state currently covers this behavior inside the app.
+- [x] Ranking/search cards now have a native reading-list quick-add (bookmark button → shared
+      `SaveToListSheet`), shown to signed-in users on Home and Search cards.
+- [x] Deep-linkable type pages: decision recorded below — Home filter state is sufficient for the
+      app-store MVP; no separate native type screens are built.
 
 ### Work items
 
-- [ ] Audit web `Home`, `FilteredSeriesPage`, header search, `ComparePage`, and reading-list card actions before changing mobile.
-- [ ] Confirm Manga, Manhwa, and Manhua filters behave consistently with web type pages, including loading, empty, and error states.
-- [ ] Decide whether mobile needs deep-linkable type screens, or whether Home filter state is enough for app-store MVP. Document the decision in this file.
-- [ ] Confirm max-limit feedback is visible everywhere users can add a title to Compare, including Home, Search, and Series detail. It should never fail silently.
-- [ ] Confirm signed-in users can add titles to reading lists from ranking/search/detail surfaces in a way that feels native, not web-like.
-- [ ] Add regression tests around compare max count, type filter switching, and ranking-card reading-list actions.
+- [x] Audit web `Home`, `FilteredSeriesPage`, header search, `ComparePage`, and reading-list card
+      actions before changing mobile. (Web shows an add-to-list control on ranking cards; mobile now
+      mirrors this with a bookmark quick-add that opens the shared save sheet.)
+- [x] Confirm Manga, Manhwa, and Manhua filters behave consistently with web type pages, including
+      loading, empty, and error states. (Home and Search now share `getTypeParam` /
+      `filterSeriesByType` from `src/utils/seriesBrowse.ts`; loading/empty/error states verified on
+      both screens.)
+- [x] **Decision (June 2026): no deep-linkable native type screens for the MVP.** The Home type rail
+      (All / Manga / Manhwa / Manhua) plus genre strip covers the same browsing intent as the web's
+      `/type/:seriesType` pages, and the rankings endpoint is driven server-side by the `type` param
+      so results are complete. Deep-linkable type routes can be revisited in Phase 41 if shared
+      `/type/...` links become a real need.
+- [x] Confirm max-limit feedback is visible everywhere users can add a title to Compare. Home and
+      Search compare buttons show a disabled "Max 4" label once four titles are selected — the cap
+      never fails silently. Series Detail intentionally has no compare-add action (compare is built
+      from Home/Search cards), so there is no silent-failure surface there.
+- [x] Confirm signed-in users can add titles to reading lists from ranking/search/detail surfaces in
+      a native way. The shared `SaveToListSheet` (extracted from Series Detail) is now used from
+      Home cards, Search cards, and Series Detail — one consistent native sheet, no web-like flow.
+- [x] Add regression tests around compare max count, type filter switching, and ranking-card
+      reading-list actions: `src/utils/compare.test.ts` (toggle, max cap, removal at max) and
+      `src/utils/seriesBrowse.test.ts` (`getTypeParam`, `filterSeriesByType`, `isSeriesInAnyList`).
 
 ### Emulator test steps
 
