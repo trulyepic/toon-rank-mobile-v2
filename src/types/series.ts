@@ -62,3 +62,18 @@ export interface SeriesDetailData {
   drama_or_fight_total?: number;
   drama_or_fight_count?: number;
 }
+
+export type SubmissionStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+export interface SeriesSubmission {
+  id: number;
+  title: string;
+  type: SeriesType;
+  genre?: string | null;
+  author?: string | null;
+  artist?: string | null;
+  cover_url?: string | null;
+  approval_status: SubmissionStatus;
+  detail_ready: boolean;
+  created_at?: string | null;
+}

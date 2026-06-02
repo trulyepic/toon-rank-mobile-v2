@@ -82,15 +82,11 @@ npm run web
 
 ## Implementation Priorities
 
-Current priority update: Phases 1-23 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete. Phase 24 is in progress for public profiles and pinned favorites. After Phase 24, continue with Phase 25 reading-list filtering. The older Phase 10 notes below are historical and should not be treated as current work.
-
-Phases 1–9 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete. The active priority is Phase 10.
-
-1. **Forum activity screen (Phase 10b)** — wire `ForumActivityScreen` to the three `/forum/me/*` endpoints (threads, posts, votes) replacing the current static placeholder.
-2. **Series ratings on profile (Phase 10c)** — add a "Series ratings" section to `ProfileScreen` using `GET /series-details/me/votes`.
-3. **API layer additions (Phase 10a)** — `getMyForumThreads`, `getMyForumPosts`, `getMyForumVotes`, `getMySeriesVotes` are not yet in the API layer and must be added before 10b/10c.
-
-See `docs/CORE_APP_EXPERIENCE_TODO.md` Phase 10 for the full checklist.
+Current priority update: Phases 1–37 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete.
+Phase 28 (Series Submission) was done next. The violet/amber/classic theme picker was also
+added (More screen → Appearance, persisted via SecureStore). After Phase 28, continue with
+Phase 38 (discovery/compare parity) or Phase 39 (forum composer convenience — draft persistence
+and quote-reply). Phases 40 and 41 (admin issue triage and deep-link parity) follow.
 
 ## Product Identity
 

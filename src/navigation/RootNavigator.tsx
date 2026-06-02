@@ -24,6 +24,8 @@ import { AboutScreen } from "../screens/AboutScreen";
 import { HowRankingsWorkScreen } from "../screens/HowRankingsWorkScreen";
 import { NotFoundScreen } from "../screens/NotFoundScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { SubmitSeriesScreen } from "../screens/SubmitSeriesScreen";
+import { MySubmissionsScreen } from "../screens/MySubmissionsScreen";
 
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList> | undefined;
@@ -48,6 +50,8 @@ export type RootStackParamList = {
   HowRankingsWork: undefined;
   NotFound: undefined;
   Settings: undefined;
+  SubmitSeries: undefined;
+  MySubmissions: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,6 +81,8 @@ export function RootNavigator() {
       <Stack.Screen name="HowRankingsWork" component={HowRankingsWorkScreen} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="SubmitSeries" component={SubmitSeriesScreen} />
+      <Stack.Screen name="MySubmissions" component={MySubmissionsScreen} />
     </Stack.Navigator>
   );
 }
