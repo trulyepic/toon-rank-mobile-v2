@@ -1,11 +1,12 @@
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { fetchRankings } from "../api/series";
+import { getMyReadingLists } from "../api/readingLists";
 import {
   AppButton,
   AppText,
@@ -13,20 +14,22 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  SaveToListSheet,
   ScreenShell,
 } from "../components";
+import { useAuth } from "../auth/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
-import type { RankedSeries, SeriesType } from "../types/series";
+import type { RankedSeries } from "../types/series";
+import {
+  getTypeParam,
+  isSeriesInAnyList,
+  TITLE_TYPE_FILTERS,
+  type TitleTypeFilter,
+} from "../utils/seriesBrowse";
 
-const titleTypeFilters = ["All", "Manga", "Manhwa", "Manhua"] as const;
-type TitleTypeFilter = (typeof titleTypeFilters)[number];
 const HOME_RANKINGS_PAGE_SIZE = 20;
-
-function getTypeParam(filter: TitleTypeFilter): SeriesType | undefined {
-  return filter === "All" ? undefined : (filter.toUpperCase() as SeriesType);
-}
 
 /** Derive a sorted, deduplicated list of genres from all loaded rankings. */
 function deriveGenres(items: RankedSeries[]): string[] {
@@ -62,12 +65,18 @@ function HomeCard({
   selectedForCompare,
   canAddMore,
   onToggleCompare,
+  showSave,
+  saved,
+  onSave,
 }: {
   item: RankedSeries;
   onPress: () => void;
   selectedForCompare: boolean;
   canAddMore: boolean;
   onToggleCompare: () => void;
+  showSave: boolean;
+  saved: boolean;
+  onSave: () => void;
 }) {
   const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
@@ -112,21 +121,46 @@ function HomeCard({
         </View>
       </Pressable>
 
-      <AppButton
-        onPress={onToggleCompare}
-        size="sm"
-        disabled={compareDisabled}
-        selected={selectedForCompare}
-        label={selectedForCompare ? "Selected" : compareDisabled ? "Max 4" : "Compare"}
-        iconLeft={
-          <Ionicons
-            name={selectedForCompare ? "checkmark" : "git-compare-outline"}
-            size={14}
-            color={colors.text}
-          />
-        }
-        style={styles.compareButton}
-      />
+      <View style={styles.cardActions}>
+        <AppButton
+          onPress={onToggleCompare}
+          size="sm"
+          disabled={compareDisabled}
+          selected={selectedForCompare}
+          label={selectedForCompare ? "Selected" : compareDisabled ? "Max 4" : "Compare"}
+          iconLeft={
+            <Ionicons
+              name={selectedForCompare ? "checkmark" : "git-compare-outline"}
+              size={14}
+              color={colors.text}
+            />
+          }
+          style={styles.compareButton}
+        />
+        {showSave ? (
+          <Pressable
+            onPress={onSave}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              saved
+                ? `${item.title} is in a reading list. Manage lists`
+                : `Save ${item.title} to a reading list`
+            }
+            style={({ pressed }) => [
+              styles.saveIconButton,
+              saved ? styles.saveIconButtonSaved : null,
+              pressed ? styles.saveIconButtonPressed : null,
+            ]}
+          >
+            <Ionicons
+              name={saved ? "bookmark" : "bookmark-outline"}
+              size={16}
+              color={colors.accentStrong}
+            />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -135,8 +169,10 @@ export function HomeScreen() {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
+  const { isSignedIn } = useAuth();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
 
   const rankingsQuery = useInfiniteQuery({
     queryKey: ["rankings", activeType, activeGenre],
@@ -153,6 +189,12 @@ export function HomeScreen() {
   });
   const rankings = rankingsQuery.data?.pages.flat() ?? [];
   const genres = deriveGenres(rankings);
+
+  const readingListsQuery = useQuery({
+    queryKey: ["reading-lists", "me"],
+    queryFn: getMyReadingLists,
+    enabled: isSignedIn,
+  });
 
   return (
     <ScreenShell
@@ -176,7 +218,7 @@ export function HomeScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.typeRail}
       >
-        {titleTypeFilters.map((filter) => {
+        {TITLE_TYPE_FILTERS.map((filter) => {
           const selected = activeType === filter;
 
           return (
@@ -250,6 +292,9 @@ export function HomeScreen() {
             selectedForCompare={isSelected(item.id)}
             canAddMore={canAddMore}
             onToggleCompare={() => toggleCompare(item)}
+            showSave={isSignedIn}
+            saved={isSeriesInAnyList(readingListsQuery.data, item.id)}
+            onSave={() => setSaveSeriesId(item.id)}
           />
         )}
         ListEmptyComponent={
@@ -297,6 +342,14 @@ export function HomeScreen() {
           ) : null
         }
       />
+
+      {saveSeriesId != null ? (
+        <SaveToListSheet
+          seriesId={saveSeriesId}
+          visible={saveSeriesId != null}
+          onClose={() => setSaveSeriesId(null)}
+        />
+      ) : null}
     </ScreenShell>
   );
 }
@@ -431,9 +484,32 @@ function getStyles() {
       fontSize: 12,
       fontWeight: "800",
     },
-    compareButton: {
+    cardActions: {
       marginTop: spacing.xs,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    compareButton: {
       alignSelf: "flex-start",
+    },
+    saveIconButton: {
+      width: 34,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+    },
+    saveIconButtonSaved: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    saveIconButtonPressed: {
+      opacity: 0.85,
+      transform: [{ scale: 0.96 }],
     },
     posterCardPressed: {
       opacity: 0.9,

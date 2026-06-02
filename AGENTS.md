@@ -82,11 +82,16 @@ npm run web
 
 ## Implementation Priorities
 
-Current priority update: Phases 1–37 of `docs/CORE_APP_EXPERIENCE_TODO.md` are complete.
-Phase 28 (Series Submission) was done next. The violet/amber/classic theme picker was also
-added (More screen → Appearance, persisted via SecureStore). After Phase 28, continue with
-Phase 38 (discovery/compare parity) or Phase 39 (forum composer convenience — draft persistence
-and quote-reply). Phases 40 and 41 (admin issue triage and deep-link parity) follow.
+Current priority update: Phases 1–37 plus Phase 28 (Series Submission) are complete, along with the
+violet/classic/amber theme picker (More → Appearance, persisted via SecureStore). See the
+"Status Summary" section at the top of `docs/CORE_APP_EXPERIENCE_TODO.md` for the full done/blocked
+breakdown.
+
+The active enhancement sweep runs in this order: **Phase 38** (discovery/compare parity — reading-list
+quick-add on home/search cards, type-page decision) → **Phase 39** (forum composer convenience —
+draft persistence, quote-reply) → **Phase 40** (admin issue triage) → **Phase 41** (deep-link parity).
+**Phase 28.5** (admin pending titles + user role management) is deferred to much later by product
+decision — do not start it until the enhancement sweep is done.
 
 ## Product Identity
 
