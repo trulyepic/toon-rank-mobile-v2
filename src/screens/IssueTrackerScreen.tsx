@@ -1,11 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Alert, Modal, Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import { listIssues } from "../api/issues";
+import { deleteIssue, listIssues, updateIssueStatus } from "../api/issues";
+import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
   AppText,
@@ -22,6 +23,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { Issue, IssueStatus, IssueType } from "../types/issue";
 import { openInAppBrowser } from "../utils/externalLinks";
+import { canTriageIssues } from "../utils/issueAdmin";
 
 const PAGE_SIZE = 50;
 
@@ -136,8 +138,24 @@ function StatusBadge({ status }: { status: IssueStatus }) {
   );
 }
 
-function IssueCard({ issue }: { issue: Issue }) {
+function IssueCard({
+  issue,
+  isAdmin,
+  onChangeStatus,
+  onDelete,
+  isUpdating,
+  isDeleting,
+}: {
+  issue: Issue;
+  isAdmin: boolean;
+  onChangeStatus: (issue: Issue, status: IssueStatus) => void;
+  onDelete: (issue: Issue) => void;
+  isUpdating: boolean;
+  isDeleting: boolean;
+}) {
   const styles = getStyles();
+  const [statusPickerVisible, setStatusPickerVisible] = useState(false);
+
   return (
     <Surface variant="raised" radius="xl" style={styles.issueCard}>
       <View style={styles.issueHeader}>
@@ -173,6 +191,77 @@ function IssueCard({ issue }: { issue: Issue }) {
           </AppText>
         </Pressable>
       ) : null}
+
+      {isAdmin ? (
+        <View style={styles.adminRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Change status for ${issue.title}`}
+            disabled={isUpdating || isDeleting}
+            onPress={() => setStatusPickerVisible(true)}
+            style={({ pressed }) => [
+              styles.adminButton,
+              pressed ? styles.pressed : null,
+              isUpdating || isDeleting ? styles.adminButtonDisabled : null,
+            ]}
+          >
+            <Ionicons name="swap-horizontal-outline" size={15} color={colors.text} />
+            <AppText variant="caption">
+              {isUpdating ? "Updating…" : "Change status"}
+            </AppText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${issue.title}`}
+            disabled={isUpdating || isDeleting}
+            onPress={() => onDelete(issue)}
+            style={({ pressed }) => [
+              styles.adminButton,
+              styles.adminDeleteButton,
+              pressed ? styles.pressed : null,
+              isUpdating || isDeleting ? styles.adminButtonDisabled : null,
+            ]}
+          >
+            <Ionicons name="trash-outline" size={15} color={colors.danger} />
+            <AppText variant="caption" tone="danger">
+              {isDeleting ? "Deleting…" : "Delete"}
+            </AppText>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <Modal transparent visible={statusPickerVisible} animationType="fade">
+        <Pressable
+          style={styles.pickerBackdrop}
+          onPress={() => setStatusPickerVisible(false)}
+        />
+        <View style={styles.pickerSheet}>
+          <AppText variant="cardTitle" style={styles.pickerTitle}>
+            Set status
+          </AppText>
+          {statusOptions.map((option) => {
+            const active = option.value === issue.status;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => {
+                  setStatusPickerVisible(false);
+                  if (!active) onChangeStatus(issue, option.value);
+                }}
+                style={({ pressed }) => [
+                  styles.pickerRow,
+                  pressed ? styles.pressed : null,
+                ]}
+              >
+                <AppText tone={active ? "accent" : "primary"}>{option.label}</AppText>
+                {active ? (
+                  <Ionicons name="checkmark" size={18} color={colors.accentStrong} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </Modal>
     </Surface>
   );
 }
@@ -180,6 +269,9 @@ function IssueCard({ issue }: { issue: Issue }) {
 export function IssueTrackerScreen() {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = canTriageIssues(user?.role);
   const [statusFilter, setStatusFilter] = useState<IssueStatus | undefined>();
   const [typeFilter, setTypeFilter] = useState<IssueType | undefined>();
   const [search, setSearch] = useState("");
@@ -189,6 +281,48 @@ export function IssueTrackerScreen() {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: IssueStatus }) =>
+      updateIssueStatus(id, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["issues"] });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Status not updated",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteIssue(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["issues"] });
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Issue not deleted",
+        error instanceof Error ? error.message : "Try again in a moment.",
+      );
+    },
+  });
+
+  const handleChangeStatus = (issue: Issue, status: IssueStatus) => {
+    statusMutation.mutate({ id: issue.id, status });
+  };
+
+  const handleDelete = (issue: Issue) => {
+    Alert.alert("Delete issue?", `"${issue.title}" will be permanently removed.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteMutation.mutate(issue.id),
+      },
+    ]);
+  };
 
   const issuesQuery = useInfiniteQuery({
     queryKey: ["issues", debouncedSearch, statusFilter, typeFilter],
@@ -342,7 +476,19 @@ export function IssueTrackerScreen() {
 
         <View style={styles.issueStack}>
           {issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
+            <IssueCard
+              key={issue.id}
+              issue={issue}
+              isAdmin={isAdmin}
+              onChangeStatus={handleChangeStatus}
+              onDelete={handleDelete}
+              isUpdating={
+                statusMutation.isPending && statusMutation.variables?.id === issue.id
+              }
+              isDeleting={
+                deleteMutation.isPending && deleteMutation.variables === issue.id
+              }
+            />
           ))}
         </View>
 
@@ -473,6 +619,59 @@ function getStyles() {
     pressed: {
       opacity: 0.88,
       transform: [{ scale: 0.99 }],
+    },
+    adminRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSoft,
+      paddingTop: spacing.sm,
+    },
+    adminButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surface,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    adminDeleteButton: {
+      borderColor: colors.danger,
+    },
+    adminButtonDisabled: {
+      opacity: 0.5,
+    },
+    pickerBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+    },
+    pickerSheet: {
+      position: "absolute",
+      left: spacing.lg,
+      right: spacing.lg,
+      top: "35%",
+      gap: spacing.xs,
+      borderRadius: radii.xl,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      padding: spacing.md,
+    },
+    pickerTitle: {
+      marginBottom: spacing.xs,
+    },
+    pickerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radii.md,
     },
   });
 }
