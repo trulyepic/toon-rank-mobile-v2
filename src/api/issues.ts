@@ -1,6 +1,15 @@
 import { api } from "./client";
 import type { Issue, IssueStatus, IssueType, ReportIssueRequest } from "../types/issue";
 
+export async function updateIssueStatus(id: number, status: IssueStatus) {
+  const res = await api.patch<Issue>(`/issues/${id}/status`, { status });
+  return res.data;
+}
+
+export async function deleteIssue(id: number) {
+  await api.delete(`/issues/${id}`);
+}
+
 export type ListIssuesParams = {
   q?: string;
   type?: IssueType;

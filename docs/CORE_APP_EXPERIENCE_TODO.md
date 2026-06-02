@@ -82,7 +82,7 @@ deferred to much later** by product decision.
 | -------- | --------------------------------------------------------------------------------- | -------- |
 | **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done  |
 | **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done  |
-| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned  |
+| **40**   | Admin issue triage controls (status change + delete)                              | ✅ Done  |
 | **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned  |
 | **28.5** | Admin pending titles review + user role management                                | Deferred |
 
@@ -2746,16 +2746,24 @@ The website `/issues` page is public for viewing, and admins can update issue st
 
 - [x] Mobile already has `ReportIssueScreen` and issue submission API coverage.
 - [x] Mobile has the public read-only issue tracker screen from Phase 26.
-- [ ] Mobile does not yet have admin issue triage controls.
+- [x] Mobile now has admin issue triage controls (status change + delete) on `IssueTrackerScreen`.
 - [x] This phase should not start until Phase 26 exists, unless the product decision changes.
 
 ### Work items
 
-- [ ] Re-audit web `IssuesPage` and backend issue endpoints before changing mobile.
-- [ ] After Phase 26 is implemented, decide whether mobile admins should be able to triage issues in-app or whether this remains a desktop-only admin workflow.
-- [ ] If enabled, add admin-only controls for status update and delete.
-- [ ] If deferred, document the reason clearly in Phase 26 and this phase so future agents do not rediscover the same gap.
-- [ ] Add tests for role-gated visibility if admin controls are implemented.
+- [x] Re-audit web `IssuesPage` and backend issue endpoints. Backend exposes
+      `PATCH /issues/{id}/status` (`{ status }`) and `DELETE /issues/{id}` — already used by the web.
+- [x] **Decision (June 2026): mobile admins CAN triage issues in-app.** The backend endpoints were
+      already live and this mirrors the Phase 32 admin report-queue precedent, so the gap was worth
+      closing rather than staying desktop-only.
+- [x] Added admin-only controls for status update and delete:
+  - `updateIssueStatus(id, status)` and `deleteIssue(id)` added to `src/api/issues.ts`.
+  - On `IssueTrackerScreen`, admin users see a "Change status" action (opens a status picker:
+    Open / In Progress / Resolved / Won't Fix) and a "Delete" action (destructive confirm) per
+    issue card. Mutations invalidate `["issues"]`; per-card pending states shown.
+  - Non-admins and signed-out users see the tracker unchanged (read-only).
+- [x] Add tests for role-gated visibility: `canTriageIssues(role)` helper in
+      `src/utils/issueAdmin.ts`, covered by `src/utils/issueAdmin.test.ts`.
 
 ### Emulator test steps
 

@@ -90,9 +90,10 @@ breakdown.
 
 The active enhancement sweep runs in this order: **Phase 38** ✅ (discovery/compare parity) →
 **Phase 39** ✅ (forum composer convenience — draft persistence, quote-reply, docked composer, and
-reading-list insertion all shipped) → **Phase 40** (admin issue triage) → **Phase 41** (deep-link
-parity). **Phase 28.5** (admin pending titles + user role management) is deferred to much later by
-product decision — do not start it until the enhancement sweep is done.
+reading-list insertion all shipped) → **Phase 40** ✅ (admin issue triage — status change + delete
+on `IssueTrackerScreen`, admin-only) → **Phase 41** (deep-link parity — focused `toonranks://`
+scheme slice next). **Phase 28.5** (admin pending titles + user role management) is deferred to much
+later by product decision — do not start it until the enhancement sweep is done.
 
 Forum composer drafts use `useForumDraft` (`src/hooks/useForumDraft.ts`) backed by AsyncStorage,
 with pure key/empty helpers in `src/utils/forumDrafts.ts`.
