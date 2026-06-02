@@ -1636,7 +1636,10 @@ export function ForumThreadScreen() {
         disabled={replyMutation.isPending}
         onRemove={() => setReplyAttachment(null)}
       />
-      <View style={styles.composerActions}>
+      <View style={styles.dockedActionsRow}>
+        <AppText variant="caption" tone="subtle" style={styles.dockedHint}>
+          Markdown supported · @ to mention a user or series
+        </AppText>
         <AppButton
           label={replyMutation.isPending ? "Posting..." : "Post reply"}
           disabled={!canSubmitReply}
@@ -2425,6 +2428,16 @@ function getStyles() {
     },
     dockedComposer: {
       gap: spacing.sm,
+    },
+    dockedActionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    dockedHint: {
+      flex: 1,
+      minWidth: 0,
     },
     dockedHeaderRight: {
       flexDirection: "row",
