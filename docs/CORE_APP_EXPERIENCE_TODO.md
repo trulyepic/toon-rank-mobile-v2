@@ -81,7 +81,7 @@ deferred to much later** by product decision.
 | Phase    | What it adds                                                                      | Status      |
 | -------- | --------------------------------------------------------------------------------- | ----------- |
 | **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done     |
-| **39**   | Draft persistence (done); quote-reply, reading-list insertion, keyboard polish    | In progress |
+| **39**   | Draft persistence + quote-reply (done); reading-list insertion, keyboard polish   | In progress |
 | **40**   | Admin issue triage controls (currently read-only by design)                       | Planned     |
 | **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned     |
 | **28.5** | Admin pending titles review + user role management                                | Deferred    |
@@ -2693,18 +2693,23 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
       `replyDraftKey(threadId, …)`; cleared on successful post.) Note: the mobile thread view uses a
       single shared reply composer, so the draft is scoped per thread (root slot) rather than per
       individual parent post — this matches the shared-composer UX.
-- [ ] **Quote-reply:** The web shipped a "Quote" button on each post/reply action row that inserts a
-      blockquote attribution (`> **@author** wrote:\n> {excerpt}`) and pre-fills the reply composer,
-      threading the reply under the quoted post via `quoteParentId`. Add:
-  - A "Quote" action button in each post/reply action row (alongside the existing reply button),
-    visible to signed-in users.
-  - On tap: build the blockquote markdown string from the post author and first ~200 chars of body;
-    pre-fill the relevant composer (inline reply if in a thread, main composer if quoting the OP).
-  - Pass `quoteParentId` (the quoted post's id) so the backend threads it correctly.
-  - Auto-scroll to and focus the composer after inserting the quote text.
+- [x] **Quote-reply (shipped on branch `mobile-forum-quote-reply`):** A "Quote" button sits next to
+      "Reply" in every post/reply action row (signed-in users only). Tapping it builds a blockquote
+      attribution (`> **@author** wrote:\n> {≤200-char plain-text excerpt}`) via
+      `buildQuoteMarkdown` (`src/utils/forumQuote.ts`), prepends it to the reply composer (preserving
+      any in-progress draft below it), sets the reply target so the post threads under the quoted
+      post via the existing `parent_id` mechanism, and the inline composer now `autoFocus`es so the
+      keyboard opens and the field scrolls into view. Works for both the original post and nested
+      replies. Covered by `src/utils/forumQuote.test.ts`.
 - [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
 - [x] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
-- [ ] Keep the keyboard visible and the text box in view while using autocomplete, toolbar actions, and image/list pickers.
+- [x] Keep the composer visible above the keyboard. **Solved via a docked composer (branch
+      `mobile-forum-quote-reply`):** the reply box is now pinned to the bottom of the screen (a
+      `stickyFooter` on `ScreenShell`, rendered inside the `KeyboardAvoidingView` outside the scroll),
+      so post length can never push it under the keyboard. It uses the standard mobile pattern — a
+      compact "Write a reply…" bar that expands into the full composer (toolbar, mention
+      autocomplete, attachment, send) above the keyboard, with a "Replying to @author ✕" context
+      chip and a collapse chevron. The old inline-under-post composer was removed.
 - [x] Add tests for draft key/clear logic (`src/utils/forumDrafts.test.ts` — key scoping per
       thread/parent and empty-draft detection that drives the remove-on-clear behavior). Reading-list
       insertion formatting tests will land with that follow-up slice.

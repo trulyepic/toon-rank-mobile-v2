@@ -16,9 +16,22 @@ type Props = PropsWithChildren<{
   subtitle?: string;
   rightSlot?: ReactNode;
   scrollRef?: RefObject<ScrollView | null>;
+  /**
+   * Optional content docked below the scroll view, inside the keyboard-avoiding
+   * container — i.e. pinned to the bottom of the screen above the keyboard.
+   * Use for a reply/compose bar that must never be hidden by the keyboard.
+   */
+  stickyFooter?: ReactNode;
 }>;
 
-export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }: Props) {
+export function ScreenShell({
+  title,
+  subtitle,
+  rightSlot,
+  children,
+  scrollRef,
+  stickyFooter,
+}: Props) {
   const styles = StyleSheet.create({
     safe: {
       flex: 1,
@@ -43,6 +56,14 @@ export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }:
       flex: 1,
       gap: spacing.xs,
     },
+    footer: {
+      borderTopWidth: 1,
+      borderTopColor: colors.borderSoft,
+      backgroundColor: colors.background,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
   });
 
   return (
@@ -66,6 +87,7 @@ export function ScreenShell({ title, subtitle, rightSlot, children, scrollRef }:
           </View>
           {children}
         </ScrollView>
+        {stickyFooter ? <View style={styles.footer}>{stickyFooter}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

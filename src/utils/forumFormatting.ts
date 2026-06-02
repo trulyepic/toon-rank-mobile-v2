@@ -29,9 +29,16 @@ export function previewMarkdown(content: string, maxLength = 180) {
 }
 
 export function plainTextMarkdown(content: string) {
-  return content
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/[#>*_`[\]()]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    content
+      .replace(/```[\s\S]*?```/g, " ")
+      // Drop image markdown entirely (e.g. ![alt](url)).
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+      // Reduce links/series references to their label text only, so the link
+      // target (e.g. "series:209") does not leak into the plain-text preview.
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/[#>*_`[\]()]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
