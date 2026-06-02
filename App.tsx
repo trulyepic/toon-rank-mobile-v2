@@ -1,6 +1,5 @@
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
-import type { LinkingOptions } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useCallback, useEffect, useState } from "react";
@@ -8,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AuthProvider } from "./src/auth/AuthContext";
 import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import type { RootStackParamList } from "./src/navigation/RootNavigator";
+import { linking } from "./src/navigation/linking";
 import { applyTheme, colors, DEFAULT_THEME, type ThemeName } from "./src/theme/tokens";
 import { ThemeProvider } from "./src/theme/ThemeContext";
 import { configureGoogleSignIn } from "./src/utils/googleSignInNative";
@@ -16,15 +15,6 @@ import * as SecureStore from "expo-secure-store";
 
 const THEME_KEY = "toonranks_theme";
 const queryClient = new QueryClient();
-
-const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ["toonranks://"],
-  config: {
-    screens: {
-      PublicReadingList: "lists/:token",
-    },
-  },
-};
 
 function AppInner({ navKey }: { navKey: number }) {
   const navTheme = {

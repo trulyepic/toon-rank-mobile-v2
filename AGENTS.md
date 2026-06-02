@@ -91,9 +91,16 @@ breakdown.
 The active enhancement sweep runs in this order: **Phase 38** ✅ (discovery/compare parity) →
 **Phase 39** ✅ (forum composer convenience — draft persistence, quote-reply, docked composer, and
 reading-list insertion all shipped) → **Phase 40** ✅ (admin issue triage — status change + delete
-on `IssueTrackerScreen`, admin-only) → **Phase 41** (deep-link parity — focused `toonranks://`
-scheme slice next). **Phase 28.5** (admin pending titles + user role management) is deferred to much
-later by product decision — do not start it until the enhancement sweep is done.
+on `IssueTrackerScreen`, admin-only) → **Phase 41** ✅ (deep-link parity — `toonranks://` scheme
+links for existing screens + NotFound fallback in `src/navigation/linking.ts`; Universal Links and
+the reset-password/verify email deep links deferred to **Phase 16**, which needs a store-live signed
+build). **Phase 28.5** (admin pending titles + user role management) is deferred to much later by
+product decision.
+
+With the enhancement sweep (38–41) complete, the remaining open work is store-launch-gated:
+**Phase 16** (mobile email-verification + reset-password deep links, needs Universal/App Links) and
+**Phase 28.5** (admin pending titles + role management, deferred by product). See the Status Summary
+at the top of `docs/CORE_APP_EXPERIENCE_TODO.md`.
 
 Forum composer drafts use `useForumDraft` (`src/hooks/useForumDraft.ts`) backed by AsyncStorage,
 with pure key/empty helpers in `src/utils/forumDrafts.ts`.
