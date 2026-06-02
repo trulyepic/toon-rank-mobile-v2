@@ -78,13 +78,13 @@ loading/error/empty states:
 These are being worked next, in order. **Phase 28.5 (admin pending titles + role management) is
 deferred to much later** by product decision.
 
-| Phase    | What it adds                                                                      | Status   |
-| -------- | --------------------------------------------------------------------------------- | -------- |
-| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done  |
-| **39**   | Forum draft persistence, quote-reply button, reading-list insertion in composer   | Next     |
-| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned  |
-| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned  |
-| **28.5** | Admin pending titles review + user role management                                | Deferred |
+| Phase    | What it adds                                                                      | Status      |
+| -------- | --------------------------------------------------------------------------------- | ----------- |
+| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done     |
+| **39**   | Draft persistence (done); quote-reply, reading-list insertion, keyboard polish    | In progress |
+| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned     |
+| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned     |
+| **28.5** | Admin pending titles review + user role management                                | Deferred    |
 
 ### Minor open items inside core phases
 
@@ -2668,15 +2668,31 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
 - [x] Forum image/GIF rendering exists for posts after the media rendering pass.
 - [x] Posting, nested replies, and up/down votes exist when signed in.
 - [x] Compact markdown toolbar actions exist in new-thread, main reply, and inline reply composers.
-- [ ] Draft persistence is not implemented for new threads or replies.
+- [x] Draft persistence is implemented for new threads and replies (AsyncStorage-backed).
 - [ ] Reading-list insertion is not implemented in mobile forum composers.
 - [ ] User mention autocomplete is tracked separately in Phase 35 and should not be duplicated here.
+
+> **Scope note (June 2026):** Phase 39 is being delivered in slices. **This branch
+> (`mobile-forum-composer-convenience`) ships draft persistence only.** Quote-reply,
+> reading-list insertion, and keyboard-visibility polish are tracked as follow-up branches below.
+
+> **Storage decision:** Drafts use `@react-native-async-storage/async-storage` (added this phase) —
+> the standard mobile-forum approach. Drafts survive accidental navigation, app backgrounding, and a
+> full app restart. `expo-secure-store` was rejected for drafts (it is for secrets and has a ~2 KB
+> per-key Android limit that forum bodies can exceed). Writes are debounced (500 ms) and flushed on
+> unmount; empty drafts are removed rather than stored.
 
 ### Work items
 
 - [x] Re-audit web `RichReplyEditor` before implementing this phase.
-- [ ] Persist unsent new-thread drafts locally by forum context.
-- [ ] Persist unsent reply drafts locally by thread and parent post, so accidental navigation or app backgrounding does not erase a reply.
+- [x] Persist unsent new-thread drafts locally by forum context. (`ForumCreateThreadScreen` now uses
+      `useForumDraft` with `newThreadDraftKey()`; persists title, body, and category; cleared on
+      successful create.)
+- [x] Persist unsent reply drafts locally so accidental navigation, app backgrounding, or restart
+      does not erase a reply. (`ForumThreadScreen` reply composer is backed by `useForumDraft` with
+      `replyDraftKey(threadId, …)`; cleared on successful post.) Note: the mobile thread view uses a
+      single shared reply composer, so the draft is scoped per thread (root slot) rather than per
+      individual parent post — this matches the shared-composer UX.
 - [ ] **Quote-reply:** The web shipped a "Quote" button on each post/reply action row that inserts a
       blockquote attribution (`> **@author** wrote:\n> {excerpt}`) and pre-fills the reply composer,
       threading the reply under the quoted post via `quoteParentId`. Add:
@@ -2689,7 +2705,9 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
 - [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
 - [x] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
 - [ ] Keep the keyboard visible and the text box in view while using autocomplete, toolbar actions, and image/list pickers.
-- [ ] Add tests for draft restore/clear behavior and reading-list insertion formatting.
+- [x] Add tests for draft key/clear logic (`src/utils/forumDrafts.test.ts` — key scoping per
+      thread/parent and empty-draft detection that drives the remove-on-clear behavior). Reading-list
+      insertion formatting tests will land with that follow-up slice.
 
 ### Emulator test steps
 

@@ -90,6 +90,12 @@ import {
   type ForumTextSelection,
 } from "../utils/forumComposerFormatting";
 import { rankForUsername, useTopRankMap } from "../hooks/useTopRankMap";
+import { useForumDraft } from "../hooks/useForumDraft";
+import {
+  EMPTY_REPLY_DRAFT,
+  isReplyDraftEmpty,
+  replyDraftKey,
+} from "../utils/forumDrafts";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -721,7 +727,20 @@ export function ForumThreadScreen() {
   const { isSignedIn, user } = useAuth();
   const topRankMap = useTopRankMap();
   const isAdmin = user?.role === "ADMIN";
-  const [replyText, setReplyText] = useState("");
+  const {
+    draft: replyDraft,
+    setDraft: setReplyDraft,
+    clearDraft: clearReplyDraft,
+  } = useForumDraft(
+    replyDraftKey(route.params.threadId, null),
+    EMPTY_REPLY_DRAFT,
+    isReplyDraftEmpty,
+  );
+  const replyText = replyDraft.body;
+  const setReplyText = (updater: string | ((prev: string) => string)) =>
+    setReplyDraft((d) => ({
+      body: typeof updater === "function" ? updater(d.body) : updater,
+    }));
   const [replySelection, setReplySelection] = useState<ForumTextSelection>({
     start: 0,
     end: 0,
@@ -825,7 +844,7 @@ export function ForumThreadScreen() {
           }),
         ),
     onSuccess: async (createdPost) => {
-      setReplyText("");
+      clearReplyDraft();
       setReplySelection({ start: 0, end: 0 });
       setReplyAttachment(null);
       setReplyTarget(null);

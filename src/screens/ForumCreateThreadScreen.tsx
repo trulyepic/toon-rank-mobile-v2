@@ -49,6 +49,12 @@ import {
   type ForumTextSelection,
 } from "../utils/forumComposerFormatting";
 import { validateForumThreadDraft } from "../utils/forumValidation";
+import {
+  EMPTY_THREAD_DRAFT,
+  isThreadDraftEmpty,
+  newThreadDraftKey,
+} from "../utils/forumDrafts";
+import { useForumDraft } from "../hooks/useForumDraft";
 
 type CreateThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -61,9 +67,20 @@ export function ForumCreateThreadScreen() {
   const queryClient = useQueryClient();
   const { isSignedIn, status } = useAuth();
   const bodyInputRef = useRef<TextInput | null>(null);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const { draft, setDraft, clearDraft } = useForumDraft(
+    newThreadDraftKey(),
+    EMPTY_THREAD_DRAFT,
+    isThreadDraftEmpty,
+  );
+  const { title, body, categoryId: selectedCategoryId } = draft;
+  const setTitle = (value: string) => setDraft((d) => ({ ...d, title: value }));
+  const setBody = (updater: string | ((prev: string) => string)) =>
+    setDraft((d) => ({
+      ...d,
+      body: typeof updater === "function" ? updater(d.body) : updater,
+    }));
+  const setSelectedCategoryId = (value: number | null) =>
+    setDraft((d) => ({ ...d, categoryId: value }));
   const [bodySelection, setBodySelection] = useState<ForumTextSelection>({
     start: 0,
     end: 0,
@@ -114,8 +131,7 @@ export function ForumCreateThreadScreen() {
       setValidationMessage(null);
     },
     onSuccess: (thread) => {
-      setTitle("");
-      setBody("");
+      clearDraft();
       setAttachment(null);
       void queryClient.invalidateQueries({ queryKey: ["forum", "threads"] });
       void queryClient.invalidateQueries({ queryKey: ["forum", "categories"] });
