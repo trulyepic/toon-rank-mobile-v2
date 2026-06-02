@@ -279,6 +279,21 @@ export function MoreScreen() {
         </View>
       </View>
 
+      {isSignedIn && (user?.role === "CONTRIBUTOR" || user?.role === "ADMIN") ? (
+        <View style={styles.section}>
+          <SectionHeader title="Contributor" />
+          <View style={styles.rowStack}>
+            <MenuRow
+              icon="documents-outline"
+              iconColor="#8b5cf6"
+              title="My Submissions"
+              subtitle="Series you've submitted for ranking consideration."
+              onPress={() => navigation.navigate("MySubmissions")}
+            />
+          </View>
+        </View>
+      ) : null}
+
       {isSignedIn && user?.role === "ADMIN" ? (
         <View style={styles.section}>
           <SectionHeader title="Admin tools" />

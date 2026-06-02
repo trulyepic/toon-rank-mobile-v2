@@ -1667,41 +1667,49 @@ utility checks for this. Regular members (`GENERAL` role) cannot submit.
 
 **28a — Series submission form**
 
-- [ ] Create `src/screens/SubmitSeriesScreen.tsx` (Contributor/Admin only — show
-      `AccountRequiredCard` or a "Contributor access required" card if the signed-in user is `GENERAL`
-      role).
-- [ ] Form fields: Title (required), Type selector (Manhwa/Manga/Manhua), Genre (required), Author
-      (optional), Artist (optional), Cover image (required — use `ImagePicker`, then upload as
+- [x] Create `src/screens/SubmitSeriesScreen.tsx` (Contributor/Admin only — shows
+      "Contributor access required" card for GENERAL users).
+- [x] Form fields: Title (required), Type selector (Manhwa/Manga/Manhua), Genre (required), Author
+      (optional), Artist (optional), Cover image (required — `ImagePicker` 2:3 crop, uploaded as
       multipart to `POST /series/`).
-- [ ] On submit, show progress while uploading the cover image. On success, navigate to
-      `MySubmissionsScreen` and show a success toast.
-- [ ] On failure, show the backend error (e.g., duplicate title, invalid type).
+- [x] On submit, shows `ActivityIndicator` while uploading. On success, navigates to
+      `MySubmissionsScreen` via `navigation.replace`.
+- [x] On failure, shows the backend error inline above the form.
 
 **28b — My Submissions screen**
 
-- [ ] Create `src/screens/MySubmissionsScreen.tsx`
-- [ ] Fetch `GET /series/submissions/mine`. Show a card per submission with: cover thumbnail, title,
-      type badge, status badge (`Awaiting approval` / `Approved`), and `detail_ready` readiness chip.
-- [ ] If `detail_ready` is false and not yet approved, show a prompt: "Open the title page to add
-      synopsis and secondary cover before admin review."
-- [ ] Tapping a submission navigates to `SeriesDetailScreen` for that series.
-- [ ] Empty state: "You haven't submitted any titles yet."
+- [x] Create `src/screens/MySubmissionsScreen.tsx`
+- [x] Fetches `GET /series/submissions/mine` via `useQuery`. Shows a card per submission with:
+      cover thumbnail (`CoverImage`), title, type chip, status chip
+      (`Awaiting approval` / `Approved` / `Rejected`), and `detail_ready` readiness row.
+- [x] If `detail_ready` is false and `PENDING_REVIEW`, shows prompt to open the title page and add
+      synopsis/secondary cover before admin review.
+- [x] Tapping a submission navigates to `SeriesDetailScreen` for that series.
+- [x] Loading, error, and empty states.
 
 **28c — Navigation**
 
-- [ ] Add `SubmitSeries: undefined` and `MySubmissions: undefined` to `RootStackParamList` and
-      register both screens.
-- [ ] Add a "My Submissions" entry to `MoreScreen` (only visible when `user.role === "CONTRIBUTOR"`
-      or `"ADMIN"`), with a "Submit a Title" button inside `MySubmissionsScreen`.
+- [x] Add `SubmitSeries: undefined` and `MySubmissions: undefined` to `RootStackParamList` and
+      register both screens in `RootNavigator.tsx`.
+- [x] Add a "My Submissions" entry to `MoreScreen` under a "Contributor" section (visible only when
+      `user.role === "CONTRIBUTOR"` or `"ADMIN"`); "Submit a Title" button is inside
+      `MySubmissionsScreen`.
+
+**28a.api — API additions (done alongside 28a/28b)**
+
+- [x] Add `SeriesSubmission` and `SubmissionStatus` types to `src/types/series.ts`
+- [x] Add `submitSeries(payload)` → `POST /series/` (multipart) to `src/api/series.ts`
+- [x] Add `getMySubmissions()` → `GET /series/submissions/mine` to `src/api/series.ts`
 
 **28d — Emulator test steps**
 
 1. Sign in as a GENERAL user — confirm "My Submissions" does not appear in MoreScreen.
-2. Sign in as a Contributor — confirm "My Submissions" appears.
-3. Tap "Submit a Title" — fill in the form, attach a cover image — confirm the series is created
-   and appears in the submissions list with `detail_ready = false`.
+2. Sign in as a Contributor — confirm "My Submissions" appears under the Contributor section.
+3. Tap "Submit a Title" — fill in title, type, genre, attach a cover image — confirm the series is
+   created and the screen navigates to My Submissions showing the new card with `Awaiting approval`.
 4. Tap the submission card — confirm it navigates to the series detail page.
-5. Sign in as Admin — confirm the same screens are accessible.
+5. Confirm a `detail_ready = false` card shows the synopsis/secondary cover prompt.
+6. Sign in as Admin — confirm the same screens are accessible.
 
 Done means Contributor and Admin users can submit new series for the rankings and track their
 submission status from the mobile app.
