@@ -53,6 +53,7 @@ import {
   ForumMentionSuggestions,
   ForumMarkdown,
   ForumSeriesStrip,
+  InsertReadingListSheet,
   LoadingState,
   RankerBadge,
   RoleNameText,
@@ -97,6 +98,8 @@ import {
   replyDraftKey,
 } from "../utils/forumDrafts";
 import { buildQuoteMarkdown } from "../utils/forumQuote";
+import { buildReadingListRef } from "../utils/forumReadingListRef";
+import type { ReadingList } from "../types/readingList";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -661,6 +664,7 @@ export function ForumThreadScreen() {
   );
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const [composerExpanded, setComposerExpanded] = useState(false);
+  const [insertListVisible, setInsertListVisible] = useState(false);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [isEditingThread, setIsEditingThread] = useState(false);
@@ -1508,6 +1512,22 @@ export function ForumThreadScreen() {
     const picked = await pickForumMediaAttachment();
     if (picked) setReplyAttachment(picked);
   };
+  const handleInsertReadingList = (list: ReadingList) => {
+    const ref = buildReadingListRef(list.name, list.share_token);
+    setReplyText((current) => {
+      const { start, end } = replySelection;
+      const next = `${current.slice(0, start)}${ref}${current.slice(end)}`.slice(
+        0,
+        REPLY_MAX_LENGTH,
+      );
+      const caret = Math.min(start + ref.length, next.length);
+      setReplySelection({ start: caret, end: caret });
+      return next;
+    });
+    setInsertListVisible(false);
+    requestAnimationFrame(() => replyInputRef.current?.focus());
+  };
+
   const handleFormatReply = (action: ForumFormatAction) => {
     const formatted = applyForumFormat(replyText, replySelection, action);
     const nextReply = formatted.text.slice(0, REPLY_MAX_LENGTH);
@@ -1615,6 +1635,7 @@ export function ForumThreadScreen() {
         disabled={replyMutation.isPending}
         onFormat={handleFormatReply}
         onPickAttachment={handlePickReplyAttachment}
+        onInsertList={() => setInsertListVisible(true)}
       />
       <TextInput
         ref={replyInputRef}
@@ -2317,6 +2338,12 @@ export function ForumThreadScreen() {
           </Surface>
         </View>
       </Modal>
+
+      <InsertReadingListSheet
+        visible={insertListVisible}
+        onClose={() => setInsertListVisible(false)}
+        onInsert={handleInsertReadingList}
+      />
     </ScreenShell>
   );
 }

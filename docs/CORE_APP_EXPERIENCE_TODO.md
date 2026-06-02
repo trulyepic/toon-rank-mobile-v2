@@ -78,13 +78,13 @@ loading/error/empty states:
 These are being worked next, in order. **Phase 28.5 (admin pending titles + role management) is
 deferred to much later** by product decision.
 
-| Phase    | What it adds                                                                      | Status      |
-| -------- | --------------------------------------------------------------------------------- | ----------- |
-| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done     |
-| **39**   | Draft persistence + quote-reply (done); reading-list insertion, keyboard polish   | In progress |
-| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned     |
-| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned     |
-| **28.5** | Admin pending titles review + user role management                                | Deferred    |
+| Phase    | What it adds                                                                      | Status   |
+| -------- | --------------------------------------------------------------------------------- | -------- |
+| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done  |
+| **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done  |
+| **40**   | Admin issue triage controls (currently read-only by design)                       | Planned  |
+| **41**   | Deep-link handling for more routes (series, threads, profiles, reset-password)    | Planned  |
+| **28.5** | Admin pending titles review + user role management                                | Deferred |
 
 ### Minor open items inside core phases
 
@@ -2669,7 +2669,7 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
 - [x] Posting, nested replies, and up/down votes exist when signed in.
 - [x] Compact markdown toolbar actions exist in new-thread, main reply, and inline reply composers.
 - [x] Draft persistence is implemented for new threads and replies (AsyncStorage-backed).
-- [ ] Reading-list insertion is not implemented in mobile forum composers.
+- [x] Reading-list insertion is implemented in both mobile forum composers (toolbar "List" action).
 - [ ] User mention autocomplete is tracked separately in Phase 35 and should not be duplicated here.
 
 > **Scope note (June 2026):** Phase 39 is being delivered in slices. **This branch
@@ -2701,7 +2701,13 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
       post via the existing `parent_id` mechanism, and the inline composer now `autoFocus`es so the
       keyboard opens and the field scrolls into view. Works for both the original post and nested
       replies. Covered by `src/utils/forumQuote.test.ts`.
-- [ ] Add a mobile-friendly reading-list insertion flow that lets users attach or insert one of their public reading lists into a post.
+- [x] Add a mobile-friendly reading-list insertion flow (branch `mobile-forum-reading-list-insert`).
+      A "List" toolbar action opens `InsertReadingListSheet`, which lists the user's **public**
+      reading lists (only public lists with a share token are shareable, matching the web composer).
+      Selecting one inserts `[List name](/lists/{share_token})` at the caret via `buildReadingListRef`
+      in both the new-thread and reply composers. `ForumMarkdown` was extended to recognise
+      `/lists/{token}` links and render them as a tappable pill that opens `PublicReadingList` — so
+      reading-list references created on mobile or the web now render and route correctly on mobile.
 - [x] Add compact markdown toolbar actions that are useful on mobile: bold, italic, list, spoiler/details, image/GIF, and series/user mention entry points.
 - [x] Keep the composer visible above the keyboard. **Solved via a docked composer (branch
       `mobile-forum-quote-reply`):** the reply box is now pinned to the bottom of the screen (a
@@ -2711,8 +2717,8 @@ Mobile already has or has TODO coverage for the major pieces. This phase is for 
       autocomplete, attachment, send) above the keyboard, with a "Replying to @author ✕" context
       chip and a collapse chevron. The old inline-under-post composer was removed.
 - [x] Add tests for draft key/clear logic (`src/utils/forumDrafts.test.ts` — key scoping per
-      thread/parent and empty-draft detection that drives the remove-on-clear behavior). Reading-list
-      insertion formatting tests will land with that follow-up slice.
+      thread/parent and empty-draft detection that drives the remove-on-clear behavior) and
+      reading-list insertion formatting (`src/utils/forumReadingListRef.test.ts`).
 
 ### Emulator test steps
 

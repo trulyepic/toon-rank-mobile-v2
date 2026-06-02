@@ -26,11 +26,12 @@ type Segment =
   | { kind: "text"; value: string }
   | { kind: "image"; alt: string; url: string }
   | { kind: "series"; label: string; seriesId: number }
+  | { kind: "readingList"; label: string; token: string }
   | { kind: "link"; label: string; url: string }
   | { kind: "spoiler"; summary: string; body: string };
 
 const tokenPattern =
-  /<details\b[^>]*>\s*<summary\b[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>|<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>|!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((series:\s*\d+|\/series\/\d+(?:[?#][^)]+)?|https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s<>()]+)?)/gi;
+  /<details\b[^>]*>\s*<summary\b[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>|<img\b[^>]*\bsrc=["'](https?:\/\/[^"']+)["'][^>]*>|!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((series:\s*\d+|\/series\/\d+(?:[?#][^)]+)?|\/lists\/[A-Za-z0-9_-]+|https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<>()]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s<>()]+)?)/gi;
 
 function parseMarkdown(markdown: string): Segment[] {
   const segments: Segment[] = [];
@@ -58,6 +59,7 @@ function parseMarkdown(markdown: string): Segment[] {
       const label = match[6];
       const url = match[7].trim();
       const seriesMatch = url.match(/(?:series:\s*|\/series\/)(\d+)/i);
+      const listMatch = url.match(/\/lists\/([A-Za-z0-9_-]+)/i);
 
       if (seriesMatch) {
         const seriesId = Number(seriesMatch[1]);
@@ -67,6 +69,8 @@ function parseMarkdown(markdown: string): Segment[] {
             ? { kind: "series", label, seriesId }
             : { kind: "text", value: label },
         );
+      } else if (listMatch) {
+        segments.push({ kind: "readingList", label, token: listMatch[1] });
       } else {
         segments.push({ kind: "link", label, url });
       }
@@ -551,6 +555,26 @@ export function ForumMarkdown({ markdown }: Props) {
               accessibilityHint="Opens the title detail screen"
             >
               <Ionicons name="book-outline" size={14} color={colors.accentStrong} />
+              <AppText variant="caption" style={styles.linkText}>
+                {segment.label}
+              </AppText>
+            </Pressable>
+          );
+        }
+
+        if (segment.kind === "readingList") {
+          return (
+            <Pressable
+              key={`list-${segment.token}-${index}`}
+              onPress={() =>
+                navigation.navigate("PublicReadingList", { token: segment.token })
+              }
+              style={({ pressed }) => [styles.linkPill, pressed ? styles.pressed : null]}
+              accessibilityRole="button"
+              accessibilityLabel={`Open reading list ${segment.label}`}
+              accessibilityHint="Opens the shared reading list"
+            >
+              <Ionicons name="bookmark-outline" size={14} color={colors.accentStrong} />
               <AppText variant="caption" style={styles.linkText}>
                 {segment.label}
               </AppText>

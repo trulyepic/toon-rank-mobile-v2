@@ -27,9 +27,12 @@ import {
   AppText,
   ForumComposerToolbar,
   ForumMentionSuggestions,
+  InsertReadingListSheet,
   ScreenShell,
   Surface,
 } from "../components";
+import { buildReadingListRef } from "../utils/forumReadingListRef";
+import type { ReadingList } from "../types/readingList";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import {
@@ -87,6 +90,7 @@ export function ForumCreateThreadScreen() {
   });
   const [attachment, setAttachment] = useState<ForumMediaAttachment | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
+  const [insertListVisible, setInsertListVisible] = useState(false);
   const activeMention = getActiveForumMention(body);
 
   const categoriesQuery = useQuery({
@@ -160,6 +164,23 @@ export function ForumCreateThreadScreen() {
   const handlePickAttachment = async () => {
     const picked = await pickForumMediaAttachment();
     if (picked) setAttachment(picked);
+  };
+
+  const handleInsertReadingList = (list: ReadingList) => {
+    const ref = buildReadingListRef(list.name, list.share_token);
+    setBody((current) => {
+      const { start, end } = bodySelection;
+      const next = (current.slice(0, start) + ref + current.slice(end)).slice(
+        0,
+        MAX_BODY_LENGTH,
+      );
+      const caret = Math.min(start + ref.length, next.length);
+      setBodySelection({ start: caret, end: caret });
+      return next;
+    });
+    setInsertListVisible(false);
+    setValidationMessage(null);
+    requestAnimationFrame(() => bodyInputRef.current?.focus());
   };
 
   const handleFormatBody = (action: ForumFormatAction) => {
@@ -287,6 +308,7 @@ export function ForumCreateThreadScreen() {
               disabled={createMutation.isPending}
               onFormat={handleFormatBody}
               onPickAttachment={handlePickAttachment}
+              onInsertList={() => setInsertListVisible(true)}
             />
             <TextInput
               ref={bodyInputRef}
@@ -372,6 +394,12 @@ export function ForumCreateThreadScreen() {
           </Surface>
         </>
       ) : null}
+
+      <InsertReadingListSheet
+        visible={insertListVisible}
+        onClose={() => setInsertListVisible(false)}
+        onInsert={handleInsertReadingList}
+      />
     </ScreenShell>
   );
 }

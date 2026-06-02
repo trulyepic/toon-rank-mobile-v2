@@ -15,6 +15,7 @@ type Props = {
   disabled?: boolean;
   onFormat: (action: ForumFormatAction) => void;
   onPickAttachment?: () => void;
+  onInsertList?: () => void;
 };
 
 const ACTIONS: ToolbarAction[] = [
@@ -34,6 +35,7 @@ export function ForumComposerToolbar({
   disabled = false,
   onFormat,
   onPickAttachment,
+  onInsertList,
 }: Props) {
   const styles = getStyles();
   return (
@@ -89,6 +91,25 @@ export function ForumComposerToolbar({
             <Ionicons name="image-outline" size={15} color={colors.text} />
             <AppText variant="caption" style={styles.toolLabel}>
               Image/GIF
+            </AppText>
+          </Pressable>
+        ) : null}
+        {onInsertList ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Insert a reading list"
+            disabled={disabled}
+            onPress={onInsertList}
+            style={({ pressed }) => [
+              styles.toolButton,
+              styles.mediaButton,
+              disabled ? styles.disabled : null,
+              pressed && !disabled ? styles.pressed : null,
+            ]}
+          >
+            <Ionicons name="bookmark-outline" size={15} color={colors.text} />
+            <AppText variant="caption" style={styles.toolLabel}>
+              List
             </AppText>
           </Pressable>
         ) : null}
