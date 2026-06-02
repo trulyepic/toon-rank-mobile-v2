@@ -89,8 +89,8 @@ violet/classic/amber theme picker (More → Appearance, persisted via SecureStor
 breakdown.
 
 The active enhancement sweep runs in this order: **Phase 38** ✅ (discovery/compare parity) →
-**Phase 39** (forum composer convenience — _draft persistence shipped; quote-reply, reading-list
-insertion, and keyboard polish remain as follow-up slices_) → **Phase 40** (admin issue triage) →
+**Phase 39** (forum composer convenience — _draft persistence and quote-reply shipped; reading-list
+insertion and keyboard polish remain as follow-up slices_) → **Phase 40** (admin issue triage) →
 **Phase 41** (deep-link parity). **Phase 28.5** (admin pending titles + user role management) is
 deferred to much later by product decision — do not start it until the enhancement sweep is done.
 

@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   Modal,
   Pressable,
   ScrollView,
@@ -72,7 +73,6 @@ import type {
 } from "../types/forum";
 import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
 import {
-  type ActiveMention,
   extractForumSeriesIds,
   getActiveForumMention,
   insertForumMention,
@@ -96,6 +96,7 @@ import {
   isReplyDraftEmpty,
   replyDraftKey,
 } from "../utils/forumDrafts";
+import { buildQuoteMarkdown } from "../utils/forumQuote";
 
 type ForumThreadRoute = RouteProp<RootStackParamList, "ForumThread">;
 type ForumThreadNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -116,6 +117,7 @@ function PostCard({
   onVote,
   canReply,
   onStartReply,
+  onStartQuote,
   isOwner,
   isAdmin,
   isEditing,
@@ -141,6 +143,7 @@ function PostCard({
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
   onStartReply: (post: ForumPost) => void;
+  onStartQuote: (post: ForumPost) => void;
   isOwner: boolean;
   isAdmin: boolean;
   isEditing: boolean;
@@ -334,6 +337,20 @@ function PostCard({
             <AppText variant="caption">Reply</AppText>
           </Pressable>
         ) : null}
+        {canReply && !isEditing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Quote ${post.author_username || "this post"}`}
+            onPress={() => onStartQuote(post)}
+            style={({ pressed }) => [
+              styles.replyAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="chatbox-ellipses-outline" size={13} color={colors.text} />
+            <AppText variant="caption">Quote</AppText>
+          </Pressable>
+        ) : null}
         {hasSecondaryActions ? (
           <Pressable
             accessibilityRole="button"
@@ -438,112 +455,6 @@ function PostCard({
   );
 }
 
-function InlineComposer({
-  replyToPost,
-  replyText,
-  onReplyChange,
-  onSubmit,
-  onCancel,
-  isPending,
-  activeMention,
-  onMentionSelect,
-  attachment,
-  onPickAttachment,
-  onRemoveAttachment,
-  selection,
-  onSelectionChange,
-  onFormat,
-}: {
-  replyToPost: ForumPost;
-  replyText: string;
-  onReplyChange: (text: string) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-  isPending: boolean;
-  activeMention: ActiveMention | null;
-  onMentionSelect: (selection: MentionSelection) => void;
-  attachment: ForumMediaAttachment | null;
-  onPickAttachment: () => void;
-  onRemoveAttachment: () => void;
-  selection: ForumTextSelection;
-  onSelectionChange: (selection: ForumTextSelection) => void;
-  onFormat: (action: ForumFormatAction) => void;
-}) {
-  const styles = getStyles();
-  const inputRef = useRef<TextInput | null>(null);
-  const isOverLimit = replyText.length > REPLY_MAX_LENGTH;
-  const canSubmit =
-    (replyText.trim().length > 0 || attachment) && !isOverLimit && !isPending;
-
-  return (
-    <Surface variant="raised" radius="xl" style={styles.inlineComposer}>
-      <View style={styles.composerHeader}>
-        <Ionicons
-          name="return-up-forward-outline"
-          size={15}
-          color={colors.accentStrong}
-        />
-        <View style={{ flex: 1 }}>
-          <RoleNameText variant="caption" role={replyToPost.author_role}>
-            {`Replying to @${replyToPost.author_username || "reader"}`}
-          </RoleNameText>
-        </View>
-        <AppText variant="caption" tone={isOverLimit ? "danger" : "subtle"}>
-          {replyText.length}/{REPLY_MAX_LENGTH}
-        </AppText>
-      </View>
-      <ForumMentionSuggestions mention={activeMention} onSelect={onMentionSelect} />
-      <ForumComposerToolbar
-        disabled={isPending}
-        onFormat={(action) => {
-          onFormat(action);
-          requestAnimationFrame(() => inputRef.current?.focus());
-        }}
-        onPickAttachment={onPickAttachment}
-      />
-      <TextInput
-        ref={inputRef}
-        autoCapitalize="sentences"
-        autoCorrect
-        multiline
-        textAlignVertical="top"
-        value={replyText}
-        onChangeText={onReplyChange}
-        onSelectionChange={(event) => onSelectionChange(event.nativeEvent.selection)}
-        selection={selection}
-        placeholder={`Reply to ${replyToPost.author_username || "this post"}...`}
-        placeholderTextColor={colors.textSubtle}
-        style={styles.replyInput}
-      />
-      <ForumAttachmentPicker
-        attachment={attachment}
-        disabled={isPending}
-        onRemove={onRemoveAttachment}
-      />
-      <View style={styles.inlineComposerActions}>
-        <AppButton
-          label={isPending ? "Posting..." : "Post reply"}
-          disabled={!canSubmit}
-          onPress={onSubmit}
-          iconLeft={
-            isPending ? (
-              <ActivityIndicator size="small" color={colors.text} />
-            ) : (
-              <Ionicons name="send-outline" size={15} color={colors.text} />
-            )
-          }
-        />
-        <AppButton
-          label="Cancel"
-          disabled={isPending}
-          onPress={onCancel}
-          iconLeft={<Ionicons name="close-outline" size={15} color={colors.text} />}
-        />
-      </View>
-    </Surface>
-  );
-}
-
 function ForumAttachmentPicker({
   attachment,
   disabled,
@@ -595,6 +506,7 @@ function ReplyTree({
   onVote,
   canReply,
   onStartReply,
+  onStartQuote,
   editingPostId,
   editText,
   onEditStart,
@@ -605,7 +517,6 @@ function ReplyTree({
   onDelete,
   currentUsername,
   isAdmin,
-  renderInlineComposer,
   parentPost,
   registerPostRef,
   topRankMap,
@@ -622,6 +533,7 @@ function ReplyTree({
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
   onStartReply: (post: ForumPost) => void;
+  onStartQuote: (post: ForumPost) => void;
   editingPostId: number | null;
   editText: string;
   onEditStart: (post: ForumPost) => void;
@@ -632,7 +544,6 @@ function ReplyTree({
   onDelete: (post: ForumPost) => void;
   currentUsername: string | null;
   isAdmin: boolean;
-  renderInlineComposer: (post: ForumPost) => ReactNode;
   parentPost?: ForumPost;
   registerPostRef?: (id: number, ref: View | null) => void;
   topRankMap: Record<string, number>;
@@ -660,6 +571,7 @@ function ReplyTree({
         onVote={onVote}
         canReply={canReply}
         onStartReply={onStartReply}
+        onStartQuote={onStartQuote}
         isOwner={isOwner}
         isAdmin={isAdmin}
         isEditing={editingPostId === post.id}
@@ -683,7 +595,6 @@ function ReplyTree({
         }
         onReport={onReport}
       />
-      {renderInlineComposer(post)}
       {children.map((child) => (
         <ReplyTree
           key={child.id}
@@ -695,6 +606,7 @@ function ReplyTree({
           onVote={onVote}
           canReply={canReply}
           onStartReply={onStartReply}
+          onStartQuote={onStartQuote}
           editingPostId={editingPostId}
           editText={editText}
           onEditStart={onEditStart}
@@ -705,7 +617,6 @@ function ReplyTree({
           onDelete={onDelete}
           currentUsername={currentUsername}
           isAdmin={isAdmin}
-          renderInlineComposer={renderInlineComposer}
           parentPost={post}
           registerPostRef={registerPostRef}
           topRankMap={topRankMap}
@@ -749,6 +660,7 @@ export function ForumThreadScreen() {
     null,
   );
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
+  const [composerExpanded, setComposerExpanded] = useState(false);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [isEditingThread, setIsEditingThread] = useState(false);
@@ -848,6 +760,8 @@ export function ForumThreadScreen() {
       setReplySelection({ start: 0, end: 0 });
       setReplyAttachment(null);
       setReplyTarget(null);
+      setComposerExpanded(false);
+      Keyboard.dismiss();
       queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
         queryKey,
         (current) => {
@@ -1496,7 +1410,7 @@ export function ForumThreadScreen() {
       attachment: replyAttachment,
     });
   };
-  const handleStartReply = (post: ForumPost) => {
+  const ensureCanReply = (): boolean => {
     if (!isSignedIn) {
       Alert.alert(
         "Log in to reply",
@@ -1506,17 +1420,45 @@ export function ForumThreadScreen() {
           { text: "Log in", onPress: () => navigation.navigate("Login") },
         ],
       );
-      return;
+      return false;
     }
 
     if (!canReplyToThread) {
       Alert.alert("Thread is locked", "This discussion is no longer accepting replies.");
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleStartReply = (post: ForumPost) => {
+    if (!ensureCanReply()) return;
 
     setReplyTarget(post);
     setReplyAttachment(null);
     setReplySelection({ start: 0, end: 0 });
+    setComposerExpanded(true);
+  };
+
+  const handleStartQuote = (post: ForumPost) => {
+    if (!ensureCanReply()) return;
+
+    const quote = buildQuoteMarkdown(post.author_username, post.content_markdown);
+    setReplyTarget(post);
+    setReplyAttachment(null);
+    setReplyText((current) => {
+      // Prepend the quote, preserving any in-progress reply text below it.
+      const next = `${quote}${current}`.slice(0, REPLY_MAX_LENGTH);
+      const caret = Math.min(quote.length, next.length);
+      setReplySelection({ start: caret, end: caret });
+      return next;
+    });
+    setComposerExpanded(true);
+  };
+
+  const collapseComposer = () => {
+    setComposerExpanded(false);
+    Keyboard.dismiss();
   };
   const openPublicProfile = (username?: string | null) => {
     if (!username) return;
@@ -1576,38 +1518,147 @@ export function ForumThreadScreen() {
     });
     requestAnimationFrame(() => replyInputRef.current?.focus());
   };
-  const renderInlineComposer = (post: ForumPost): ReactNode => {
-    if (replyTarget?.id !== post.id) return null;
-    return (
-      <InlineComposer
-        replyToPost={post}
-        replyText={replyText}
-        onReplyChange={setReplyText}
-        onSubmit={handleSubmitReply}
-        onCancel={() => {
-          setReplyTarget(null);
-          setReplyText("");
-          setReplySelection({ start: 0, end: 0 });
-          setReplyAttachment(null);
-        }}
-        isPending={replyMutation.isPending}
-        activeMention={activeMention}
-        onMentionSelect={handleMentionSelect}
-        attachment={replyAttachment}
-        onPickAttachment={handlePickReplyAttachment}
-        onRemoveAttachment={() => setReplyAttachment(null)}
-        selection={replySelection}
-        onSelectionChange={setReplySelection}
+
+  const composerFooter = !thread ? null : thread.locked ? (
+    <View style={styles.dockedLockedBar}>
+      <Ionicons name="lock-closed-outline" size={16} color={colors.warningText} />
+      <AppText variant="caption" tone="muted" style={styles.dockedBarText}>
+        This thread is locked — new replies are disabled.
+      </AppText>
+    </View>
+  ) : !isSignedIn ? (
+    <Pressable
+      style={({ pressed }) => [styles.dockedBar, pressed ? styles.pressedLight : null]}
+      onPress={() => navigation.navigate("Login")}
+      accessibilityRole="button"
+      accessibilityLabel="Log in to reply"
+    >
+      <Ionicons name="log-in-outline" size={18} color={colors.accentStrong} />
+      <AppText tone="muted" style={styles.dockedBarText}>
+        Log in to reply
+      </AppText>
+    </Pressable>
+  ) : !composerExpanded ? (
+    <Pressable
+      style={({ pressed }) => [styles.dockedBar, pressed ? styles.pressedLight : null]}
+      onPress={() => setComposerExpanded(true)}
+      accessibilityRole="button"
+      accessibilityLabel="Open reply composer"
+    >
+      <Ionicons name="create-outline" size={18} color={colors.accentStrong} />
+      <AppText
+        tone={replyTarget || replyText.trim() ? "primary" : "muted"}
+        numberOfLines={1}
+        style={styles.dockedBarText}
+      >
+        {replyTarget
+          ? `Replying to @${replyTarget.author_username || "reader"}`
+          : replyText.trim()
+            ? replyText.trim()
+            : "Write a reply…"}
+      </AppText>
+      {replyTarget ? (
+        <Pressable
+          hitSlop={8}
+          onPress={() => setReplyTarget(null)}
+          accessibilityRole="button"
+          accessibilityLabel="Clear reply target"
+        >
+          <Ionicons name="close" size={18} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
+    </Pressable>
+  ) : (
+    <View style={styles.dockedComposer}>
+      <View style={styles.composerHeader}>
+        <View style={styles.composerTitle}>
+          <Ionicons
+            name="return-up-forward-outline"
+            size={16}
+            color={colors.accentStrong}
+          />
+          <AppText variant="caption">
+            {replyTarget
+              ? `Replying to @${replyTarget.author_username || "reader"}`
+              : "Reply in thread"}
+          </AppText>
+          {replyTarget ? (
+            <Pressable
+              hitSlop={6}
+              onPress={() => setReplyTarget(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Clear reply target"
+            >
+              <Ionicons name="close" size={16} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+        <View style={styles.dockedHeaderRight}>
+          <AppText
+            variant="caption"
+            tone={replyText.length > REPLY_MAX_LENGTH ? "danger" : "subtle"}
+          >
+            {replyText.length}/{REPLY_MAX_LENGTH}
+          </AppText>
+          <Pressable
+            hitSlop={8}
+            onPress={collapseComposer}
+            accessibilityRole="button"
+            accessibilityLabel="Collapse reply composer"
+          >
+            <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+          </Pressable>
+        </View>
+      </View>
+      <ForumMentionSuggestions mention={activeMention} onSelect={handleMentionSelect} />
+      <ForumComposerToolbar
+        disabled={replyMutation.isPending}
         onFormat={handleFormatReply}
+        onPickAttachment={handlePickReplyAttachment}
       />
-    );
-  };
+      <TextInput
+        ref={replyInputRef}
+        autoFocus
+        autoCapitalize="sentences"
+        autoCorrect
+        multiline
+        textAlignVertical="top"
+        value={replyText}
+        onChangeText={setReplyText}
+        onSelectionChange={(event) => setReplySelection(event.nativeEvent.selection)}
+        selection={replySelection}
+        placeholder="Write a reply..."
+        placeholderTextColor={colors.textSubtle}
+        style={styles.dockedInput}
+      />
+      <ForumAttachmentPicker
+        attachment={replyAttachment}
+        disabled={replyMutation.isPending}
+        onRemove={() => setReplyAttachment(null)}
+      />
+      <View style={styles.composerActions}>
+        <AppButton
+          label={replyMutation.isPending ? "Posting..." : "Post reply"}
+          disabled={!canSubmitReply}
+          onPress={handleSubmitReply}
+          iconLeft={
+            replyMutation.isPending ? (
+              <ActivityIndicator size="small" color={colors.text} />
+            ) : (
+              <Ionicons name="send-outline" size={15} color={colors.text} />
+            )
+          }
+        />
+      </View>
+    </View>
+  );
 
   return (
     <ScreenShell
       title="Thread"
       subtitle="Read public discussions, vote, and reply with your Toon Ranks account."
       scrollRef={scrollViewRef}
+      stickyFooter={composerFooter}
       rightSlot={
         <Pressable
           accessibilityRole="button"
@@ -2118,6 +2169,7 @@ export function ForumThreadScreen() {
             onVote={handleVote}
             canReply={canReplyToThread}
             onStartReply={handleStartReply}
+            onStartQuote={handleStartQuote}
             isOwner={Boolean(
               user?.username && user.username === originalPost.author_username,
             )}
@@ -2143,7 +2195,6 @@ export function ForumThreadScreen() {
             }
             onReport={handleReport}
           />
-          {renderInlineComposer(originalPost)}
         </View>
       ) : null}
 
@@ -2174,6 +2225,7 @@ export function ForumThreadScreen() {
                 onVote={handleVote}
                 canReply={canReplyToThread}
                 onStartReply={handleStartReply}
+                onStartQuote={handleStartQuote}
                 editingPostId={editingPostId}
                 editText={editText}
                 onEditStart={handleEditStart}
@@ -2184,7 +2236,6 @@ export function ForumThreadScreen() {
                 onDelete={handleDelete}
                 currentUsername={user?.username ?? null}
                 isAdmin={isAdmin}
-                renderInlineComposer={renderInlineComposer}
                 parentPost={originalPost}
                 registerPostRef={registerPostRef}
                 topRankMap={topRankMap}
@@ -2216,98 +2267,6 @@ export function ForumThreadScreen() {
         </View>
       ) : null}
 
-      {thread && !replyTarget ? (
-        <Surface variant="raised" radius="xl" style={styles.replyComposer}>
-          <View style={styles.composerHeader}>
-            <View style={styles.composerTitle}>
-              <Ionicons
-                name={thread.locked ? "lock-closed-outline" : "return-up-forward-outline"}
-                size={18}
-                color={thread.locked ? colors.warningText : colors.accentStrong}
-              />
-              <AppText variant="cardTitle">
-                {thread.locked ? "Thread locked" : "Reply in thread"}
-              </AppText>
-            </View>
-            <AppText
-              variant="caption"
-              tone={replyText.length > REPLY_MAX_LENGTH ? "danger" : "subtle"}
-            >
-              {replyText.length}/{REPLY_MAX_LENGTH}
-            </AppText>
-          </View>
-
-          {thread.locked ? (
-            <AppText tone="muted">
-              This discussion is locked, so new replies are disabled on mobile and web.
-            </AppText>
-          ) : isSignedIn ? (
-            <>
-              <ForumMentionSuggestions
-                mention={activeMention}
-                onSelect={handleMentionSelect}
-              />
-              <ForumComposerToolbar
-                disabled={replyMutation.isPending}
-                onFormat={handleFormatReply}
-                onPickAttachment={handlePickReplyAttachment}
-              />
-              <TextInput
-                ref={replyInputRef}
-                autoCapitalize="sentences"
-                autoCorrect
-                multiline
-                textAlignVertical="top"
-                value={replyText}
-                onChangeText={setReplyText}
-                onSelectionChange={(event) =>
-                  setReplySelection(event.nativeEvent.selection)
-                }
-                selection={replySelection}
-                placeholder="Write a reply..."
-                placeholderTextColor={colors.textSubtle}
-                style={styles.replyInput}
-              />
-              <View style={styles.composerActions}>
-                <AppText variant="caption" tone="muted" style={styles.composerHint}>
-                  Markdown is supported. Type @ to mention a user or series. Image and GIF
-                  uploads are supported.
-                </AppText>
-                <ForumAttachmentPicker
-                  attachment={replyAttachment}
-                  disabled={replyMutation.isPending}
-                  onRemove={() => setReplyAttachment(null)}
-                />
-                <AppButton
-                  label={replyMutation.isPending ? "Posting..." : "Post reply"}
-                  disabled={!canSubmitReply}
-                  onPress={handleSubmitReply}
-                  iconLeft={
-                    replyMutation.isPending ? (
-                      <ActivityIndicator size="small" color={colors.text} />
-                    ) : (
-                      <Ionicons name="send-outline" size={15} color={colors.text} />
-                    )
-                  }
-                />
-              </View>
-            </>
-          ) : (
-            <View style={styles.signInPrompt}>
-              <AppText tone="muted" style={styles.signInPromptText}>
-                Log in with your Toon Ranks account to post a reply.
-              </AppText>
-              <AppButton
-                label="Log in"
-                onPress={() => navigation.navigate("Login")}
-                iconLeft={
-                  <Ionicons name="log-in-outline" size={15} color={colors.text} />
-                }
-              />
-            </View>
-          )}
-        </Surface>
-      ) : null}
       {/* Report modal */}
       <Modal transparent visible={!!reportModalPost} animationType="slide">
         <View style={styles.reportModalBackdrop}>
@@ -2442,8 +2401,48 @@ function getStyles() {
     stack: {
       gap: spacing.sm,
     },
-    replyComposer: {
-      gap: spacing.md,
+    dockedBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+    },
+    dockedBarText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    dockedLockedBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: spacing.md,
+    },
+    dockedComposer: {
+      gap: spacing.sm,
+    },
+    dockedHeaderRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    dockedInput: {
+      minHeight: 44,
+      maxHeight: 140,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      color: colors.text,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      fontSize: 16,
+      lineHeight: 22,
     },
     composerHeader: {
       flexDirection: "row",
@@ -2457,36 +2456,6 @@ function getStyles() {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
-    },
-    replyTargetCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: spacing.sm,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radii.lg,
-      backgroundColor: colors.accentSoft,
-      borderWidth: 1,
-      borderColor: colors.accentBorder,
-    },
-    replyTargetText: {
-      flex: 1,
-      minWidth: 0,
-      flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "center",
-      gap: spacing.xs,
-    },
-    clearReplyTarget: {
-      width: 34,
-      height: 34,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: radii.pill,
-      backgroundColor: colors.backgroundSoft,
-      borderWidth: 1,
-      borderColor: colors.borderSoft,
     },
     replyInput: {
       minHeight: 132,
@@ -2502,9 +2471,6 @@ function getStyles() {
     },
     composerActions: {
       gap: spacing.sm,
-    },
-    composerHint: {
-      flexShrink: 1,
     },
     attachmentBlock: {
       gap: spacing.sm,
@@ -2538,12 +2504,6 @@ function getStyles() {
       backgroundColor: colors.surfaceRaised,
       borderWidth: 1,
       borderColor: colors.borderSoft,
-    },
-    signInPrompt: {
-      gap: spacing.sm,
-    },
-    signInPromptText: {
-      flexShrink: 1,
     },
     postCard: {
       gap: spacing.sm,
@@ -2656,13 +2616,6 @@ function getStyles() {
       gap: spacing.sm,
     },
     editActions: {
-      flexDirection: "row",
-      gap: spacing.sm,
-    },
-    inlineComposer: {
-      gap: spacing.md,
-    },
-    inlineComposerActions: {
       flexDirection: "row",
       gap: spacing.sm,
     },
