@@ -1,5 +1,5 @@
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,9 +13,11 @@ import {
   CoverImage,
   EmptyState,
   ErrorState,
+  HomeFilterSheet,
   LoadingState,
   SaveToListSheet,
   ScreenShell,
+  SeriesStatusBadge,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { useCompare } from "../context/CompareContext";
@@ -28,6 +30,7 @@ import {
   TITLE_TYPE_FILTERS,
   type TitleTypeFilter,
 } from "../utils/seriesBrowse";
+import { getSeriesStatusMeta, SERIES_STATUS_FILTERS } from "../utils/seriesStatus";
 
 const HOME_RANKINGS_PAGE_SIZE = 20;
 
@@ -106,6 +109,9 @@ function HomeCard({
               {score}
             </Text>
           </View>
+          <View style={styles.statusBadge}>
+            <SeriesStatusBadge status={item.status} />
+          </View>
         </View>
 
         <View style={styles.posterMeta}>
@@ -172,23 +178,51 @@ export function HomeScreen() {
   const { isSignedIn } = useAuth();
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
 
   const rankingsQuery = useInfiniteQuery({
-    queryKey: ["rankings", activeType, activeGenre],
+    queryKey: ["rankings", activeType, activeGenre, activeStatus],
     queryFn: ({ pageParam }) =>
       fetchRankings(
         pageParam,
         HOME_RANKINGS_PAGE_SIZE,
         getTypeParam(activeType),
         activeGenre ?? undefined,
+        activeStatus ?? undefined,
       ),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === HOME_RANKINGS_PAGE_SIZE ? allPages.length + 1 : undefined,
   });
-  const rankings = rankingsQuery.data?.pages.flat() ?? [];
-  const genres = deriveGenres(rankings);
+  const rankings = useMemo(
+    () => rankingsQuery.data?.pages.flat() ?? [],
+    [rankingsQuery.data?.pages],
+  );
+  const genres = useMemo(() => deriveGenres(rankings), [rankings]);
+
+  // Accumulate every genre seen this session so the filter list only ever grows
+  // and never collapses when an active filter narrows the loaded results.
+  const [allGenres, setAllGenres] = useState<string[]>([]);
+  useEffect(() => {
+    setAllGenres((prev) => {
+      const merged = new Set(prev);
+      let changed = false;
+      for (const g of genres) {
+        if (!merged.has(g)) {
+          merged.add(g);
+          changed = true;
+        }
+      }
+      return changed ? Array.from(merged).sort() : prev;
+    });
+  }, [genres]);
+
+  const activeStatusLabel = SERIES_STATUS_FILTERS.find(
+    (s) => s.value === activeStatus,
+  )?.label;
+  const activeFilterCount = (activeStatus ? 1 : 0) + (activeGenre ? 1 : 0);
 
   const readingListsQuery = useQuery({
     queryKey: ["reading-lists", "me"],
@@ -249,34 +283,72 @@ export function HomeScreen() {
         })}
       </ScrollView>
 
-      {genres.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.genreRail}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open filters"
+          onPress={() => setFiltersVisible(true)}
+          style={({ pressed }) => [
+            styles.filtersChip,
+            activeFilterCount > 0 ? styles.filtersChipActive : null,
+            pressed ? styles.segmentButtonPressed : null,
+          ]}
         >
-          {genres.map((genre) => {
-            const selected = activeGenre === genre;
-            return (
-              <Pressable
-                key={genre}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setActiveGenre(selected ? null : genre)}
-                style={({ pressed }) => [
-                  styles.genrePill,
-                  selected ? styles.genrePillActive : null,
-                  pressed ? styles.segmentButtonPressed : null,
-                ]}
-              >
-                <AppText variant="caption" tone={selected ? "primary" : "muted"}>
-                  {genre}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : null}
+          <Ionicons name="options-outline" size={15} color={colors.text} />
+          <AppText variant="caption" style={styles.filtersChipText}>
+            Filters
+          </AppText>
+          {activeFilterCount > 0 ? (
+            <View style={styles.filterCountBadge}>
+              <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+
+        {activeStatusLabel ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Clear ${activeStatusLabel} status filter`}
+            onPress={() => setActiveStatus(null)}
+            style={({ pressed }) => [
+              styles.activeFilterChip,
+              pressed ? styles.segmentButtonPressed : null,
+            ]}
+          >
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: getSeriesStatusMeta(activeStatus)?.background },
+              ]}
+            />
+            <AppText variant="caption" tone="primary">
+              {activeStatusLabel}
+            </AppText>
+            <Ionicons name="close" size={13} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
+
+        {activeGenre ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Clear ${activeGenre} genre filter`}
+            onPress={() => setActiveGenre(null)}
+            style={({ pressed }) => [
+              styles.activeFilterChip,
+              pressed ? styles.segmentButtonPressed : null,
+            ]}
+          >
+            <AppText variant="caption" tone="primary">
+              {activeGenre}
+            </AppText>
+            <Ionicons name="close" size={13} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
+      </ScrollView>
 
       <FlatList
         data={rankings}
@@ -301,18 +373,22 @@ export function HomeScreen() {
           !rankingsQuery.isLoading && !rankingsQuery.isError ? (
             <EmptyState
               title={
-                activeGenre
-                  ? `No ${activeGenre} titles`
-                  : activeType !== "All"
-                    ? `No ${activeType} yet`
-                    : undefined
+                activeStatusLabel
+                  ? `No ${activeStatusLabel} titles`
+                  : activeGenre
+                    ? `No ${activeGenre} titles`
+                    : activeType !== "All"
+                      ? `No ${activeType} yet`
+                      : undefined
               }
               message={
-                activeGenre
-                  ? "Try a different genre or clear the genre filter."
-                  : activeType !== "All"
-                    ? "Try another type filter or check back after more titles are ranked."
-                    : "No rankings are available yet. Check back soon for ranked titles."
+                activeStatusLabel
+                  ? "Try a different status or clear the status filter."
+                  : activeGenre
+                    ? "Try a different genre or clear the genre filter."
+                    : activeType !== "All"
+                      ? "Try another type filter or check back after more titles are ranked."
+                      : "No rankings are available yet. Check back soon for ranked titles."
               }
             />
           ) : null
@@ -350,6 +426,20 @@ export function HomeScreen() {
           onClose={() => setSaveSeriesId(null)}
         />
       ) : null}
+
+      <HomeFilterSheet
+        visible={filtersVisible}
+        onClose={() => setFiltersVisible(false)}
+        genres={allGenres}
+        activeStatus={activeStatus}
+        onStatusChange={setActiveStatus}
+        activeGenre={activeGenre}
+        onGenreChange={setActiveGenre}
+        onReset={() => {
+          setActiveStatus(null);
+          setActiveGenre(null);
+        }}
+      />
     </ScreenShell>
   );
 }
@@ -371,25 +461,58 @@ function getStyles() {
       gap: spacing.sm,
       paddingRight: spacing.md,
     },
-    genreRail: {
+    filterRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
       paddingRight: spacing.md,
     },
-    genrePill: {
+    filtersChip: {
       minHeight: 32,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: colors.surfaceRaised,
+      borderColor: colors.borderSoft,
+      borderWidth: 1,
+      borderRadius: radii.pill,
+      paddingHorizontal: spacing.md,
+    },
+    filtersChipActive: {
+      borderColor: colors.accentBorder,
+    },
+    filtersChipText: {
+      fontWeight: "800",
+    },
+    filterCountBadge: {
+      minWidth: 18,
+      height: 18,
+      paddingHorizontal: 5,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.backgroundSoft,
-      borderColor: colors.borderSoft,
+      borderRadius: 9,
+      backgroundColor: colors.accentStrong,
+    },
+    filterCountText: {
+      color: colors.background,
+      fontSize: 11,
+      fontWeight: "800",
+    },
+    activeFilterChip: {
+      minHeight: 32,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.accentBorder,
       borderWidth: 1,
       borderRadius: radii.pill,
       paddingHorizontal: spacing.sm,
     },
-    genrePillActive: {
-      backgroundColor: colors.accentSoft,
-      borderColor: colors.accentBorder,
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
     },
     segmentButton: {
       minHeight: 38,
@@ -468,6 +591,11 @@ function getStyles() {
       color: colors.text,
       fontSize: 12,
       fontWeight: "800",
+    },
+    statusBadge: {
+      position: "absolute",
+      right: spacing.sm,
+      bottom: spacing.sm,
     },
     scoreBadge: {
       position: "absolute",

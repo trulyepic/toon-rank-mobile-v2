@@ -11,9 +11,10 @@ export async function fetchRankings(
   pageSize = 20,
   type?: SeriesType,
   genre?: string,
+  status?: string,
 ) {
   const res = await api.get<RankedSeries[]>("/series/rankings", {
-    params: { page, page_size: pageSize, type, genre },
+    params: { page, page_size: pageSize, type, genre, status },
   });
   return res.data;
 }
