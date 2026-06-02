@@ -63,6 +63,7 @@ shared user data, native mobile frontend.
 - TanStack Query
 - Axios
 - expo-secure-store (token storage)
+- @react-native-async-storage/async-storage (forum composer draft persistence)
 - expo-web-browser (web auth bridge)
 - Expo vector icons
 
@@ -87,11 +88,14 @@ violet/classic/amber theme picker (More → Appearance, persisted via SecureStor
 "Status Summary" section at the top of `docs/CORE_APP_EXPERIENCE_TODO.md` for the full done/blocked
 breakdown.
 
-The active enhancement sweep runs in this order: **Phase 38** (discovery/compare parity — reading-list
-quick-add on home/search cards, type-page decision) → **Phase 39** (forum composer convenience —
-draft persistence, quote-reply) → **Phase 40** (admin issue triage) → **Phase 41** (deep-link parity).
-**Phase 28.5** (admin pending titles + user role management) is deferred to much later by product
-decision — do not start it until the enhancement sweep is done.
+The active enhancement sweep runs in this order: **Phase 38** ✅ (discovery/compare parity) →
+**Phase 39** (forum composer convenience — _draft persistence shipped; quote-reply, reading-list
+insertion, and keyboard polish remain as follow-up slices_) → **Phase 40** (admin issue triage) →
+**Phase 41** (deep-link parity). **Phase 28.5** (admin pending titles + user role management) is
+deferred to much later by product decision — do not start it until the enhancement sweep is done.
+
+Forum composer drafts use `useForumDraft` (`src/hooks/useForumDraft.ts`) backed by AsyncStorage,
+with pure key/empty helpers in `src/utils/forumDrafts.ts`.
 
 ## Product Identity
 
