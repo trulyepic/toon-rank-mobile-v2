@@ -93,6 +93,17 @@ deferred to much later** by product decision.
 | Phase 5.5 — markdown regression tests         | Two test items never written                              |
 | Phase 21 — session info / revoke-all-sessions | Backend `DELETE /auth/sessions` may not be live; deferred |
 
+### Post-roadmap polish & admin extras (shipped after the sweep)
+
+Not numbered phases — UX polish and small admin features added on top of the completed roadmap:
+
+| Item                              | What it adds                                                                                                                                  | Status  |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Series status badge               | Colored status pill (Ongoing/Complete/Hiatus/Season End/Unknown) on Home covers + Series Detail hero (`SeriesStatusBadge`, `seriesStatus.ts`) | ✅ Done |
+| Home status filter + filter sheet | Server-side `status` param on `/series/rankings`; Home genre+status filters moved into a collapsible `HomeFilterSheet` with cumulative genres | ✅ Done |
+| Deep-link cold-start fix          | Removed the greedy `"*"` NotFound catch-all that hijacked normal app launches                                                                 | ✅ Done |
+| Admin edit-title                  | Admin-only edit pencil on Home covers → `EditSeriesModal` (`PUT /series/{id}`: title, type, status, genre, author, artist, cover)             | ✅ Done |
+
 ## Design Direction — Violet/Indigo Theme (Option A)
 
 **Decision (June 2026):** Replace the generic blue-navy colour palette with a deep violet/indigo

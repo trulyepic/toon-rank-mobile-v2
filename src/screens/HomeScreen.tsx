@@ -11,6 +11,7 @@ import {
   AppButton,
   AppText,
   CoverImage,
+  EditSeriesModal,
   EmptyState,
   ErrorState,
   HomeFilterSheet,
@@ -71,6 +72,8 @@ function HomeCard({
   showSave,
   saved,
   onSave,
+  showEdit,
+  onEdit,
 }: {
   item: RankedSeries;
   onPress: () => void;
@@ -80,6 +83,8 @@ function HomeCard({
   showSave: boolean;
   saved: boolean;
   onSave: () => void;
+  showEdit: boolean;
+  onEdit: () => void;
 }) {
   const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
@@ -112,6 +117,20 @@ function HomeCard({
           <View style={styles.statusBadge}>
             <SeriesStatusBadge status={item.status} />
           </View>
+          {showEdit ? (
+            <Pressable
+              onPress={onEdit}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${item.title}`}
+              style={({ pressed }) => [
+                styles.editOverlayButton,
+                pressed ? styles.editOverlayButtonPressed : null,
+              ]}
+            >
+              <Ionicons name="create-outline" size={15} color={colors.text} />
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.posterMeta}>
@@ -175,12 +194,14 @@ export function HomeScreen() {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
+  const [editSeriesItem, setEditSeriesItem] = useState<RankedSeries | null>(null);
 
   const rankingsQuery = useInfiniteQuery({
     queryKey: ["rankings", activeType, activeGenre, activeStatus],
@@ -367,6 +388,8 @@ export function HomeScreen() {
             showSave={isSignedIn}
             saved={isSeriesInAnyList(readingListsQuery.data, item.id)}
             onSave={() => setSaveSeriesId(item.id)}
+            showEdit={isAdmin}
+            onEdit={() => setEditSeriesItem(item)}
           />
         )}
         ListEmptyComponent={
@@ -424,6 +447,15 @@ export function HomeScreen() {
           seriesId={saveSeriesId}
           visible={saveSeriesId != null}
           onClose={() => setSaveSeriesId(null)}
+        />
+      ) : null}
+
+      {editSeriesItem ? (
+        <EditSeriesModal
+          series={editSeriesItem}
+          visible={editSeriesItem != null}
+          onClose={() => setEditSeriesItem(null)}
+          onSaved={() => setEditSeriesItem(null)}
         />
       ) : null}
 
@@ -596,6 +628,23 @@ function getStyles() {
       position: "absolute",
       right: spacing.sm,
       bottom: spacing.sm,
+    },
+    editOverlayButton: {
+      position: "absolute",
+      left: spacing.sm,
+      bottom: spacing.sm,
+      width: 30,
+      height: 30,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      backgroundColor: colors.overlay,
+      borderWidth: 1,
+      borderColor: colors.overlayBorder,
+    },
+    editOverlayButtonPressed: {
+      opacity: 0.85,
+      transform: [{ scale: 0.94 }],
     },
     scoreBadge: {
       position: "absolute",

@@ -7,6 +7,7 @@ export { EmptyState, ErrorState, LoadingState } from "./StateMessage";
 export { ForumMarkdown } from "./ForumMarkdown";
 export { ForumComposerToolbar } from "./ForumComposerToolbar";
 export { ForumMentionSuggestions } from "./ForumMentionSuggestions";
+export { EditSeriesModal } from "./EditSeriesModal";
 export { ForumSeriesStrip } from "./ForumSeriesStrip";
 export { HomeFilterSheet } from "./HomeFilterSheet";
 export { IconButton } from "./IconButton";

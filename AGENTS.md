@@ -105,6 +105,24 @@ at the top of `docs/CORE_APP_EXPERIENCE_TODO.md`.
 Forum composer drafts use `useForumDraft` (`src/hooks/useForumDraft.ts`) backed by AsyncStorage,
 with pure key/empty helpers in `src/utils/forumDrafts.ts`.
 
+### Post-roadmap polish & admin extras (shipped after the sweep)
+
+- **Series status badge** — colored pill (Ongoing/Complete/Hiatus/Season End/Unknown) on Home covers
+  and the Series Detail hero, via `SeriesStatusBadge` + `src/utils/seriesStatus.ts`.
+- **Home status filter** — server-side `status` param on `/series/rankings`; the Home filters now
+  live in a collapsible **Filters bottom sheet** (`HomeFilterSheet`) alongside genre, with a
+  cumulative genre list so it doesn't collapse when a filter narrows results. The type rail stays
+  inline.
+- **Deep-link cold-start fix** — removed the greedy `"*"` NotFound catch-all from
+  `src/navigation/linking.ts` (it was hijacking normal launches into NotFound).
+- **Admin edit-title** — admins get an edit pencil overlaid on each Home cover that opens
+  `EditSeriesModal` (`updateSeries` → `PUT /series/{id}` multipart: title, type, status, genre,
+  author, artist, optional cover). Gated by `user.role === "ADMIN"`.
+
+Bottom-sheet pattern note: when a sheet has a fixed footer, cap the inner `ScrollView` height
+(e.g. `screenHeight * 0.6`) and add `useSafeAreaInsets().bottom` padding so the footer stays on
+screen — see `HomeFilterSheet` / `EditSeriesModal`.
+
 ## Product Identity
 
 Public brand: `Toon Ranks`
@@ -148,15 +166,23 @@ Shared data:
 - forum threads, replies, up/down votes, and user-generated content
 - rating/voting history
 
-## Current Known Issues
+## Current Known Issues / Open Items
 
-- `ForumActivityScreen` is a complete stub — no live data, no API calls. Phase 10b addresses this.
-- `ProfileScreen` has no series ratings section. Phase 10b/10c addresses this.
-- The API layer (`src/api/`) is missing `getMyForumThreads`, `getMyForumPosts`, `getMyForumVotes`, and `getMySeriesVotes`. Phase 10a addresses this.
-- App-store assets (icon, splash) still need to be dropped into `assets/`. EAS build config exists but store submission has not been attempted.
-- `com.anonymous.toonranksmobile` is the placeholder Android package name and must be replaced before store submission.
-- Forum image uploads are not yet built (noted in `ForumCreateThreadScreen` and `ForumThreadScreen` UI copy).
-- Regression tests for markdown rendering are not yet written (Phase 5.5 left item).
+_The core product and the Phase 38–41 enhancement sweep are complete (see the Status Summary at the
+top of `docs/CORE_APP_EXPERIENCE_TODO.md`). The remaining open items are:_
+
+- **Store-launch-gated (need Apple/Google developer accounts):** iOS production build + TestFlight,
+  App Store Connect & Play Console listings/screenshots/age & data-safety forms, and **Phase 16**
+  (email-verification / reset-password deep links back into the app — needs Universal/App Links on a
+  store-live signed build). App store store-submission has not been attempted.
+- **Deferred by product decision:** **Phase 28.5** (admin pending-titles review + user role
+  management).
+- **Small code items still open:** forum markdown regression tests (Phase 5.5), and session
+  info / "revoke all sessions" (Phase 21 — depends on a backend `DELETE /auth/sessions` that may not
+  be live yet).
+
+The older "stub" issues (ForumActivityScreen, ProfileScreen ratings, missing `/forum/me/*` API
+functions, forum image uploads, app-store assets, placeholder Android package name) are all resolved.
 
 ## Safe Working Rules
 

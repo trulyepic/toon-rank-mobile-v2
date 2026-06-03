@@ -66,3 +66,36 @@ export async function getMySubmissions(): Promise<SeriesSubmission[]> {
   const res = await api.get<SeriesSubmission[]>("/series/submissions/mine");
   return res.data;
 }
+
+/** Update a series' metadata (admin, or owner of a pending submission). */
+export async function updateSeries(
+  id: number,
+  payload: {
+    title?: string;
+    genre?: string;
+    type?: SeriesType;
+    author?: string;
+    artist?: string;
+    status?: string;
+    coverUri?: string;
+    coverMimeType?: string;
+  },
+): Promise<void> {
+  const formData = new FormData();
+  if (payload.title !== undefined) formData.append("title", payload.title);
+  if (payload.genre !== undefined) formData.append("genre", payload.genre);
+  if (payload.type !== undefined) formData.append("type", payload.type);
+  if (payload.author !== undefined) formData.append("author", payload.author);
+  if (payload.artist !== undefined) formData.append("artist", payload.artist);
+  if (payload.status) formData.append("status", payload.status);
+  if (payload.coverUri && payload.coverMimeType) {
+    formData.append("cover", {
+      uri: payload.coverUri,
+      type: payload.coverMimeType,
+      name: "cover." + (payload.coverMimeType.split("/")[1] ?? "jpg"),
+    } as unknown as Blob);
+  }
+  await api.put(`/series/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
