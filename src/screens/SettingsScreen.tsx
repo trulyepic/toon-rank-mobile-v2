@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation } from "@tanstack/react-query";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 
 import {
   AppButton,
@@ -16,12 +16,14 @@ import { useAuth } from "../auth/AuthContext";
 import { deleteAccount } from "../api/auth";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, spacing } from "../theme/tokens";
+import { colors, radii, spacing, THEME_META, type ThemeName } from "../theme/tokens";
+import { useTheme } from "../theme/ThemeContext";
 import { openInAppBrowser } from "../utils/externalLinks";
 
 export function SettingsScreen() {
   const styles = getStyles();
   const { isSignedIn, logout, status, user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isLoadingAuth = status === "loading";
 
@@ -109,17 +111,45 @@ export function SettingsScreen() {
       </Surface>
 
       <View style={styles.section}>
-        <SectionHeader title="Preferences" />
-        <Surface variant="raised" radius="xl" style={styles.row}>
-          <View style={styles.rowIcon}>
-            <Ionicons name="moon-outline" size={19} color={colors.accentStrong} />
+        <SectionHeader title="Appearance" />
+        <Surface variant="raised" radius="xl" style={styles.themePicker}>
+          <AppText variant="caption" tone="muted">
+            Choose your colour theme
+          </AppText>
+          <View style={styles.themeOptions}>
+            {(Object.keys(THEME_META) as ThemeName[]).map((name) => {
+              const meta = THEME_META[name];
+              const active = theme === name;
+              return (
+                <Pressable
+                  key={name}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${meta.label} theme`}
+                  onPress={() => void setTheme(name)}
+                  style={({ pressed }) => [
+                    styles.themeOption,
+                    active ? styles.themeOptionActive : null,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <View style={[styles.themeSwatch, { backgroundColor: meta.swatch }]} />
+                  <AppText
+                    variant="caption"
+                    style={active ? { color: meta.swatch, fontWeight: "700" } : undefined}
+                  >
+                    {meta.label}
+                  </AppText>
+                  {active ? (
+                    <Ionicons name="checkmark-circle" size={14} color={meta.swatch} />
+                  ) : null}
+                </Pressable>
+              );
+            })}
           </View>
-          <View style={styles.rowText}>
-            <AppText variant="cardTitle">Appearance</AppText>
-            <AppText tone="muted">
-              Dark theme is active. Light theme will be added after core app parity.
-            </AppText>
-          </View>
+          <AppText variant="caption" tone="subtle">
+            Accent colours update instantly. Restart the app to fully apply background
+            changes.
+          </AppText>
         </Surface>
       </View>
 
@@ -183,24 +213,35 @@ function getStyles() {
     section: {
       gap: spacing.sm,
     },
-    row: {
-      flexDirection: "row",
-      gap: spacing.md,
+    themePicker: {
+      gap: spacing.sm,
     },
-    rowIcon: {
-      width: 42,
-      height: 42,
+    themeOptions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    themeOption: {
+      flex: 1,
       alignItems: "center",
-      justifyContent: "center",
-      borderRadius: radii.md,
-      backgroundColor: colors.backgroundSoft,
-      borderWidth: 1,
+      gap: spacing.xs,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      borderRadius: radii.lg,
+      borderWidth: 1.5,
       borderColor: colors.borderSoft,
     },
-    rowText: {
-      flex: 1,
-      minWidth: 0,
-      gap: spacing.xs,
+    themeOptionActive: {
+      borderColor: colors.accentStrong,
+      backgroundColor: colors.accentSoft,
+    },
+    themeSwatch: {
+      width: 28,
+      height: 28,
+      borderRadius: radii.pill,
+    },
+    pressed: {
+      opacity: 0.86,
+      transform: [{ scale: 0.99 }],
     },
     accountCard: {
       gap: spacing.sm,
