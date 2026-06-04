@@ -131,10 +131,10 @@ Operating entity: `Nofara LLC`
 
 Canonical website: `https://www.toonranks.com`
 
-Backend used by mobile (Railway deployment URL — unchanged by repo rename):
+Backend used by mobile (stable API domain):
 
 ```text
-https://man-review-backend-production.up.railway.app
+https://api.toonranks.com
 ```
 
 The app should keep `Toon Ranks` as the user-facing product name. Mention `Nofara LLC` only in
