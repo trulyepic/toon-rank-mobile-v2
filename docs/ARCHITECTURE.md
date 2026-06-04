@@ -126,12 +126,11 @@ API base URL is in `src/config/env.ts`:
 
 ```ts
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
-  "https://man-review-backend-production.up.railway.app";
+  process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "https://api.toonranks.com";
 ```
 
-The Railway deployment URL (`man-review-backend-production`) is a historical name that predates the
-GitHub repo rename. The URL itself is still correct — Railway keeps deployment URLs stable.
+`https://api.toonranks.com` is the stable API domain. Keep mobile builds pointed at this domain so
+backend hosting can move without forcing app code changes.
 
 All network calls go through `src/api`. Do not hardcode production URLs in screens.
 
