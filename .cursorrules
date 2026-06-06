@@ -1,0 +1,43 @@
+# Toon Ranks Mobile — Cursor Rules
+
+## Project identity
+Expo 54 / React Native 0.81 native app (TypeScript) for the Toon Ranks manga/manhwa/manhua
+ranking platform. Shares the production backend and user data with the website.
+React Navigation, TanStack Query, Axios, expo-secure-store.
+
+## Hard rules
+- **Read CONSTRAINTS.md and AGENTS.md** — they define the workflow, handoff, and product rules
+- Never commit or push without explicit instruction from the owner
+- Always end every task with: numbered emulator/device test steps (with expected outcomes) + one-line commit message + short PR description
+- Never work on `main` — branch as `mobile-<short-desc>`
+- Run `npm run verify` (typecheck + lint + format + test) before handing back
+
+## Architecture rules
+- API calls go through `src/api/` wrappers — never call axios directly from a screen
+- Tokens use `expo-secure-store` — never plain AsyncStorage (AsyncStorage ok for non-sensitive drafts)
+- Shared backend only — never add a mobile-only store for data that must sync with the website
+  (reading lists, forum, votes, identity)
+- Auth changes: `docs/MOBILE_AUTH_CONTRACT.md` is the source of truth — read before editing auth
+- Use theme tokens in `src/theme/` — never hardcode colors/spacing; styles built per-screen via getStyles()
+- It is NOT a web wrapper — preserve the product model, not the website layout; no web-page copy
+
+## Domain vocabulary
+- Series types: MANGA, MANHWA, MANHUA
+- Series statuses: ONGOING, COMPLETE, HIATUS, SEASON_END, UNKNOWN
+- User roles: GENERAL < CONTRIBUTOR < ADMIN
+- Scoring: 1-10 per category; final_score = avg of the category averages
+
+## Key reference files
+- Quick start: CLAUDE.md
+- Full product context + roadmap: AGENTS.md
+- App structure: docs/ARCHITECTURE.md
+- Auth: docs/MOBILE_AUTH_CONTRACT.md
+- Active roadmap: docs/CORE_APP_EXPERIENCE_TODO.md
+
+## What to avoid
+- Committing/pushing without being asked
+- Calling axios directly from screens
+- Storing tokens in AsyncStorage
+- Hardcoding colors/spacing instead of theme tokens
+- Mobile-only data stores for shared data
+- Large one-off screen rewrites when a reusable component fits
