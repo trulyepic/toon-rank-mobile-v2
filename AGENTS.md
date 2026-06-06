@@ -4,6 +4,10 @@ This file is the first stop for any AI agent or developer working in the Toon Ra
 The goal is to preserve product context so the user does not have to re-explain the mobile app every
 time work resumes.
 
+> ⚠️ **Workflow rules live in `CONSTRAINTS.md`** — never commit/push without explicit instruction,
+> always end every task with numbered emulator/device test steps + a commit message + a PR
+> description, one branch per task. `CLAUDE.md` is the quick-start companion to this file.
+
 ## Product Goal
 
 Toon Ranks Mobile is the native app-store version of Toon Ranks. It should eventually provide the
@@ -118,6 +122,9 @@ with pure key/empty helpers in `src/utils/forumDrafts.ts`.
 - **Admin edit-title** — admins get an edit pencil overlaid on each Home cover that opens
   `EditSeriesModal` (`updateSeries` → `PUT /series/{id}` multipart: title, type, status, genre,
   author, artist, optional cover). Gated by `user.role === "ADMIN"`.
+- **Home card alignment** — `posterTitle` reserves a fixed two-line height
+  (`typography.cardTitle.lineHeight * 2`) so the type/votes row, Compare button, and save icon line
+  up across all cards whether the title wraps to one or two lines.
 
 Bottom-sheet pattern note: when a sheet has a fixed footer, cap the inner `ScrollView` height
 (e.g. `screenHeight * 0.6`) and add `useSafeAreaInsets().bottom` padding so the footer stays on
@@ -186,6 +193,10 @@ functions, forum image uploads, app-store assets, placeholder Android package na
 
 ## Safe Working Rules
 
+- **Never commit or push without explicit instruction from the owner** (see `CONSTRAINTS.md`).
+- **Always end every task with numbered emulator/device test steps (with expected outcomes), a
+  one-line commit message, and a short PR description.**
+- **Never work on `main` directly** — branch as `mobile-<short-desc>`.
 - Keep changes small and branch-sized.
 - Prefer TypeScript-safe, reusable components over large one-off screen rewrites.
 - Run `npm run verify` before handing work back when dependencies are available.

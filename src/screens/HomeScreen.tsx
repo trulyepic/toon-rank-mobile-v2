@@ -699,6 +699,10 @@ function getStyles() {
     posterTitle: {
       color: colors.text,
       ...typography.cardTitle,
+      // Reserve exactly two lines (lineHeight 24 × 2) so the title block is the
+      // same height whether a title wraps to one or two lines. This keeps the
+      // type/votes row, Compare button, and save icon aligned across all cards.
+      height: typography.cardTitle.lineHeight * 2,
     },
     posterMetaRow: {
       flexDirection: "row",
