@@ -32,6 +32,7 @@ import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 import {
   filterSeriesByType,
+  getTypeParam,
   isSeriesInAnyList,
   TITLE_TYPE_FILTERS,
   type TitleTypeFilter,
@@ -175,12 +176,18 @@ export function SearchScreen() {
   }, [query]);
 
   const hasSearchQuery = debouncedQuery.length >= MIN_SEARCH_LENGTH;
+  // Pass the active type so the backend scopes both results AND rank to that
+  // category — each result keeps its true rank within the selected type instead
+  // of its global "All" rank. `activeType` is in the query key so switching the
+  // type rail refetches (and caches) per category.
+  const typeParam = getTypeParam(activeType);
   const { data, isFetching, isLoading, isError, refetch } = useQuery({
-    queryKey: ["series-search", debouncedQuery],
-    queryFn: () => searchSeries(debouncedQuery),
+    queryKey: ["series-search", debouncedQuery, activeType],
+    queryFn: () => searchSeries(debouncedQuery, typeParam),
     enabled: hasSearchQuery,
   });
   const allResults = data ?? [];
+  // Backend already scopes by type; keep the client filter as a defensive no-op.
   const results = filterSeriesByType(allResults, activeType);
 
   const readingListsQuery = useQuery({
