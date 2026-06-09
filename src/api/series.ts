@@ -19,9 +19,12 @@ export async function fetchRankings(
   return res.data;
 }
 
-export async function searchSeries(query: string) {
+export async function searchSeries(query: string, type?: SeriesType) {
+  // When `type` is provided the backend scopes both the results and the rank to
+  // that category, so each result keeps its true rank within the type. Without
+  // `type`, ranks reflect the full "All" ranking.
   const res = await api.get<RankedSeries[]>("/series/search", {
-    params: { query },
+    params: { query, ...(type ? { type } : {}) },
   });
   return res.data;
 }

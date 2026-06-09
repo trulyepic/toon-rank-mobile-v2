@@ -125,6 +125,10 @@ with pure key/empty helpers in `src/utils/forumDrafts.ts`.
 - **Home card alignment** — `posterTitle` reserves a fixed two-line height
   (`typography.cardTitle.lineHeight * 2`) so the type/votes row, Compare button, and save icon line
   up across all cards whether the title wraps to one or two lines.
+- **Search rank by category** — `SearchScreen` passes the active type-rail filter to
+  `searchSeries(query, type)` (via `getTypeParam`) and keys the query on `activeType`, so each result
+  shows its true rank **within the selected type** (e.g. a title is #6 in Manhwa, not its #12 "All"
+  rank). The backend `/series/search` scopes both results and rank when `type` is provided.
 
 Bottom-sheet pattern note: when a sheet has a fixed footer, cap the inner `ScrollView` height
 (e.g. `screenHeight * 0.6`) and add `useSafeAreaInsets().bottom` padding so the footer stays on
