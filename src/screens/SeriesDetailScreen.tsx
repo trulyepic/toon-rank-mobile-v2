@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -81,7 +82,7 @@ function MetricCard({
   );
 }
 
-function BreakdownCard({
+function BreakdownBar({
   label,
   score,
   votes,
@@ -91,18 +92,35 @@ function BreakdownCard({
   votes: number;
 }) {
   const styles = getStyles();
+  const pct = score > 0 ? Math.max(0, Math.min(100, (score / 10) * 100)) : 0;
   return (
-    <Surface style={styles.breakdownCard}>
+    <View style={styles.breakdownRow}>
       <View style={styles.breakdownTopRow}>
         <AppText variant="cardTitle">{label}</AppText>
-        <AppText variant="sectionTitle" style={{ color: getScoreTone(score) }}>
-          {score > 0 ? score.toFixed(1) : "-"}
-        </AppText>
+        <View style={styles.breakdownScoreGroup}>
+          <AppText tone="muted" variant="caption">
+            {votes > 0 ? `${votes} votes` : "No votes yet"}
+          </AppText>
+          <AppText variant="cardTitle" style={{ color: colors.ratingBarFrom }}>
+            {score > 0 ? score.toFixed(1) : "-"}
+            <AppText tone="subtle" variant="caption">
+              {" "}
+              /10
+            </AppText>
+          </AppText>
+        </View>
       </View>
-      <AppText tone="muted" variant="caption">
-        {votes > 0 ? `${votes} votes` : "No votes yet"}
-      </AppText>
-    </Surface>
+      <View style={styles.breakdownTrack}>
+        {pct > 0 ? (
+          <LinearGradient
+            colors={[colors.ratingBarFrom, colors.ratingBarTo]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.breakdownFill, { width: `${pct}%` }]}
+          />
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -422,33 +440,33 @@ export function SeriesDetailScreen() {
             title="How readers rate this series"
           />
 
-          <View style={styles.breakdownGrid}>
-            <BreakdownCard
+          <Surface style={styles.breakdownPanel}>
+            <BreakdownBar
               label="Story"
               score={storyScore}
               votes={detail?.vote_counts?.Story ?? 0}
             />
-            <BreakdownCard
+            <BreakdownBar
               label="Characters"
               score={characterScore}
               votes={detail?.vote_counts?.Characters ?? 0}
             />
-            <BreakdownCard
+            <BreakdownBar
               label="World Building"
               score={worldScore}
               votes={detail?.vote_counts?.["World Building"] ?? 0}
             />
-            <BreakdownCard
+            <BreakdownBar
               label="Art"
               score={artScore}
               votes={detail?.vote_counts?.Art ?? 0}
             />
-            <BreakdownCard
+            <BreakdownBar
               label="Drama / Fighting"
               score={dramaScore}
               votes={detail?.vote_counts?.["Drama / Fighting"] ?? 0}
             />
-          </View>
+          </Surface>
 
           <View style={styles.voteSection}>
             <SectionHeader eyebrow="Community Voting" title="Rate this series" />
@@ -606,17 +624,32 @@ function getStyles() {
       fontSize: 16,
       lineHeight: 28,
     },
-    breakdownGrid: {
-      gap: spacing.sm,
+    breakdownPanel: {
+      gap: spacing.md,
     },
-    breakdownCard: {
+    breakdownRow: {
       gap: spacing.xs,
     },
     breakdownTopRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "baseline",
       justifyContent: "space-between",
       gap: spacing.md,
+    },
+    breakdownScoreGroup: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: spacing.sm,
+    },
+    breakdownTrack: {
+      height: 8,
+      borderRadius: radii.pill,
+      backgroundColor: colors.surfacePressed,
+      overflow: "hidden",
+    },
+    breakdownFill: {
+      height: "100%",
+      borderRadius: radii.pill,
     },
     voteSection: {
       gap: spacing.md,
