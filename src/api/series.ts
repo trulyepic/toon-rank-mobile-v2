@@ -6,15 +6,18 @@ import type {
   SeriesType,
 } from "../types/series";
 
+export type SeriesSort = "score" | "votes" | "newest" | "title";
+
 export async function fetchRankings(
   page = 1,
   pageSize = 20,
   type?: SeriesType,
   genre?: string,
   status?: string,
+  sort?: SeriesSort,
 ) {
   const res = await api.get<RankedSeries[]>("/series/rankings", {
-    params: { page, page_size: pageSize, type, genre, status },
+    params: { page, page_size: pageSize, type, genre, status, sort },
   });
   return res.data;
 }

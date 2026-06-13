@@ -9,11 +9,19 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import type { SeriesSort } from "../api/series";
 import { colors, radii, spacing } from "../theme/tokens";
 import { getSeriesStatusMeta, SERIES_STATUS_FILTERS } from "../utils/seriesStatus";
 import { AppButton } from "./AppButton";
 import { AppText } from "./AppText";
 import { Surface } from "./Surface";
+
+const SORT_OPTIONS: { value: SeriesSort; label: string }[] = [
+  { value: "score", label: "Score" },
+  { value: "votes", label: "Most Voted" },
+  { value: "newest", label: "Newest" },
+  { value: "title", label: "A–Z" },
+];
 
 type Props = {
   visible: boolean;
@@ -23,6 +31,8 @@ type Props = {
   onStatusChange: (status: string | null) => void;
   activeGenre: string | null;
   onGenreChange: (genre: string | null) => void;
+  activeSort: SeriesSort;
+  onSortChange: (sort: SeriesSort) => void;
   onReset: () => void;
 };
 
@@ -40,6 +50,8 @@ export function HomeFilterSheet({
   onStatusChange,
   activeGenre,
   onGenreChange,
+  activeSort,
+  onSortChange,
   onReset,
 }: Props) {
   const styles = getStyles();
@@ -48,7 +60,7 @@ export function HomeFilterSheet({
   // Cap the scrollable pill area so the header and Reset/Done footer always stay
   // on screen no matter how many genres there are.
   const maxScrollHeight = screenHeight * 0.55;
-  const hasActive = !!activeStatus || !!activeGenre;
+  const hasActive = !!activeStatus || !!activeGenre || activeSort !== "score";
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -76,6 +88,32 @@ export function HomeFilterSheet({
             contentContainerStyle={styles.scroll}
           >
             <AppText variant="label" tone="muted">
+              Sort
+            </AppText>
+            <View style={styles.pillWrap}>
+              {SORT_OPTIONS.map((option) => {
+                const selected = activeSort === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => onSortChange(option.value)}
+                    style={({ pressed }) => [
+                      styles.pill,
+                      selected ? styles.pillActive : null,
+                      pressed ? styles.pillPressed : null,
+                    ]}
+                  >
+                    <AppText variant="caption" tone={selected ? "primary" : "muted"}>
+                      {option.label}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <AppText variant="label" tone="muted" style={styles.genreHeading}>
               Status
             </AppText>
             <View style={styles.pillWrap}>
