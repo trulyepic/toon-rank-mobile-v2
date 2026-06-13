@@ -60,6 +60,7 @@ loading/error/empty states:
 | Issue reporting + public issue tracker                                         | ✅ Done |
 | About, How Rankings Work, NotFound screens                                     | ✅ Done |
 | Theme picker (Violet / Classic / Amber, persisted)                             | ✅ Done |
+| First-launch onboarding/tutorial, persisted locally after completion           | ✅ Done |
 | Contributor series submission + My Submissions                                 | ✅ Done |
 | App store config (bundle IDs, splash/icon assets, iOS encryption declaration)  | ✅ Done |
 | Android production build (APK/AAB confirmed)                                   | ✅ Done |
