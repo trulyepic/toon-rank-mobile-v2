@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { fetchRankings } from "../api/series";
+import { fetchRankings, type SeriesSort } from "../api/series";
 import { getMyReadingLists } from "../api/readingLists";
 import {
   AppButton,
@@ -199,12 +199,13 @@ export function HomeScreen() {
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [activeSort, setActiveSort] = useState<SeriesSort>("score");
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
   const [editSeriesItem, setEditSeriesItem] = useState<RankedSeries | null>(null);
 
   const rankingsQuery = useInfiniteQuery({
-    queryKey: ["rankings", activeType, activeGenre, activeStatus],
+    queryKey: ["rankings", activeType, activeGenre, activeStatus, activeSort],
     queryFn: ({ pageParam }) =>
       fetchRankings(
         pageParam,
@@ -212,6 +213,7 @@ export function HomeScreen() {
         getTypeParam(activeType),
         activeGenre ?? undefined,
         activeStatus ?? undefined,
+        activeSort,
       ),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
@@ -467,9 +469,12 @@ export function HomeScreen() {
         onStatusChange={setActiveStatus}
         activeGenre={activeGenre}
         onGenreChange={setActiveGenre}
+        activeSort={activeSort}
+        onSortChange={setActiveSort}
         onReset={() => {
           setActiveStatus(null);
           setActiveGenre(null);
+          setActiveSort("score");
         }}
       />
     </ScreenShell>
