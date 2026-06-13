@@ -156,32 +156,51 @@ export const radii = {
   pill: 999,
 };
 
+// Brand font families. Names must match the @expo-google-fonts exports loaded in
+// App.tsx. In React Native each weight is its own family (fontWeight alone won't
+// switch face), so headings use Manrope (matches the web display font) and
+// body/UI uses Inter. fontWeight is kept as a graceful fallback if a face fails
+// to load.
+export const fonts = {
+  body: "Inter_400Regular",
+  medium: "Inter_500Medium",
+  semibold: "Inter_600SemiBold",
+  bold: "Inter_700Bold",
+  heading: "Manrope_800ExtraBold",
+  headingBold: "Manrope_700Bold",
+};
+
 export const typography = {
   screenTitle: {
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "800" as const,
+    fontFamily: fonts.heading,
   },
   sectionTitle: {
     fontSize: 24,
     lineHeight: 30,
     fontWeight: "800" as const,
+    fontFamily: fonts.heading,
   },
   cardTitle: {
     fontSize: 18,
     lineHeight: 24,
     fontWeight: "800" as const,
+    fontFamily: fonts.heading,
   },
   body: {
     fontSize: 15,
     lineHeight: 23,
     fontWeight: "400" as const,
+    fontFamily: fonts.body,
   },
   label: {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "700" as const,
     letterSpacing: 0.8,
+    fontFamily: fonts.bold,
   },
 };
 

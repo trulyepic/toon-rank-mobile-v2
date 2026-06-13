@@ -3,6 +3,14 @@ import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useCallback, useEffect, useState } from "react";
+import { useFonts } from "expo-font";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+import { Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
 import { AuthProvider } from "./src/auth/AuthContext";
 import { CompareProvider } from "./src/context/CompareContext";
@@ -42,6 +50,14 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [navKey, setNavKey] = useState(0);
   const onThemeChange = useCallback(() => setNavKey((k) => k + 1), []);
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+  });
 
   useEffect(() => {
     void configureGoogleSignIn();
@@ -55,7 +71,7 @@ export default function App() {
       .finally(() => setReady(true));
   }, []);
 
-  if (!ready) return null;
+  if (!ready || !fontsLoaded) return null;
 
   return (
     <SafeAreaProvider>

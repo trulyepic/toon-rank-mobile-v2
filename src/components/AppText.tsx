@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { StyleSheet, Text, type TextProps, type TextStyle } from "react-native";
 
-import { colors, typography } from "../theme/tokens";
+import { colors, fonts, typography } from "../theme/tokens";
 
 type AppTextVariant =
   | "screenTitle"
@@ -57,6 +57,7 @@ export function AppText({
 const styles = StyleSheet.create({
   base: {
     letterSpacing: 0,
+    fontFamily: fonts.body,
   },
   screenTitle: typography.screenTitle,
   sectionTitle: typography.sectionTitle,
@@ -70,5 +71,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
 });
