@@ -91,6 +91,11 @@ export const colors = {
   danger: "#eb6a5a",
   overlayBorder: "rgba(255,255,255,0.12)",
   shadow: "#000000",
+  // Rating bar fill — blue→cyan gradient matching the website wordmark/identity.
+  // Theme-independent on purpose so the rating breakdown reads as "Toon Ranks blue"
+  // across all palettes.
+  ratingBarFrom: "#3b82f6",
+  ratingBarTo: "#22d3ee",
 };
 
 /** Mutate the shared colors object to the given palette. Call before first render. */
