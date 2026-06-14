@@ -64,28 +64,30 @@ loading/error/empty states:
 | Contributor series submission + My Submissions                                 | ✅ Done |
 | App store config (bundle IDs, splash/icon assets, iOS encryption declaration)  | ✅ Done |
 | Android production build (APK/AAB confirmed)                                   | ✅ Done |
+| Android Google Play production release                                         | ✅ Done |
 
 ### Blocked on external prerequisites (not code gaps)
 
-| Item                                                  | Blocker                                                 |
-| ----------------------------------------------------- | ------------------------------------------------------- |
-| iOS production build + TestFlight (Phase 19b)         | Apple Developer account ($99/yr)                        |
-| App Store Connect listing, screenshots, age rating    | Apple Developer account                                 |
-| Google Play Console listing, screenshots, data safety | Google Play Developer account ($25)                     |
-| Phase 16 — email verification deep link back to app   | App live in stores + Universal/App Links verified first |
+| Item                                                | Blocker                                                   |
+| --------------------------------------------------- | --------------------------------------------------------- |
+| iOS production build + TestFlight (Phase 19b)       | Apple Developer account ($99/yr)                          |
+| App Store Connect listing, screenshots, age rating  | Apple Developer account                                   |
+| Android App Links final verification                | Play App Signing SHA-256 + frontend `assetlinks.json`     |
+| Phase 16 — email verification deep link back to app | Universal/App Links verified first; iOS still store-gated |
 
 ### Remaining enhancement phases (not core — optional for MVP)
 
 These are being worked next, in order. **Phase 28.5 (admin pending titles + role management) is
 deferred to much later** by product decision.
 
-| Phase    | What it adds                                                                      | Status                                             |
-| -------- | --------------------------------------------------------------------------------- | -------------------------------------------------- |
-| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done                                            |
-| **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done                                            |
-| **40**   | Admin issue triage controls (status change + delete)                              | ✅ Done                                            |
-| **41**   | Scheme deep links (series, threads, profiles, leaderboard, issues) + fallback     | ✅ Done (scheme slice; Universal Links → Phase 16) |
-| **28.5** | Admin pending titles review + user role management                                | Deferred                                           |
+| Phase    | What it adds                                                                      | Status                                            |
+| -------- | --------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **38**   | Reading-list quick-add on home/search cards; type-page decision; regression tests | ✅ Done                                           |
+| **39**   | Draft persistence, quote-reply, docked composer, reading-list insertion           | ✅ Done                                           |
+| **40**   | Admin issue triage controls (status change + delete)                              | ✅ Done                                           |
+| **41**   | Scheme deep links (series, threads, profiles, leaderboard, issues) + fallback     | ✅ Done (scheme slice; HTTPS links → Phase 42/16) |
+| **42**   | Android App Links for canonical website URLs                                      | In progress; waiting on deploy + new AAB          |
+| **28.5** | Admin pending titles review + user role management                                | Deferred                                          |
 
 ### Minor open items inside core phases
 
@@ -795,9 +797,9 @@ the app after verifying, rather than dropping them on the website.
 ### Background
 
 Currently all verification emails send a web link (`https://toonranks.com/verify?token=...`)
-regardless of whether the account was created on web or mobile. This is intentional for now — the
-app is not yet in the app stores and Universal Links / App Links cannot be configured without a
-signed, publicly distributed build.
+regardless of whether the account was created on web or mobile. This is intentional for now: Android
+is live on Google Play, but verified HTTPS App Links are still being completed in Phase 42, and iOS
+Universal Links remain blocked until the iOS app is store-live.
 
 The correct implementation requires three sides working together:
 
@@ -810,16 +812,17 @@ The correct implementation requires three sides working together:
 - **Mobile**: register `toonranks://auth/verified` as a deep link route; navigate the user to the
   Login screen with a success banner when this link fires.
 
-The email link must always be a web URL — `toonranks://` custom scheme links do not open in most
-desktop email clients (Gmail web, Outlook, Apple Mail on macOS) and would be a dead link for those
-users. The web-first approach ensures the link always works regardless of device.
+The email link must always be a web URL because `toonranks://` custom scheme links do not open in
+most desktop email clients (Gmail web, Outlook, Apple Mail on macOS) and would be a dead link for
+those users. The web-first approach ensures the link always works regardless of device.
 
 ### Prerequisites before starting this phase
 
-- [ ] App is signed and live in the Apple App Store and Google Play Store
-- [ ] `apple-app-site-association` file served from `toonranks.com/.well-known/`
-- [ ] `assetlinks.json` file served from `toonranks.com/.well-known/`
-- [ ] Universal Links (iOS) and App Links (Android) verified end-to-end
+- [x] Android app is signed and live in Google Play.
+- [ ] iOS app is signed and live in the Apple App Store.
+- [ ] `apple-app-site-association` file served from `toonranks.com/.well-known/`.
+- [ ] Android `assetlinks.json` file served from `toonranks.com/.well-known/` with the Play App Signing SHA-256 fingerprint. Tracked in Phase 42.
+- [ ] Universal Links (iOS) and App Links (Android) verified end-to-end.
 
 ### Work items
 
@@ -2799,17 +2802,16 @@ The website currently has public and account routes for home, auth, verification
 
 > **Scope (June 2026): focused scheme-based slice.** This phase shipped `toonranks://` deep links
 > for the screens that already exist natively, plus a NotFound fallback, a route parity table, and
-> parse tests. **Universal Links / App Links (https links opening the app) and the password-reset
-> email deep link are deferred to Phase 16**, because they require the app to be live in the stores
-> with `apple-app-site-association` / `assetlinks.json` served from toonranks.com before they can be
-> verified end-to-end. The config lives in `src/navigation/linking.ts`.
+> parse tests. Android HTTPS App Links are tracked in Phase 42 now that the Android app is live.
+> iOS Universal Links and verification/reset email handoff remain deferred to Phase 16. The config
+> lives in `src/navigation/linking.ts`.
 
 ### Current mobile status
 
 - [x] Mobile linking handles `toonranks://lists/:token` for public reading lists.
 - [x] Native routes already exist for series detail, login, signup, check email, reading lists, public reading list, forum threads, forum activity, profile, report issue, and settings.
 - [x] Scheme deep links now also cover series detail, forum thread (+ post anchor), public profile, leaderboard, issue tracker, and report issue, with a NotFound wildcard fallback.
-- [ ] Verify email and reset password deep links remain deferred to Phase 16 (need store-live Universal/App Links).
+- [ ] Verify email and reset password deep links remain deferred to Phase 16 (need verified Universal/App Links).
 - [x] Deep linking is now mapped for the high-value native routes.
 
 ### Work items
@@ -2818,8 +2820,8 @@ The website currently has public and account routes for home, auth, verification
 - [x] Support deep links for high-value user-facing routes: series detail, forum thread (+ post
       anchor via `?postId=`), public list, public profile, leaderboard, issue tracker, and report
       issue. (Login/signup/verify/reset deferred — see scope note.)
-- [ ] **Reset-password deep link — deferred to Phase 16.** Needs the reset email to emit a link the
-      app can claim (Universal/App Links), which requires a store-live signed build. Tracked there.
+- [ ] **Reset-password deep link - deferred to Phase 16.** Needs the reset email to emit a link the
+      app can claim after verified Universal/App Links are complete. Tracked there.
 - [x] Open low-value or desktop-heavy routes in the production website when native parity is not
       worth building yet (e.g. submissions/pending-titles stay web/admin-only for now).
 - [x] Add a native fallback screen for unsupported or expired links (`NotFoundScreen`, wired as the
@@ -2871,6 +2873,52 @@ The website currently has public and account routes for home, auth, verification
 Links 1–4 need real IDs/tokens that exist in your data; links 5–8 take no parameters and work as-is.
 
 Done means frontend route additions are less likely to quietly leave the mobile app behind.
+
+---
+
+## Phase 42: Android App Links And Post-Launch Deep-Link Verification
+
+Suggested branch group:
+
+- `mobile-android-app-links`
+- `frontend-android-app-links`
+
+Purpose: make canonical `https://www.toonranks.com` links open the installed Android app now that
+Toon Ranks is live on Google Play.
+
+### Current status
+
+- [x] Toon Ranks Android is live on Google Play.
+- [x] Mobile app claims canonical `www.toonranks.com` HTTPS routes in Android intent filters.
+- [x] React Navigation accepts `https://www.toonranks.com` links.
+- [x] Play App Signing SHA-256 fingerprint captured from the installed Play Store build.
+- [x] Frontend `assetlinks.json` file added with the Play App Signing SHA-256 fingerprint.
+- [ ] Frontend deploy is live and `https://www.toonranks.com/.well-known/assetlinks.json` returns JSON.
+- [ ] New Android AAB is built and released after the native intent-filter change.
+- [ ] Real-device links open the installed app.
+
+### Work items
+
+- [x] Add Android HTTPS App Links intent filters for `/series`, `/forum`, `/user`, `/lists`,
+      `/leaderboard`, `/issues`, and `/report-issue`.
+- [x] Add `https://www.toonranks.com` to linking prefixes and tests.
+- [x] Capture the Play App Signing SHA-256 fingerprint from the installed Play Store APK.
+- [x] Add frontend `public/.well-known/assetlinks.json` using that fingerprint.
+- [ ] Deploy frontend and confirm `https://www.toonranks.com/.well-known/assetlinks.json` returns JSON.
+- [ ] Build and release a new Android AAB after the native intent-filter change.
+- [ ] Verify example links on a real Android device.
+
+### Verification links
+
+After the new AAB and `assetlinks.json` are live, tap these links from a real Android phone with
+Toon Ranks installed:
+
+- `https://www.toonranks.com/series/1`
+- `https://www.toonranks.com/forum/1`
+- `https://www.toonranks.com/leaderboard`
+
+Done means Google can verify Toon Ranks as the handler for canonical website links, and supported
+website URLs open the installed Android app instead of staying in the browser.
 
 ---
 

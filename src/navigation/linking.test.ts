@@ -21,6 +21,10 @@ describe("deep link config", () => {
     expect(linking.prefixes).toContain("toonranks://");
   });
 
+  it("registers the canonical production website host for Android App Links", () => {
+    expect(linking.prefixes).toContain("https://www.toonranks.com");
+  });
+
   it("maps the high-value routes to stable paths", () => {
     expect(pathOf("SeriesDetail")).toBe("series/:seriesId");
     expect(pathOf("ForumThread")).toBe("forum/:threadId");
