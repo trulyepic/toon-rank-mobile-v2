@@ -3,14 +3,15 @@ import type { LinkingOptions } from "@react-navigation/native";
 import type { RootStackParamList } from "./RootNavigator";
 
 /**
- * Deep-link configuration for the `toonranks://` custom scheme.
+ * Deep-link configuration for the `toonranks://` custom scheme and the
+ * canonical `https://www.toonranks.com` Android App Links host.
  *
- * Scope (Phase 41): scheme-based links for the screens that already exist
- * natively. Universal Links / App Links (https links opening the app) and the
- * password-reset email link are intentionally deferred to Phase 16, since they
- * require the app to be live in the stores with apple-app-site-association /
- * assetlinks.json served from toonranks.com before they can be verified
- * end-to-end.
+ * Scope (Phase 41 + Phase 42): scheme-based links cover the screens that
+ * already exist natively. Android App Links are now prepared for the canonical
+ * production host; domain verification still requires `assetlinks.json` with
+ * the Google Play App Signing SHA-256 fingerprint served by the web frontend.
+ * iOS Universal Links and password-reset/verification email handoff remain
+ * deferred until the Apple app is live.
  *
  * Numeric path params are coerced with `parse` so screens receive real numbers
  * (React Navigation otherwise passes path/query params as strings). The forum
@@ -24,7 +25,7 @@ import type { RootStackParamList } from "./RootNavigator";
  * navigation.
  */
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ["toonranks://"],
+  prefixes: ["toonranks://", "https://www.toonranks.com"],
   config: {
     screens: {
       SeriesDetail: { path: "series/:seriesId", parse: { seriesId: Number } },

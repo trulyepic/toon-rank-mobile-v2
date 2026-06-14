@@ -39,6 +39,48 @@
               "scheme": "toonranks"
             }
           ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "pathPrefix": "/series"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "pathPrefix": "/forum"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "pathPrefix": "/user"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "pathPrefix": "/lists"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "path": "/leaderboard"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "path": "/issues"
+            },
+            {
+              "scheme": "https",
+              "host": "www.toonranks.com",
+              "path": "/report-issue"
+            }
+          ]
         }
       ]
     },
