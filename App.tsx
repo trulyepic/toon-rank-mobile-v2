@@ -16,8 +16,10 @@ import { AuthProvider } from "./src/auth/AuthContext";
 import { CompareProvider } from "./src/context/CompareContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { linking } from "./src/navigation/linking";
+import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { applyTheme, colors, DEFAULT_THEME, type ThemeName } from "./src/theme/tokens";
 import { ThemeProvider } from "./src/theme/ThemeContext";
+import { hasSeenOnboarding, markOnboardingSeen } from "./src/utils/onboarding";
 import { configureGoogleSignIn } from "./src/utils/googleSignInNative";
 import * as SecureStore from "expo-secure-store";
 
@@ -48,6 +50,7 @@ function AppInner({ navKey }: { navKey: number }) {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [navKey, setNavKey] = useState(0);
   const onThemeChange = useCallback(() => setNavKey((k) => k + 1), []);
   const [fontsLoaded] = useFonts({
@@ -61,29 +64,42 @@ export default function App() {
 
   useEffect(() => {
     void configureGoogleSignIn();
-    // Read and apply theme before anything renders
-    SecureStore.getItemAsync(THEME_KEY)
-      .then((stored) => {
+    // Read and apply theme before anything renders, then decide whether the
+    // local first-launch onboarding should be shown for this install.
+    Promise.all([SecureStore.getItemAsync(THEME_KEY), hasSeenOnboarding()])
+      .then(([stored, onboardingSeen]) => {
         const theme = (stored as ThemeName) ?? DEFAULT_THEME;
         applyTheme(theme);
+        setShowOnboarding(!onboardingSeen);
       })
-      .catch(() => {})
+      .catch(() => {
+        applyTheme(DEFAULT_THEME);
+      })
       .finally(() => setReady(true));
   }, []);
 
   if (!ready || !fontsLoaded) return null;
 
+  async function completeOnboarding() {
+    setShowOnboarding(false);
+    await markOnboardingSeen();
+  }
+
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <CompareProvider>
-            <ThemeProvider onThemeChange={onThemeChange}>
-              <AppInner navKey={navKey} />
-            </ThemeProvider>
-          </CompareProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      {showOnboarding ? (
+        <OnboardingScreen onComplete={() => void completeOnboarding()} />
+      ) : (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <CompareProvider>
+              <ThemeProvider onThemeChange={onThemeChange}>
+                <AppInner navKey={navKey} />
+              </ThemeProvider>
+            </CompareProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      )}
     </SafeAreaProvider>
   );
 }
