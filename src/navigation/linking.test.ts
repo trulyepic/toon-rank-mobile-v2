@@ -28,7 +28,7 @@ describe("deep link config", () => {
   it("maps the high-value routes to stable paths", () => {
     expect(pathOf("SeriesDetail")).toBe("series/:seriesId");
     expect(pathOf("ForumThread")).toBe("forum/:threadId");
-    expect(pathOf("PublicProfile")).toBe("profile/:username");
+    expect(pathOf("PublicProfile")).toBe("user/:username");
     expect(pathOf("PublicReadingList")).toBe("lists/:token");
     expect(pathOf("Leaderboard")).toBe("leaderboard");
     expect(pathOf("IssueTracker")).toBe("issues");
