@@ -110,7 +110,7 @@ function FavoriteCard({
           {favorite.title}
         </AppText>
         {favorite.type ? (
-          <AppText variant="caption" tone="subtle">
+          <AppText variant="caption" tone="muted">
             {favorite.type}
           </AppText>
         ) : null}

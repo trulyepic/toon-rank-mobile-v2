@@ -23,7 +23,7 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { colors, radii, shadows, spacing, typography } from "../theme/tokens";
+import { colors, radii, spacing } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
 import {
   getTypeParam,
@@ -134,14 +134,16 @@ function HomeCard({
         </View>
 
         <View style={styles.posterMeta}>
-          <Text numberOfLines={2} style={styles.posterTitle}>
+          <AppText variant="caption" numberOfLines={1} style={styles.posterTitle}>
             {item.title}
-          </Text>
+          </AppText>
           <View style={styles.posterMetaRow}>
-            <Text style={styles.posterType}>{item.type}</Text>
-            <Text style={styles.posterVotes}>
+            <AppText variant="caption" tone="muted">
+              {item.type}
+            </AppText>
+            <AppText variant="caption" tone="muted">
               {item.vote_count.toLocaleString()} votes
-            </Text>
+            </AppText>
           </View>
         </View>
       </Pressable>
@@ -490,7 +492,9 @@ function getStyles() {
       paddingTop: spacing.sm,
     },
     columnWrap: {
-      gap: spacing.md,
+      // Tighter inter-column gap (matches the profile favorites grid) so each
+      // card — and its cover — is a little wider.
+      gap: spacing.sm,
     },
     typeRail: {
       flexDirection: "row",
@@ -582,19 +586,20 @@ function getStyles() {
     posterCard: {
       flex: 1,
       minWidth: 0,
-      gap: spacing.sm,
-      padding: 6,
-      borderRadius: radii.xl,
+      // Full-bleed cover that sits flush to the card edges (mirrors the
+      // public-profile Favorite Series card): no inner padding, a single
+      // rounded radius, and overflow hidden so the cover's top corners are
+      // clipped to the card. The meta/actions add their own padding below.
+      borderRadius: radii.lg,
       borderWidth: 1,
       borderColor: colors.borderSoft,
       backgroundColor: colors.surfaceRaised,
+      overflow: "hidden",
     },
     posterWrap: {
       position: "relative",
       overflow: "hidden",
-      borderRadius: radii.xl,
       backgroundColor: "transparent",
-      ...shadows.card,
     },
     posterImage: {
       width: "100%",
@@ -667,10 +672,12 @@ function getStyles() {
       fontWeight: "800",
     },
     cardActions: {
-      marginTop: spacing.xs,
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingBottom: spacing.sm,
+      paddingTop: spacing.xs,
     },
     compareButton: {
       alignSelf: "flex-start",
@@ -699,37 +706,22 @@ function getStyles() {
     },
     posterMeta: {
       gap: spacing.xs,
-      paddingHorizontal: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      paddingTop: spacing.sm,
     },
     posterTitle: {
-      color: colors.text,
-      ...typography.cardTitle,
-      // Reserve exactly two lines (lineHeight 24 × 2) so the title block is the
-      // same height whether a title wraps to one or two lines. This keeps the
-      // type/votes row, Compare button, and save icon aligned across all cards.
-      height: typography.cardTitle.lineHeight * 2,
+      // Title font matches the public-profile Favorite Series card (AppText
+      // "caption": 13 / lineHeight 18 / 600). Single line (numberOfLines={1}),
+      // so every card's title block is exactly one line tall (18) — long titles
+      // truncate with an ellipsis, and all cards stay uniformly aligned (the
+      // type/votes row, Compare button, and save icon line up across columns).
+      height: 18,
     },
     posterMetaRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.xs,
-    },
-    posterType: {
-      color: colors.accentStrong,
-      fontSize: 11,
-      lineHeight: 16,
-      textTransform: "uppercase",
-      letterSpacing: 0.7,
-      fontWeight: "800",
-    },
-    posterVotes: {
-      color: colors.textMuted,
-      fontSize: 11,
-      lineHeight: 16,
-      textTransform: "uppercase",
-      letterSpacing: 0.7,
-      fontWeight: "600",
     },
     headerCounter: {
       flexDirection: "row",

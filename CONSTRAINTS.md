@@ -27,10 +27,9 @@ Owner reviews — ONLY commits and pushes when explicitly told to
 Owner merges the branch
         │
         ▼
-Before any release build: bump the app version (see constraint 7)
-        │
-        ▼
 Builds (EAS) and store releases happen separately and manually
+  └─ ONLY when the owner says a build is being made do you bump the
+     app version (see constraint 7) — never at merge
 ```
 
 ---
@@ -100,17 +99,23 @@ test) before the handoff. If you cannot run it, say so explicitly.
 If a requirement is unclear, ask one focused question before writing code. Do not
 make assumptions and build the wrong thing.
 
-### 7. Bump the app version for any change that ships in a new build
+### 7. Bump the app version only when the owner says a build is being made
 
 This project has **no over-the-air updates** (no `expo-updates` / `runtimeVersion`),
 and `eas.json` uses `appVersionSource: "local"` — so EAS does **not** auto-increment
 versions, and **every** change (even pure-JS) reaches users only through a new native
 build uploaded to the store. Google Play **rejects** a reused `versionCode`.
 
-Versioning is a **per-release** step, not a per-change one: many merged branches can
-ship in a single build with a single bump. When a branch's change is intended to ship
-(i.e. the next build will include it), update **all three** fields in `app.json`
-together, so the build is store-ready:
+**Trigger:** bump **only when the owner explicitly says they ran / are about to run a
+build** (e.g. "I ran a build", "cutting a release"). Do **not** bump on merge, on
+handoff, or "to be safe" — merging does not produce a build. Many merged branches
+accumulate and then ship together under a **single** bump when that build is cut. If you
+are unsure whether a build is happening, leave the version untouched and say so in the
+handoff. (The number in `app.json` is the next build's number, which may already be one
+ahead of the live store build — see below.)
+
+When the owner does signal a build, update **all three** fields in `app.json` together
+so the build is store-ready:
 
 | Field                   | Rule                                                                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -118,10 +123,13 @@ together, so the build is store-ready:
 | `ios.buildNumber`       | **+1**, kept in sync with `versionCode` (string). Matters once iOS ships.                                                                                     |
 | `version` (user-facing) | Bump semver (e.g. `1.0.2` → `1.0.3`) for any user-visible change. Optional for build-only/internal fixes, but keep it moving so releases are distinguishable. |
 
-The current live store build is the source of truth for the last-used numbers — never
-assume; check the latest values in `app.json` (and Play Console if unsure) and go one
-higher. If a branch is purely internal (docs, tests, tooling) and will **not** ship in
-a build, do not bump — and say so in the handoff.
+The number in `app.json` is the **next** build's number, and it may already be one
+ahead of the live store build because a bump was staged but not yet built. In that case
+do **not** bump again — that staged number is consumed by the next build. (Example: as
+of this writing `app.json` is `versionCode 4` while the store still serves `3`; build 4
+has not been cut, so it stays `4` until the owner runs that build.) Only after the owner
+says a build was made does the _following_ shippable change move to the next integer.
+Never assume — check `app.json` and Play Console if unsure.
 
 > Robustness option (not yet adopted): switching `eas.json` to
 > `appVersionSource: "remote"` with `autoIncrement` makes EAS bump `versionCode`
