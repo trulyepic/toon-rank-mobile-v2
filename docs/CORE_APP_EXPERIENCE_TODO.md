@@ -91,10 +91,11 @@ deferred to much later** by product decision.
 
 ### Minor open items inside core phases
 
-| Item                                          | Notes                                                     |
-| --------------------------------------------- | --------------------------------------------------------- |
-| Phase 5.5 — markdown regression tests         | Two test items never written                              |
-| Phase 21 — session info / revoke-all-sessions | Backend `DELETE /auth/sessions` may not be live; deferred |
+| Item                                          | Notes                                                        |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| Phase 5.5 - markdown regression tests         | Two test items never written                                 |
+| Phase 21 - session info / revoke-all-sessions | Backend `DELETE /auth/sessions` may not be live; deferred    |
+| Android 15 edge-to-edge warning               | Monitor after Expo / React Native native dependency upgrades |
 
 ### Post-roadmap polish & admin extras (shipped after the sweep)
 
@@ -2893,8 +2894,10 @@ Toon Ranks is live on Google Play.
 - [x] React Navigation accepts `https://www.toonranks.com` links.
 - [x] Play App Signing SHA-256 fingerprint captured from the installed Play Store build.
 - [x] Frontend `assetlinks.json` file added with the Play App Signing SHA-256 fingerprint.
+- [x] Android portrait-only orientation lock removed from Expo config for the next AAB.
 - [ ] Frontend deploy is live and `https://www.toonranks.com/.well-known/assetlinks.json` returns JSON.
 - [ ] New Android AAB is built and released after the native intent-filter change.
+- [ ] Monitor Android 15 edge-to-edge deprecation warning after Expo / React Native native dependency upgrades.
 - [ ] Real-device links open the installed app.
 
 ### Work items
