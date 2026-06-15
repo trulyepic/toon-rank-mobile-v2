@@ -83,11 +83,13 @@ concrete emulator/device test steps.
 8. **API calls go through `src/api/`** wrappers — never call axios directly from a screen.
 9. **Keep changes small and branch-sized** — reusable components over big screen rewrites.
 10. **Run `npm run verify`** before handing work back.
-11. **Bump the app version for anything that ships.** No OTA updates exist here, so every
-    change reaches users only via a new store build, and Play rejects a reused
-    `versionCode`. When a branch's change will ship, bump `android.versionCode` (+1),
-    `ios.buildNumber` (+1), and `version` (semver) together in `app.json`. This is a
-    per-release step, not per-edit. See `CONSTRAINTS.md` constraint 7 for the full rule.
+11. **Bump the app version only when the owner says a build is being made.** No OTA
+    updates exist here, so changes ship only via a new store build, and Play rejects a
+    reused `versionCode`. Bump **only** when the owner explicitly says they ran / are
+    running a build — never on merge or handoff. `app.json` may already be one ahead of
+    the live store build (a staged bump); if so, don't bump again. When triggered, bump
+    `android.versionCode` (+1), `ios.buildNumber` (+1), and `version` (semver) together.
+    See `CONSTRAINTS.md` constraint 7 for the full rule.
 
 ---
 
