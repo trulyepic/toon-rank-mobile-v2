@@ -1,5 +1,10 @@
 import { api } from "./client";
-import type { FavoriteSeries, LeaderboardPage, PublicProfile } from "../types/account";
+import type {
+  FavoriteSeries,
+  LeaderboardPage,
+  PrivacySettings,
+  PublicProfile,
+} from "../types/account";
 
 export async function getLeaderboard(page = 1, pageSize = 50) {
   const res = await api.get<LeaderboardPage>("/users/leaderboard", {
@@ -10,6 +15,11 @@ export async function getLeaderboard(page = 1, pageSize = 50) {
 
 export async function getPublicProfile(username: string) {
   const res = await api.get<PublicProfile>(`/users/${encodeURIComponent(username)}`);
+  return res.data;
+}
+
+export async function updateMyPrivacy(payload: Partial<PrivacySettings>) {
+  const res = await api.patch<PrivacySettings>("/auth/me/privacy", payload);
   return res.data;
 }
 
