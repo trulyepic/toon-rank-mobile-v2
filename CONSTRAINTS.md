@@ -27,6 +27,9 @@ Owner reviews — ONLY commits and pushes when explicitly told to
 Owner merges the branch
         │
         ▼
+Before any release build: bump the app version (see constraint 7)
+        │
+        ▼
 Builds (EAS) and store releases happen separately and manually
 ```
 
@@ -96,6 +99,34 @@ test) before the handoff. If you cannot run it, say so explicitly.
 
 If a requirement is unclear, ask one focused question before writing code. Do not
 make assumptions and build the wrong thing.
+
+### 7. Bump the app version for any change that ships in a new build
+
+This project has **no over-the-air updates** (no `expo-updates` / `runtimeVersion`),
+and `eas.json` uses `appVersionSource: "local"` — so EAS does **not** auto-increment
+versions, and **every** change (even pure-JS) reaches users only through a new native
+build uploaded to the store. Google Play **rejects** a reused `versionCode`.
+
+Versioning is a **per-release** step, not a per-change one: many merged branches can
+ship in a single build with a single bump. When a branch's change is intended to ship
+(i.e. the next build will include it), update **all three** fields in `app.json`
+together, so the build is store-ready:
+
+| Field                   | Rule                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `android.versionCode`   | **+1** integer. Required by Play — must be strictly higher than the last upload.                                                                              |
+| `ios.buildNumber`       | **+1**, kept in sync with `versionCode` (string). Matters once iOS ships.                                                                                     |
+| `version` (user-facing) | Bump semver (e.g. `1.0.2` → `1.0.3`) for any user-visible change. Optional for build-only/internal fixes, but keep it moving so releases are distinguishable. |
+
+The current live store build is the source of truth for the last-used numbers — never
+assume; check the latest values in `app.json` (and Play Console if unsure) and go one
+higher. If a branch is purely internal (docs, tests, tooling) and will **not** ship in
+a build, do not bump — and say so in the handoff.
+
+> Robustness option (not yet adopted): switching `eas.json` to
+> `appVersionSource: "remote"` with `autoIncrement` makes EAS bump `versionCode`
+> automatically on each production build, removing the manual step. Until that change
+> is made, the manual bump above is mandatory.
 
 ---
 

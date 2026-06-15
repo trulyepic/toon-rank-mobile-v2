@@ -7,11 +7,21 @@ import type { RootStackParamList } from "./RootNavigator";
  * canonical `https://www.toonranks.com` Android App Links host.
  *
  * Scope (Phase 41 + Phase 42): scheme-based links cover the screens that
- * already exist natively. Android App Links are now prepared for the canonical
- * production host; domain verification still requires `assetlinks.json` with
- * the Google Play App Signing SHA-256 fingerprint served by the web frontend.
- * iOS Universal Links and password-reset/verification email handoff remain
- * deferred until the Apple app is live.
+ * already exist natively. Android App Links target the canonical production
+ * host; domain verification is backed by `assetlinks.json` (with the Google
+ * Play App Signing SHA-256 fingerprint) served by the web frontend at
+ * `/.well-known/assetlinks.json`. Password-reset/verification email handoff
+ * remains deferred until the Apple app is live.
+ *
+ * iOS: `associatedDomains` (`applinks:www.toonranks.com`) is now declared in
+ * `app.json` as mobile-side prep, but Universal Links stay non-functional until
+ * (a) the web host serves `/.well-known/apple-app-site-association` and (b) the
+ * iOS app is live. Until then this config is inert and harmless.
+ *
+ * The public-profile path is `user/:username` to match the canonical web URL
+ * (`https://www.toonranks.com/user/:username`) and the Android App Link intent
+ * filter (`pathPrefix: "/user"`). It was previously `profile/:username`, which
+ * never resolved for App Links.
  *
  * Numeric path params are coerced with `parse` so screens receive real numbers
  * (React Navigation otherwise passes path/query params as strings). The forum
@@ -33,7 +43,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
         path: "forum/:threadId",
         parse: { threadId: Number, postId: Number },
       },
-      PublicProfile: "profile/:username",
+      PublicProfile: "user/:username",
       PublicReadingList: "lists/:token",
       Leaderboard: "leaderboard",
       IssueTracker: "issues",

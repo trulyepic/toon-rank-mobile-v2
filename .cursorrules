@@ -11,6 +11,7 @@ React Navigation, TanStack Query, Axios, expo-secure-store.
 - Always end every task with: numbered emulator/device test steps (with expected outcomes) + one-line commit message + short PR description
 - Never work on `main` — branch as `mobile-<short-desc>`
 - Run `npm run verify` (typecheck + lint + format + test) before handing back
+- Bump the app version for anything that ships: no OTA updates, so Play needs a new build with a higher `versionCode`. Bump `android.versionCode` (+1), `ios.buildNumber` (+1), and `version` (semver) in `app.json`. Per-release, not per-edit — see CONSTRAINTS.md #7
 
 ## Architecture rules
 - API calls go through `src/api/` wrappers — never call axios directly from a screen

@@ -204,6 +204,10 @@ functions, forum image uploads, app-store assets, placeholder Android package na
 - Keep changes small and branch-sized.
 - Prefer TypeScript-safe, reusable components over large one-off screen rewrites.
 - Run `npm run verify` before handing work back when dependencies are available.
+- **Bump the app version for any change that ships.** No OTA updates exist, so every change
+  reaches users only via a new store build and Play rejects a reused `versionCode`. When a
+  branch will ship, bump `android.versionCode` (+1), `ios.buildNumber` (+1), and `version`
+  (semver) together in `app.json`. Per-release, not per-edit. Full rule: `CONSTRAINTS.md` #7.
 - Do not wire production-destructive behavior.
 - Do not introduce mobile-only data stores for data that must be shared with the website.
 - Do not fork product logic unless the backend contract requires it.
