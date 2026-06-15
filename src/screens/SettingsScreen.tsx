@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useMutation } from "@tanstack/react-query";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, StyleSheet, Switch, View } from "react-native";
 
 import {
   AppButton,
@@ -14,6 +15,7 @@ import {
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
 import { deleteAccount } from "../api/auth";
+import { updateMyPrivacy } from "../api/users";
 import { WEB_AUTH_URLS } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, THEME_META, type ThemeName } from "../theme/tokens";
@@ -22,10 +24,49 @@ import { openInAppBrowser } from "../utils/externalLinks";
 
 export function SettingsScreen() {
   const styles = getStyles();
-  const { isSignedIn, logout, status, user } = useAuth();
+  const { isSignedIn, logout, status, user, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const queryClient = useQueryClient();
   const isLoadingAuth = status === "loading";
+
+  // Public-profile visibility toggles. Default ON; synced from the stored user.
+  const [publicRatings, setPublicRatings] = useState(user?.public_ratings ?? true);
+  const [publicPosts, setPublicPosts] = useState(user?.public_posts ?? true);
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
+
+  useEffect(() => {
+    setPublicRatings(user?.public_ratings ?? true);
+    setPublicPosts(user?.public_posts ?? true);
+  }, [user?.public_ratings, user?.public_posts]);
+
+  async function handlePrivacyToggle(
+    key: "public_ratings" | "public_posts",
+    value: boolean,
+  ) {
+    const prevRatings = publicRatings;
+    const prevPosts = publicPosts;
+    // Optimistic update
+    if (key === "public_ratings") setPublicRatings(value);
+    else setPublicPosts(value);
+    setSavingPrivacy(true);
+    try {
+      await updateMyPrivacy({ [key]: value });
+      await updateUser({ [key]: value });
+      // Public profile is cached (staleTime); mark it stale so the view
+      // reflects the new visibility immediately instead of after a reload.
+      queryClient.invalidateQueries({ queryKey: ["users", "public-profile"] });
+    } catch {
+      setPublicRatings(prevRatings);
+      setPublicPosts(prevPosts);
+      Alert.alert(
+        "Couldn't update",
+        "Your privacy setting didn't save. Please check your connection and try again.",
+      );
+    } finally {
+      setSavingPrivacy(false);
+    }
+  }
 
   const deleteMutation = useMutation({
     mutationFn: deleteAccount,
@@ -155,6 +196,32 @@ export function SettingsScreen() {
 
       {isSignedIn ? (
         <View style={styles.section}>
+          <SectionHeader
+            title="Privacy"
+            body="Choose what shows on your public profile."
+          />
+          <Surface variant="raised" radius="xl" style={styles.privacyCard}>
+            <PrivacyToggleRow
+              label="Show my ratings"
+              description="Display the series you've rated on your public profile."
+              value={publicRatings}
+              disabled={savingPrivacy}
+              onValueChange={(v) => handlePrivacyToggle("public_ratings", v)}
+            />
+            <View style={styles.divider} />
+            <PrivacyToggleRow
+              label="Show my forum posts"
+              description="Display your recent forum posts on your public profile."
+              value={publicPosts}
+              disabled={savingPrivacy}
+              onValueChange={(v) => handlePrivacyToggle("public_posts", v)}
+            />
+          </Surface>
+        </View>
+      ) : null}
+
+      {isSignedIn ? (
+        <View style={styles.section}>
           <SectionHeader title="Account" />
           <Surface variant="raised" radius="xl" style={styles.accountCard}>
             <AppButton
@@ -177,6 +244,40 @@ export function SettingsScreen() {
         </View>
       ) : null}
     </ScreenShell>
+  );
+}
+
+function PrivacyToggleRow({
+  label,
+  description,
+  value,
+  disabled,
+  onValueChange,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  disabled?: boolean;
+  onValueChange: (value: boolean) => void;
+}) {
+  const styles = getStyles();
+  return (
+    <View style={styles.toggleRow}>
+      <View style={styles.toggleText}>
+        <AppText variant="cardTitle">{label}</AppText>
+        <AppText variant="caption" tone="muted">
+          {description}
+        </AppText>
+      </View>
+      <Switch
+        value={value}
+        disabled={disabled}
+        onValueChange={onValueChange}
+        trackColor={{ true: colors.accentStrong, false: colors.borderSoft }}
+        thumbColor={colors.text}
+        accessibilityLabel={label}
+      />
+    </View>
   );
 }
 
@@ -245,6 +346,19 @@ function getStyles() {
     },
     accountCard: {
       gap: spacing.sm,
+    },
+    privacyCard: {
+      gap: spacing.sm,
+    },
+    toggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    toggleText: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
     },
     divider: {
       height: 1,

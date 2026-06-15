@@ -7,6 +7,10 @@ export interface AuthUser {
   role: UserRole;
   avatar_url?: string | null;
   avatar_preset?: AvatarPreset | null;
+  // Public-profile visibility toggles (default true). Optional so older stored
+  // sessions without these fields still type-check.
+  public_ratings?: boolean;
+  public_posts?: boolean;
 }
 
 export interface AuthSession {
@@ -93,6 +97,22 @@ export interface PublicReadingListPreview {
   share_token: string;
 }
 
+export interface PublicSeriesRating {
+  series_id: number;
+  title: string | null;
+  cover_url: string | null;
+  type: string | null;
+  score: number;
+}
+
+export interface PublicForumPost {
+  post_id: number;
+  thread_id: number;
+  thread_title: string | null;
+  excerpt: string;
+  created_at: string;
+}
+
 export interface PublicProfile {
   username: string;
   role: UserRole;
@@ -104,6 +124,14 @@ export interface PublicProfile {
   post_count: number;
   favourites: FavoriteSeries[];
   reading_lists: PublicReadingListPreview[];
+  // null when the user has hidden that section (vs [] = public but empty).
+  ratings?: PublicSeriesRating[] | null;
+  posts?: PublicForumPost[] | null;
+}
+
+export interface PrivacySettings {
+  public_ratings: boolean;
+  public_posts: boolean;
 }
 
 export interface UsernameUpdateOut {

@@ -21,7 +21,12 @@ import {
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
-import type { FavoriteSeries, PublicReadingListPreview } from "../types/account";
+import type {
+  FavoriteSeries,
+  PublicForumPost,
+  PublicReadingListPreview,
+  PublicSeriesRating,
+} from "../types/account";
 
 type PublicProfileRoute = RouteProp<RootStackParamList, "PublicProfile">;
 type PublicProfileNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -38,6 +43,17 @@ function formatJoinDate(value?: string | null) {
 
   return date.toLocaleDateString(undefined, {
     month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, {
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
@@ -115,6 +131,71 @@ function FavoriteCard({
           </AppText>
         ) : null}
       </View>
+    </Pressable>
+  );
+}
+
+function RatingCard({
+  rating,
+  onPress,
+}: {
+  rating: PublicSeriesRating;
+  onPress: () => void;
+}) {
+  const styles = getStyles();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${rating.title ?? "series"}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.favoriteCard, pressed ? styles.pressed : null]}
+    >
+      <View style={styles.ratingCoverWrap}>
+        <CoverImage uri={rating.cover_url} style={styles.favoriteCover} />
+        <View style={styles.ratingScoreBadge}>
+          <Ionicons name="star" size={11} color={colors.accentStrong} />
+          <AppText variant="caption" style={styles.ratingScoreText}>
+            {rating.score.toFixed(1)}
+          </AppText>
+        </View>
+      </View>
+      <View style={styles.favoriteText}>
+        <AppText variant="caption" numberOfLines={2}>
+          {rating.title ?? "Untitled"}
+        </AppText>
+        {rating.type ? (
+          <AppText variant="caption" tone="muted">
+            {rating.type}
+          </AppText>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+function PostRow({ post, onPress }: { post: PublicForumPost; onPress: () => void }) {
+  const styles = getStyles();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open thread ${post.thread_title ?? ""}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.postRow, pressed ? styles.pressed : null]}
+    >
+      <View style={styles.listText}>
+        <AppText variant="cardTitle" numberOfLines={1}>
+          {post.thread_title ?? "Thread"}
+        </AppText>
+        <AppText variant="caption" tone="muted" numberOfLines={2}>
+          {post.excerpt}
+        </AppText>
+        {formatDate(post.created_at) ? (
+          <AppText variant="caption" tone="subtle">
+            {formatDate(post.created_at)}
+          </AppText>
+        ) : null}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
   );
 }
@@ -259,6 +340,65 @@ export function PublicProfileScreen() {
             )}
           </View>
 
+          {profile.ratings != null ? (
+            <View style={styles.section}>
+              <SectionHeader
+                title="Ratings"
+                body={`Series ${profile.username} has rated.`}
+              />
+              {profile.ratings.length > 0 ? (
+                <View style={styles.favoritesGrid}>
+                  {profile.ratings.map((rating) => (
+                    <RatingCard
+                      key={rating.series_id}
+                      rating={rating}
+                      onPress={() =>
+                        navigation.navigate("SeriesDetail", {
+                          seriesId: rating.series_id,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              ) : (
+                <EmptyState
+                  title="No ratings yet"
+                  message={`${profile.username} hasn't rated any series yet.`}
+                />
+              )}
+            </View>
+          ) : null}
+
+          {profile.posts != null ? (
+            <View style={styles.section}>
+              <SectionHeader
+                title="Forum Activity"
+                body={`Recent posts from ${profile.username}.`}
+              />
+              {profile.posts.length > 0 ? (
+                <View style={styles.stack}>
+                  {profile.posts.map((post) => (
+                    <PostRow
+                      key={post.post_id}
+                      post={post}
+                      onPress={() =>
+                        navigation.navigate("ForumThread", {
+                          threadId: post.thread_id,
+                          postId: post.post_id,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              ) : (
+                <EmptyState
+                  title="No posts yet"
+                  message={`${profile.username} hasn't posted in the forum yet.`}
+                />
+              )}
+            </View>
+          ) : null}
+
           {readingLists.length > 0 ? (
             <View style={styles.section}>
               <SectionHeader
@@ -348,6 +488,39 @@ function getStyles() {
     favoriteText: {
       gap: 2,
       padding: spacing.sm,
+    },
+    ratingCoverWrap: {
+      position: "relative",
+    },
+    ratingScoreBadge: {
+      position: "absolute",
+      top: spacing.xs,
+      right: spacing.xs,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      borderRadius: radii.pill,
+      // Opaque, theme-aware backing so the score stays legible over any cover
+      // and follows the selected theme (was the fixed gold Cred palette).
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+    },
+    ratingScoreText: {
+      color: colors.accentStrong,
+      fontWeight: "800",
+    },
+    postRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.surfaceRaised,
+      padding: spacing.md,
     },
     stack: {
       gap: spacing.sm,
