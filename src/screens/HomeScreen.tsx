@@ -18,6 +18,7 @@ import {
   LoadingState,
   SaveToListSheet,
   ScreenShell,
+  SeriesCardActionsSheet,
   SeriesStatusBadge,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
@@ -66,34 +67,27 @@ function getScoreTone(score: number) {
 function HomeCard({
   item,
   onPress,
-  selectedForCompare,
-  canAddMore,
-  onToggleCompare,
+  onOpenActions,
   showSave,
   saved,
   onSave,
-  showEdit,
-  onEdit,
 }: {
   item: RankedSeries;
   onPress: () => void;
-  selectedForCompare: boolean;
-  canAddMore: boolean;
-  onToggleCompare: () => void;
+  onOpenActions: () => void;
   showSave: boolean;
   saved: boolean;
   onSave: () => void;
-  showEdit: boolean;
-  onEdit: () => void;
 }) {
   const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
-  const compareDisabled = !selectedForCompare && !canAddMore;
 
   return (
     <View style={styles.posterCard}>
       <Pressable
         onPress={onPress}
+        onLongPress={onOpenActions}
+        delayLongPress={250}
         style={({ pressed }) => (pressed ? styles.posterCardPressed : null)}
         accessibilityRole="button"
         accessibilityLabel={`Open details for ${item.title}`}
@@ -117,20 +111,18 @@ function HomeCard({
           <View style={styles.statusBadge}>
             <SeriesStatusBadge status={item.status} />
           </View>
-          {showEdit ? (
-            <Pressable
-              onPress={onEdit}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${item.title}`}
-              style={({ pressed }) => [
-                styles.editOverlayButton,
-                pressed ? styles.editOverlayButtonPressed : null,
-              ]}
-            >
-              <Ionicons name="create-outline" size={15} color={colors.text} />
-            </Pressable>
-          ) : null}
+          <Pressable
+            onPress={onOpenActions}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`More actions for ${item.title}`}
+            style={({ pressed }) => [
+              styles.actionsOverlayButton,
+              pressed ? styles.actionsOverlayButtonPressed : null,
+            ]}
+          >
+            <Ionicons name="ellipsis-horizontal" size={16} color={colors.text} />
+          </Pressable>
         </View>
 
         <View style={styles.posterMeta}>
@@ -141,53 +133,28 @@ function HomeCard({
             <AppText variant="caption" tone="muted">
               {item.type}
             </AppText>
-            <AppText variant="caption" tone="muted">
-              {item.vote_count.toLocaleString()} votes
-            </AppText>
+            {showSave ? (
+              <Pressable
+                onPress={onSave}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  saved
+                    ? `${item.title} is in a reading list. Manage lists`
+                    : `Save ${item.title} to a reading list`
+                }
+                style={({ pressed }) => (pressed ? styles.saveIconPressed : null)}
+              >
+                <Ionicons
+                  name={saved ? "bookmark" : "bookmark-outline"}
+                  size={16}
+                  color={colors.accentStrong}
+                />
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </Pressable>
-
-      <View style={styles.cardActions}>
-        <AppButton
-          onPress={onToggleCompare}
-          size="sm"
-          disabled={compareDisabled}
-          selected={selectedForCompare}
-          label={selectedForCompare ? "Selected" : compareDisabled ? "Max 4" : "Compare"}
-          iconLeft={
-            <Ionicons
-              name={selectedForCompare ? "checkmark" : "git-compare-outline"}
-              size={14}
-              color={colors.text}
-            />
-          }
-          style={styles.compareButton}
-        />
-        {showSave ? (
-          <Pressable
-            onPress={onSave}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={
-              saved
-                ? `${item.title} is in a reading list. Manage lists`
-                : `Save ${item.title} to a reading list`
-            }
-            style={({ pressed }) => [
-              styles.saveIconButton,
-              saved ? styles.saveIconButtonSaved : null,
-              pressed ? styles.saveIconButtonPressed : null,
-            ]}
-          >
-            <Ionicons
-              name={saved ? "bookmark" : "bookmark-outline"}
-              size={16}
-              color={colors.accentStrong}
-            />
-          </Pressable>
-        ) : null}
-      </View>
     </View>
   );
 }
@@ -205,6 +172,8 @@ export function HomeScreen() {
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [saveSeriesId, setSaveSeriesId] = useState<number | null>(null);
   const [editSeriesItem, setEditSeriesItem] = useState<RankedSeries | null>(null);
+  // Series whose action sheet (Compare / Save / Edit) is open, or null.
+  const [actionsItem, setActionsItem] = useState<RankedSeries | null>(null);
 
   const rankingsQuery = useInfiniteQuery({
     queryKey: ["rankings", activeType, activeGenre, activeStatus, activeSort],
@@ -386,14 +355,10 @@ export function HomeScreen() {
           <HomeCard
             item={item}
             onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
-            selectedForCompare={isSelected(item.id)}
-            canAddMore={canAddMore}
-            onToggleCompare={() => toggleCompare(item)}
+            onOpenActions={() => setActionsItem(item)}
             showSave={isSignedIn}
             saved={isSeriesInAnyList(readingListsQuery.data, item.id)}
             onSave={() => setSaveSeriesId(item.id)}
-            showEdit={isAdmin}
-            onEdit={() => setEditSeriesItem(item)}
           />
         )}
         ListEmptyComponent={
@@ -445,6 +410,20 @@ export function HomeScreen() {
           ) : null
         }
       />
+
+      {actionsItem ? (
+        <SeriesCardActionsSheet
+          visible={actionsItem != null}
+          onClose={() => setActionsItem(null)}
+          title={actionsItem.title}
+          selectedForCompare={isSelected(actionsItem.id)}
+          canAddMore={canAddMore}
+          compareCount={compareItems.length}
+          showEdit={isAdmin}
+          onToggleCompare={() => toggleCompare(actionsItem)}
+          onEdit={() => setEditSeriesItem(actionsItem)}
+        />
+      ) : null}
 
       {saveSeriesId != null ? (
         <SaveToListSheet
@@ -639,7 +618,7 @@ function getStyles() {
       right: spacing.sm,
       bottom: spacing.sm,
     },
-    editOverlayButton: {
+    actionsOverlayButton: {
       position: "absolute",
       left: spacing.sm,
       bottom: spacing.sm,
@@ -652,7 +631,7 @@ function getStyles() {
       borderWidth: 1,
       borderColor: colors.overlayBorder,
     },
-    editOverlayButtonPressed: {
+    actionsOverlayButtonPressed: {
       opacity: 0.85,
       transform: [{ scale: 0.94 }],
     },
@@ -671,35 +650,6 @@ function getStyles() {
       fontSize: 12,
       fontWeight: "800",
     },
-    cardActions: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-      paddingHorizontal: spacing.sm,
-      paddingBottom: spacing.sm,
-      paddingTop: spacing.xs,
-    },
-    compareButton: {
-      alignSelf: "flex-start",
-    },
-    saveIconButton: {
-      width: 34,
-      height: 34,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      borderColor: colors.borderSoft,
-      backgroundColor: colors.surfaceRaised,
-    },
-    saveIconButtonSaved: {
-      borderColor: colors.accentBorder,
-      backgroundColor: colors.accentSoft,
-    },
-    saveIconButtonPressed: {
-      opacity: 0.85,
-      transform: [{ scale: 0.96 }],
-    },
     posterCardPressed: {
       opacity: 0.9,
       transform: [{ scale: 0.992 }],
@@ -708,6 +658,7 @@ function getStyles() {
       gap: spacing.xs,
       paddingHorizontal: spacing.sm,
       paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
     },
     posterTitle: {
       // Title font matches the public-profile Favorite Series card (AppText
@@ -722,6 +673,9 @@ function getStyles() {
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.xs,
+    },
+    saveIconPressed: {
+      opacity: 0.6,
     },
     headerCounter: {
       flexDirection: "row",
