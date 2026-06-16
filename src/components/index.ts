@@ -19,6 +19,7 @@ export { SeriesStatusBadge } from "./SeriesStatusBadge";
 export { RoleNameText } from "./RoleNameText";
 export { RankerBadge } from "./RankerBadge";
 export { SaveToListSheet } from "./SaveToListSheet";
+export { SeriesCardActionsSheet } from "./SeriesCardActionsSheet";
 export { InsertReadingListSheet } from "./InsertReadingListSheet";
 export { Surface } from "./Surface";
 export { UserAvatar } from "./UserAvatar";
