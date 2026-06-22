@@ -220,6 +220,11 @@ export function SeriesDetailScreen() {
       queryClient.setQueryData(["series-detail", seriesId], updatedDetail);
       void detailQuery.refetch();
       void summaryQuery.refetch();
+      // A vote can change this title's score and therefore its rank, so the
+      // cached Home rankings (and leaderboard) are now stale — invalidate them
+      // so the front page reflects the new order without a full app reload.
+      void queryClient.invalidateQueries({ queryKey: ["rankings"] });
+      void queryClient.invalidateQueries({ queryKey: ["users", "leaderboard"] });
       // Rating a series is a strong "happy moment" — let the gated, OS-rate-limited
       // in-app review prompt decide whether to ask the user to rate us on the store.
       void maybePromptForReview();

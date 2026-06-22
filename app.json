@@ -4,7 +4,7 @@
     "slug": "toonranks-mobile",
     "scheme": "toonranks",
     "newArchEnabled": false,
-    "version": "1.0.6",
+    "version": "1.0.7",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.toonranks.mobile",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "associatedDomains": ["applinks:www.toonranks.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -29,7 +29,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.toonranks.mobile",
-      "versionCode": 7,
+      "versionCode": 8,
       "intentFilters": [
         {
           "action": "VIEW",

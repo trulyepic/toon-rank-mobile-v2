@@ -22,6 +22,13 @@ type Props = PropsWithChildren<{
    * Use for a reply/compose bar that must never be hidden by the keyboard.
    */
   stickyFooter?: ReactNode;
+  /**
+   * When false, children are rendered in a plain flex container instead of a
+   * ScrollView. Use this when the screen's body is itself a virtualized list
+   * (FlatList/SectionList) so the list can own scrolling and keep its
+   * virtualization — never nest a FlatList inside the default ScrollView.
+   */
+  scroll?: boolean;
 }>;
 
 export function ScreenShell({
@@ -31,6 +38,7 @@ export function ScreenShell({
   children,
   scrollRef,
   stickyFooter,
+  scroll = true,
 }: Props) {
   const styles = StyleSheet.create({
     safe: {
@@ -44,6 +52,14 @@ export function ScreenShell({
       padding: spacing.md,
       paddingTop: spacing.lg,
       paddingBottom: spacing.xl,
+      gap: spacing.md,
+    },
+    // Non-scroll body: same insets as the scroll content (minus the bottom
+    // padding, which a hosted list owns via its own contentContainerStyle).
+    body: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.lg,
       gap: spacing.md,
     },
     header: {
@@ -72,21 +88,34 @@ export function ScreenShell({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboard}
       >
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.content}
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.header}>
-            <View style={styles.headerText}>
-              <AppText variant="screenTitle">{title}</AppText>
-              {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
+        {scroll ? (
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.content}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.header}>
+              <View style={styles.headerText}>
+                <AppText variant="screenTitle">{title}</AppText>
+                {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
+              </View>
+              {rightSlot ? <View>{rightSlot}</View> : null}
             </View>
-            {rightSlot ? <View>{rightSlot}</View> : null}
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={styles.body}>
+            <View style={styles.header}>
+              <View style={styles.headerText}>
+                <AppText variant="screenTitle">{title}</AppText>
+                {subtitle ? <AppText tone="muted">{subtitle}</AppText> : null}
+              </View>
+              {rightSlot ? <View>{rightSlot}</View> : null}
+            </View>
+            {children}
           </View>
-          {children}
-        </ScrollView>
+        )}
         {stickyFooter ? <View style={styles.footer}>{stickyFooter}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>

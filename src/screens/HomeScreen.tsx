@@ -1,5 +1,5 @@
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -64,7 +64,7 @@ function getScoreTone(score: number) {
   return colors.danger;
 }
 
-function HomeCard({
+const HomeCard = memo(function HomeCard({
   item,
   onPress,
   onOpenActions,
@@ -157,7 +157,7 @@ function HomeCard({
       </Pressable>
     </View>
   );
-}
+});
 
 export function HomeScreen() {
   const styles = getStyles();
@@ -227,6 +227,7 @@ export function HomeScreen() {
   return (
     <ScreenShell
       title="Toon Ranks"
+      scroll={false}
       rightSlot={
         compareItems.length ? (
           <View style={styles.headerCounter}>
@@ -236,121 +237,137 @@ export function HomeScreen() {
         ) : null
       }
     >
-      {rankingsQuery.isLoading ? <LoadingState message="Loading rankings..." /> : null}
-      {rankingsQuery.isError ? (
-        <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
-      ) : null}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.typeRail}
-      >
-        {TITLE_TYPE_FILTERS.map((filter) => {
-          const selected = activeType === filter;
-
-          return (
-            <Pressable
-              key={filter}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => {
-                setActiveType(filter);
-                setActiveGenre(null);
-              }}
-              style={({ pressed }) => [
-                styles.segmentButton,
-                selected ? styles.segmentButtonActive : null,
-                pressed ? styles.segmentButtonPressed : null,
-              ]}
-            >
-              {selected ? <View style={styles.typeDot} /> : null}
-              <AppText
-                variant="caption"
-                tone={selected ? "primary" : "muted"}
-                style={styles.typeButtonText}
-              >
-                {filter}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open filters"
-          onPress={() => setFiltersVisible(true)}
-          style={({ pressed }) => [
-            styles.filtersChip,
-            activeFilterCount > 0 ? styles.filtersChipActive : null,
-            pressed ? styles.segmentButtonPressed : null,
-          ]}
-        >
-          <Ionicons name="options-outline" size={15} color={colors.text} />
-          <AppText variant="caption" style={styles.filtersChipText}>
-            Filters
-          </AppText>
-          {activeFilterCount > 0 ? (
-            <View style={styles.filterCountBadge}>
-              <Text style={styles.filterCountText}>{activeFilterCount}</Text>
-            </View>
-          ) : null}
-        </Pressable>
-
-        {activeStatusLabel ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Clear ${activeStatusLabel} status filter`}
-            onPress={() => setActiveStatus(null)}
-            style={({ pressed }) => [
-              styles.activeFilterChip,
-              pressed ? styles.segmentButtonPressed : null,
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: getSeriesStatusMeta(activeStatus)?.background },
-              ]}
-            />
-            <AppText variant="caption" tone="primary">
-              {activeStatusLabel}
-            </AppText>
-            <Ionicons name="close" size={13} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
-
-        {activeGenre ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Clear ${activeGenre} genre filter`}
-            onPress={() => setActiveGenre(null)}
-            style={({ pressed }) => [
-              styles.activeFilterChip,
-              pressed ? styles.segmentButtonPressed : null,
-            ]}
-          >
-            <AppText variant="caption" tone="primary">
-              {activeGenre}
-            </AppText>
-            <Ionicons name="close" size={13} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
-      </ScrollView>
-
       <FlatList
         data={rankings}
         keyExtractor={(item) => String(item.id)}
-        scrollEnabled={false}
         numColumns={2}
         columnWrapperStyle={styles.columnWrap}
         contentContainerStyle={styles.listContent}
+        style={styles.list}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (rankingsQuery.hasNextPage && !rankingsQuery.isFetchingNextPage) {
+            void rankingsQuery.fetchNextPage();
+          }
+        }}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            {rankingsQuery.isLoading ? (
+              <LoadingState message="Loading rankings..." />
+            ) : null}
+            {rankingsQuery.isError ? (
+              <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
+            ) : null}
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.typeRail}
+            >
+              {TITLE_TYPE_FILTERS.map((filter) => {
+                const selected = activeType === filter;
+
+                return (
+                  <Pressable
+                    key={filter}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      setActiveType(filter);
+                      setActiveGenre(null);
+                    }}
+                    style={({ pressed }) => [
+                      styles.segmentButton,
+                      selected ? styles.segmentButtonActive : null,
+                      pressed ? styles.segmentButtonPressed : null,
+                    ]}
+                  >
+                    {selected ? <View style={styles.typeDot} /> : null}
+                    <AppText
+                      variant="caption"
+                      tone={selected ? "primary" : "muted"}
+                      style={styles.typeButtonText}
+                    >
+                      {filter}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+            >
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open filters"
+                onPress={() => setFiltersVisible(true)}
+                style={({ pressed }) => [
+                  styles.filtersChip,
+                  activeFilterCount > 0 ? styles.filtersChipActive : null,
+                  pressed ? styles.segmentButtonPressed : null,
+                ]}
+              >
+                <Ionicons name="options-outline" size={15} color={colors.text} />
+                <AppText variant="caption" style={styles.filtersChipText}>
+                  Filters
+                </AppText>
+                {activeFilterCount > 0 ? (
+                  <View style={styles.filterCountBadge}>
+                    <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+
+              {activeStatusLabel ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Clear ${activeStatusLabel} status filter`}
+                  onPress={() => setActiveStatus(null)}
+                  style={({ pressed }) => [
+                    styles.activeFilterChip,
+                    pressed ? styles.segmentButtonPressed : null,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: getSeriesStatusMeta(activeStatus)?.background },
+                    ]}
+                  />
+                  <AppText variant="caption" tone="primary">
+                    {activeStatusLabel}
+                  </AppText>
+                  <Ionicons name="close" size={13} color={colors.textMuted} />
+                </Pressable>
+              ) : null}
+
+              {activeGenre ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Clear ${activeGenre} genre filter`}
+                  onPress={() => setActiveGenre(null)}
+                  style={({ pressed }) => [
+                    styles.activeFilterChip,
+                    pressed ? styles.segmentButtonPressed : null,
+                  ]}
+                >
+                  <AppText variant="caption" tone="primary">
+                    {activeGenre}
+                  </AppText>
+                  <Ionicons name="close" size={13} color={colors.textMuted} />
+                </Pressable>
+              ) : null}
+            </ScrollView>
+          </View>
+        }
         renderItem={({ item }) => (
           <HomeCard
             item={item}
@@ -464,8 +481,16 @@ export function HomeScreen() {
 
 function getStyles() {
   return StyleSheet.create({
+    list: {
+      flex: 1,
+    },
     listContent: {
       gap: spacing.md,
+      paddingBottom: spacing.xl,
+    },
+    listHeader: {
+      gap: spacing.md,
+      marginBottom: spacing.md,
     },
     listFooter: {
       paddingTop: spacing.sm,
