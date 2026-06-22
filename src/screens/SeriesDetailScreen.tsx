@@ -9,6 +9,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { getSeriesDetail, getSeriesSummary } from "../api/series";
 import { getMyReadingLists } from "../api/readingLists";
 import { voteSeriesDetail } from "../api/votes";
+import { maybePromptForReview } from "../utils/appReview";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
@@ -219,6 +220,9 @@ export function SeriesDetailScreen() {
       queryClient.setQueryData(["series-detail", seriesId], updatedDetail);
       void detailQuery.refetch();
       void summaryQuery.refetch();
+      // Rating a series is a strong "happy moment" — let the gated, OS-rate-limited
+      // in-app review prompt decide whether to ask the user to rate us on the store.
+      void maybePromptForReview();
     },
     onError: (error) => {
       const message =
