@@ -72,7 +72,8 @@ import type {
   ForumVote,
   ForumVoteResponse,
 } from "../types/forum";
-import { formatForumCount, formatForumDate } from "../utils/forumFormatting";
+import { formatForumCount } from "../utils/forumFormatting";
+import { timeAgo } from "../utils/timeAgo";
 import {
   extractForumSeriesIds,
   getActiveForumMention,
@@ -116,6 +117,7 @@ function PostCard({
   post,
   depth = 0,
   label,
+  isOp = false,
   pendingVote,
   onVote,
   canReply,
@@ -142,6 +144,7 @@ function PostCard({
   post: ForumPost;
   depth?: number;
   label: string;
+  isOp?: boolean;
   pendingVote: ForumVote | null;
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
@@ -209,6 +212,15 @@ function PostCard({
                 {post.author_username || "Unknown reader"}
               </RoleNameText>
             </Pressable>
+            {isOp ? (
+              <View
+                style={styles.opBadge}
+                accessibilityRole="text"
+                accessibilityLabel="Original poster"
+              >
+                <AppText style={styles.opBadgeText}>OP</AppText>
+              </View>
+            ) : null}
             <RankerBadge rank={rank} />
             <View style={styles.replyLabel}>
               <AppText variant="caption">{label}</AppText>
@@ -216,7 +228,7 @@ function PostCard({
           </View>
           <View style={styles.postDateRow}>
             <AppText variant="caption" tone="muted">
-              {formatForumDate(post.created_at)}
+              {timeAgo(post.created_at)}
             </AppText>
             {new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() >
             10000 ? (
@@ -527,6 +539,7 @@ function ReplyTree({
   onBookmark,
   onReport,
   reportedPostIds,
+  opUsername,
 }: {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
@@ -554,6 +567,7 @@ function ReplyTree({
   onBookmark?: (post: ForumPost) => void;
   onReport?: (post: ForumPost) => void;
   reportedPostIds?: Set<number>;
+  opUsername?: string | null;
 }) {
   const styles = getStyles();
   const children = byParent[post.id] || [];
@@ -563,6 +577,7 @@ function ReplyTree({
       : `Reply to @${parentPost.author_username || "reader"}`
     : `Reply ${topIndex}`;
   const isOwner = Boolean(currentUsername && post.author_username === currentUsername);
+  const isOp = Boolean(opUsername && post.author_username === opUsername);
 
   return (
     <View style={styles.replyBranch}>
@@ -570,6 +585,7 @@ function ReplyTree({
         post={post}
         depth={depth}
         label={label}
+        isOp={isOp}
         pendingVote={pendingVote?.postId === post.id ? pendingVote.vote : null}
         onVote={onVote}
         canReply={canReply}
@@ -627,6 +643,7 @@ function ReplyTree({
           onBookmark={onBookmark}
           onReport={onReport}
           reportedPostIds={reportedPostIds}
+          opUsername={opUsername}
         />
       ))}
     </View>
@@ -1185,6 +1202,9 @@ export function ForumThreadScreen() {
   const totalReplies = pages[0]?.total_top_level ?? 0;
   const totalPages = pages[0]?.total_pages ?? 1;
   const originalPost = posts[0];
+  // The original poster's username drives the "OP" badge on their own posts.
+  // Null when the OP is anonymous, which suppresses the badge everywhere.
+  const opUsername = thread?.author_username ?? originalPost?.author_username ?? null;
   const replies = posts.slice(1);
   const byParent = replies.reduce<Record<number, ForumPost[]>>((acc, post) => {
     if (post.parent_id) {
@@ -1807,7 +1827,7 @@ export function ForumThreadScreen() {
             </Pressable>
             <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
             <AppText variant="caption" tone="muted">
-              · {formatForumDate(thread.created_at)}
+              · {timeAgo(thread.created_at)}
             </AppText>
           </View>
 
@@ -2185,6 +2205,7 @@ export function ForumThreadScreen() {
           <PostCard
             post={originalPost}
             label="Original"
+            isOp={Boolean(opUsername)}
             pendingVote={
               voteMutation.isPending && voteMutation.variables?.postId === originalPost.id
                 ? voteMutation.variables.vote
@@ -2267,6 +2288,7 @@ export function ForumThreadScreen() {
                 onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
                 onReport={isSignedIn ? handleReport : undefined}
                 reportedPostIds={reportedPostIds}
+                opUsername={opUsername}
               />
             ))}
           </View>
@@ -2578,6 +2600,21 @@ function getStyles() {
       backgroundColor: colors.backgroundSoft,
       borderWidth: 1,
       borderColor: colors.borderSoft,
+    },
+    opBadge: {
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: 4,
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    opBadgeText: {
+      fontSize: 10,
+      lineHeight: 14,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+      color: colors.accentStrong,
     },
     postFooter: {
       flexDirection: "row",
