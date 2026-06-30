@@ -200,7 +200,7 @@ functions, forum image uploads, app-store assets, placeholder Android package na
 - **Never commit or push without explicit instruction from the owner** (see `CONSTRAINTS.md`).
 - **Always end every task with numbered emulator/device test steps (with expected outcomes), a
   one-line commit message, and a short PR description.**
-- **Never work on `main` directly** — branch as `mobile-<short-desc>`.
+- **Never work on `main` directly** — branch as `<short-desc>` (no `mobile-` prefix — this repo is already the mobile app).
 - Keep changes small and branch-sized.
 - Prefer TypeScript-safe, reusable components over large one-off screen rewrites.
 - Run `npm run verify` before handing work back when dependencies are available.

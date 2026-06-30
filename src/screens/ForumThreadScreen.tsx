@@ -15,6 +15,7 @@ import {
   Alert,
   Image,
   Keyboard,
+  type LayoutChangeEvent,
   Modal,
   Pressable,
   ScrollView,
@@ -22,6 +23,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
 import {
   createForumPost,
@@ -108,16 +110,46 @@ const POSTS_PAGE_SIZE = 20;
 const REPLY_MAX_LENGTH = 2000;
 const MAX_TITLE_LENGTH = 200;
 
+// Reddit/YouTube-style branch rail (ported from the web ThreadPage, adapted to
+// RN). A parent owns ONE continuous rail down its direct replies, drawn as a
+// single SVG path: a vertical spine plus a quadratic curve into each child's
+// avatar centre, ending at the last child (no trailing tail). The avatar lives in
+// a left "rail column"; child centres are measured at runtime (onLayout) because
+// reply heights vary. Tapping the rail collapses the branch.
+const RAIL_AVATAR = 30; // UserAvatar size "sm"
+const RAIL_GAP = 10; // gap between the avatar/rail column and the content
+const RAIL_X = RAIL_AVATAR / 2; // rail x = centre of the avatar column
+const RAIL_CHILD_AVATAR_LEFT = RAIL_AVATAR + RAIL_GAP; // child avatar's left edge
+const RAIL_CHILD_CURVE_X = RAIL_X + 10; // x where the curve flattens into the row
+const RAIL_ELBOW_RADIUS = 12;
+const RAIL_START_Y = RAIL_AVATAR + 4; // rail begins just below the parent avatar
+const RAIL_THICKNESS = 2;
+// Indentation cap (§6): past this depth, each further level indents by the smaller
+// capped amount instead of the full avatar-column width, so deep threads stay
+// readable on narrow phones. The rail still curves into each child.
+const MAX_RAIL_DEPTH = 4;
+const RAIL_CHILD_AVATAR_LEFT_CAPPED = 24;
+
 type PendingVote = {
   postId: number;
   vote: ForumVote | null;
 };
 
+/** Total nested descendants under a post — used for the collapsed "(N replies)". */
+function countDescendants(postId: number, byParent: Record<number, ForumPost[]>): number {
+  const kids = byParent[postId] || [];
+  let total = kids.length;
+  for (const kid of kids) total += countDescendants(kid.id, byParent);
+  return total;
+}
+
 function PostCard({
   post,
-  depth = 0,
-  label,
+  isOriginalPost = false,
   isOp = false,
+  collapsed = false,
+  descendantCount = 0,
+  onExpand,
   pendingVote,
   onVote,
   canReply,
@@ -142,9 +174,11 @@ function PostCard({
   onReport,
 }: {
   post: ForumPost;
-  depth?: number;
-  label: string;
+  isOriginalPost?: boolean;
   isOp?: boolean;
+  collapsed?: boolean;
+  descendantCount?: number;
+  onExpand?: () => void;
   pendingVote: ForumVote | null;
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
@@ -175,68 +209,76 @@ function PostCard({
   const downvotes = getDownvoteCount(post);
   const canEdit = isOwner || isAdmin;
   const canDelete = isOwner || isAdmin;
+  const canQuote = canReply && !isEditing;
   const hasSecondaryActions =
-    (onBookmark || canReport || canEdit || canDelete) && !isEditing;
+    (canQuote || onBookmark || canReport || canEdit || canDelete) && !isEditing;
   const [sheetVisible, setSheetVisible] = useState(false);
+  const isEdited =
+    new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 10000;
 
   return (
-    <Surface
+    <View
       ref={(r) => onRegisterRef?.(r)}
-      variant="raised"
-      radius="xl"
-      style={[
-        styles.postCard,
-        depth > 0 ? styles.replyCard : null,
-        depth > 0 ? { marginLeft: Math.min(depth, 4) * 14 } : null,
-      ]}
+      style={[styles.comment, isOriginalPost ? styles.commentOriginal : null]}
     >
-      <View style={styles.postHeader}>
-        <UserAvatar
-          username={post.author_username || "Reader"}
-          avatarUrl={post.author_avatar_url}
-          avatarPreset={post.author_avatar_preset}
-          size="md"
-        />
-        <View style={styles.postAuthor}>
-          <View style={styles.authorLine}>
+      <View style={styles.commentHeaderText}>
+        <View style={styles.authorLine}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
+            disabled={!post.author_username}
+            onPress={() => {
+              if (post.author_username) onAuthorPress?.(post.author_username);
+            }}
+            style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
+          >
+            <RoleNameText
+              variant={isOriginalPost ? "cardTitle" : "caption"}
+              role={post.author_role}
+            >
+              {post.author_username || "Unknown reader"}
+            </RoleNameText>
+          </Pressable>
+          {isOp ? (
+            <View
+              style={styles.opBadge}
+              accessibilityRole="text"
+              accessibilityLabel="Original poster"
+            >
+              <AppText style={styles.opBadgeText}>OP</AppText>
+            </View>
+          ) : null}
+          <RankerBadge rank={rank} />
+          {isOriginalPost ? (
+            <View style={styles.originalPostPill}>
+              <AppText style={styles.originalPostPillText}>Original post</AppText>
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.postDateRow}>
+          <AppText variant="caption" tone="muted">
+            {timeAgo(post.created_at)}
+          </AppText>
+          {isEdited ? (
+            <AppText variant="caption" tone="muted" style={styles.editedLabel}>
+              · edited
+            </AppText>
+          ) : null}
+          {collapsed && descendantCount > 0 ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
-              disabled={!post.author_username}
-              onPress={() => {
-                if (post.author_username) onAuthorPress?.(post.author_username);
-              }}
+              accessibilityLabel={`Show ${descendantCount} ${
+                descendantCount === 1 ? "reply" : "replies"
+              }`}
+              onPress={onExpand}
+              hitSlop={6}
               style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
             >
-              <RoleNameText variant="cardTitle" role={post.author_role}>
-                {post.author_username || "Unknown reader"}
-              </RoleNameText>
-            </Pressable>
-            {isOp ? (
-              <View
-                style={styles.opBadge}
-                accessibilityRole="text"
-                accessibilityLabel="Original poster"
-              >
-                <AppText style={styles.opBadgeText}>OP</AppText>
-              </View>
-            ) : null}
-            <RankerBadge rank={rank} />
-            <View style={styles.replyLabel}>
-              <AppText variant="caption">{label}</AppText>
-            </View>
-          </View>
-          <View style={styles.postDateRow}>
-            <AppText variant="caption" tone="muted">
-              {timeAgo(post.created_at)}
-            </AppText>
-            {new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() >
-            10000 ? (
-              <AppText variant="caption" tone="muted" style={styles.editedLabel}>
-                (edited)
+              <AppText variant="caption" tone="accent">
+                {descendantCount} {descendantCount === 1 ? "reply" : "replies"}
               </AppText>
-            ) : null}
-          </View>
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -343,27 +385,20 @@ function PostCard({
             accessibilityRole="button"
             accessibilityLabel={`Reply to ${post.author_username || "this post"}`}
             onPress={() => onStartReply(post)}
+            hitSlop={6}
             style={({ pressed }) => [
-              styles.replyAction,
+              styles.textAction,
               pressed ? styles.pressedBadge : null,
             ]}
           >
-            <Ionicons name="return-up-forward-outline" size={13} color={colors.text} />
-            <AppText variant="caption">Reply</AppText>
-          </Pressable>
-        ) : null}
-        {canReply && !isEditing ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Quote ${post.author_username || "this post"}`}
-            onPress={() => onStartQuote(post)}
-            style={({ pressed }) => [
-              styles.replyAction,
-              pressed ? styles.pressedBadge : null,
-            ]}
-          >
-            <Ionicons name="chatbox-ellipses-outline" size={13} color={colors.text} />
-            <AppText variant="caption">Quote</AppText>
+            <Ionicons
+              name="return-up-forward-outline"
+              size={14}
+              color={colors.textMuted}
+            />
+            <AppText variant="caption" tone="muted">
+              Reply
+            </AppText>
           </Pressable>
         ) : null}
         {hasSecondaryActions ? (
@@ -371,12 +406,13 @@ function PostCard({
             accessibilityRole="button"
             accessibilityLabel="More actions"
             onPress={() => setSheetVisible(true)}
+            hitSlop={6}
             style={({ pressed }) => [
-              styles.replyAction,
+              styles.textAction,
               pressed ? styles.pressedBadge : null,
             ]}
           >
-            <Ionicons name="ellipsis-horizontal" size={15} color={colors.textMuted} />
+            <Ionicons name="ellipsis-horizontal" size={16} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>
@@ -385,6 +421,24 @@ function PostCard({
       <Modal transparent visible={sheetVisible} animationType="fade">
         <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)} />
         <View style={styles.actionSheet}>
+          {canQuote ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.sheetRowPressed : null,
+              ]}
+              onPress={() => {
+                setSheetVisible(false);
+                onStartQuote(post);
+              }}
+            >
+              <Ionicons name="chatbox-ellipses-outline" size={17} color={colors.text} />
+              <AppText variant="caption">Quote</AppText>
+            </Pressable>
+          ) : null}
+          {canQuote && (onBookmark || canReport || canEdit || canDelete) ? (
+            <View style={styles.sheetDivider} />
+          ) : null}
           {onBookmark ? (
             <Pressable
               style={({ pressed }) => [
@@ -466,7 +520,7 @@ function PostCard({
           ) : null}
         </View>
       </Modal>
-    </Surface>
+    </View>
   );
 }
 
@@ -512,39 +566,14 @@ function ForumAttachmentPicker({
   );
 }
 
-function ReplyTree({
-  post,
-  byParent,
-  depth,
-  topIndex,
-  pendingVote,
-  onVote,
-  canReply,
-  onStartReply,
-  onStartQuote,
-  editingPostId,
-  editText,
-  onEditStart,
-  onEditChange,
-  onEditSave,
-  onEditCancel,
-  isSavingEdit,
-  onDelete,
-  currentUsername,
-  isAdmin,
-  parentPost,
-  registerPostRef,
-  topRankMap,
-  onAuthorPress,
-  onBookmark,
-  onReport,
-  reportedPostIds,
-  opUsername,
-}: {
+// One child row in a branch: a left gutter that draws the parent-owned vertical
+// rail plus a curved elbow into the child's avatar, then the child content. The
+// rail runs full-height for every child except the last, which stops at the elbow
+// so there is no dangling tail below the final reply.
+type CommentNodeProps = {
   post: ForumPost;
   byParent: Record<number, ForumPost[]>;
   depth: number;
-  topIndex: number;
   pendingVote: PendingVote | null;
   onVote: (post: ForumPost, vote: ForumVote) => void;
   canReply: boolean;
@@ -560,7 +589,6 @@ function ReplyTree({
   onDelete: (post: ForumPost) => void;
   currentUsername: string | null;
   isAdmin: boolean;
-  parentPost?: ForumPost;
   registerPostRef?: (id: number, ref: View | null) => void;
   topRankMap: Record<string, number>;
   onAuthorPress: (username: string) => void;
@@ -568,65 +596,162 @@ function ReplyTree({
   onReport?: (post: ForumPost) => void;
   reportedPostIds?: Set<number>;
   opUsername?: string | null;
-}) {
+};
+
+// A single comment plus its branch. The avatar lives in a left "rail column"; a
+// single SVG path draws one continuous rail (spine + a curve into each direct
+// child's measured avatar centre). Tapping the rail collapses the branch.
+function CommentNode(props: CommentNodeProps) {
+  const {
+    post,
+    byParent,
+    depth,
+    pendingVote,
+    onVote,
+    canReply,
+    onStartReply,
+    onStartQuote,
+    editingPostId,
+    editText,
+    onEditStart,
+    onEditChange,
+    onEditSave,
+    onEditCancel,
+    isSavingEdit,
+    onDelete,
+    currentUsername,
+    isAdmin,
+    registerPostRef,
+    topRankMap,
+    onAuthorPress,
+    onBookmark,
+    onReport,
+    reportedPostIds,
+    opUsername,
+  } = props;
   const styles = getStyles();
   const children = byParent[post.id] || [];
-  const label = parentPost
-    ? depth === 0
-      ? "Reply to original post"
-      : `Reply to @${parentPost.author_username || "reader"}`
-    : `Reply ${topIndex}`;
+  const hasChildren = children.length > 0;
   const isOwner = Boolean(currentUsername && post.author_username === currentUsername);
   const isOp = Boolean(opUsername && post.author_username === opUsername);
 
+  const [collapsed, setCollapsed] = useState(false);
+  const [railPressed, setRailPressed] = useState(false);
+  const [childrenTop, setChildrenTop] = useState<number | null>(null);
+  const [childYs, setChildYs] = useState<Record<number, number>>({});
+
+  const recordChildY = (id: number, y: number) =>
+    setChildYs((prev) => (prev[id] === y ? prev : { ...prev, [id]: y }));
+
+  // Past the cap depth, pull children left so the indent grows slower; the rail's
+  // curve target follows so it still lands on the (shifted) child avatar.
+  const capped = depth >= MAX_RAIL_DEPTH;
+  const childAvatarLeft = capped ? RAIL_CHILD_AVATAR_LEFT_CAPPED : RAIL_CHILD_AVATAR_LEFT;
+  const childCurveX = Math.min(RAIL_CHILD_CURVE_X, childAvatarLeft - 4);
+
+  // Each child's avatar centre, measured relative to this branch's top.
+  const childCenters =
+    !collapsed && hasChildren && childrenTop != null
+      ? children
+          .map((child) => childYs[child.id])
+          .filter((y): y is number => y != null)
+          .map((y) => childrenTop + y + RAIL_AVATAR / 2)
+      : [];
+
+  let railPath: { d: string; height: number } | null = null;
+  if (childCenters.length > 0) {
+    const lastCenter = childCenters[childCenters.length - 1];
+    const lastCurveStart = Math.max(RAIL_START_Y, lastCenter - RAIL_ELBOW_RADIUS);
+    railPath = {
+      d: [
+        `M ${RAIL_X} ${RAIL_START_Y} V ${lastCurveStart}`,
+        ...childCenters.map((center) => {
+          const curveStart = Math.max(RAIL_START_Y, center - RAIL_ELBOW_RADIUS);
+          return `M ${RAIL_X} ${curveStart} Q ${RAIL_X} ${center} ${childCurveX} ${center} H ${childAvatarLeft}`;
+        }),
+      ].join(" "),
+      height: Math.ceil(lastCenter + RAIL_THICKNESS),
+    };
+  }
+
+  const descendantCount = collapsed ? countDescendants(post.id, byParent) : 0;
+
   return (
-    <View style={styles.replyBranch}>
-      <PostCard
-        post={post}
-        depth={depth}
-        label={label}
-        isOp={isOp}
-        pendingVote={pendingVote?.postId === post.id ? pendingVote.vote : null}
-        onVote={onVote}
-        canReply={canReply}
-        onStartReply={onStartReply}
-        onStartQuote={onStartQuote}
-        isOwner={isOwner}
-        isAdmin={isAdmin}
-        isEditing={editingPostId === post.id}
-        editText={editText}
-        onEditStart={onEditStart}
-        onEditChange={onEditChange}
-        onEditSave={onEditSave}
-        onEditCancel={onEditCancel}
-        isSavingEdit={isSavingEdit}
-        onDelete={onDelete}
-        onRegisterRef={(r) => registerPostRef?.(post.id, r)}
-        rank={rankForUsername(topRankMap, post.author_username)}
-        onAuthorPress={onAuthorPress}
-        isBookmarked={post.viewer_has_bookmarked}
-        onBookmark={onBookmark}
-        canReport={
-          !!currentUsername &&
-          !!post.author_username &&
-          post.author_username !== currentUsername &&
-          !reportedPostIds?.has(post.id)
-        }
-        onReport={onReport}
-      />
-      {children.map((child) => (
-        <ReplyTree
-          key={child.id}
-          post={child}
-          byParent={byParent}
-          depth={depth + 1}
-          topIndex={topIndex}
-          pendingVote={pendingVote}
+    <View style={styles.branchRow}>
+      {railPath ? (
+        <Svg
+          pointerEvents="none"
+          style={styles.railSvg}
+          width={childAvatarLeft + RAIL_THICKNESS}
+          height={railPath.height}
+        >
+          <Path
+            d={railPath.d}
+            stroke={railPressed ? colors.accentStrong : colors.accentBorder}
+            strokeWidth={RAIL_THICKNESS}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </Svg>
+      ) : null}
+
+      {/* Avatar + rail column — the rail runs from this comment's avatar down. */}
+      <View style={styles.railColumn}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${post.author_username || "reader"}'s profile`}
+          disabled={!post.author_username}
+          onPress={() => {
+            if (post.author_username) onAuthorPress(post.author_username);
+          }}
+          style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
+        >
+          <UserAvatar
+            username={post.author_username || "Reader"}
+            avatarUrl={post.author_avatar_url}
+            avatarPreset={post.author_avatar_preset}
+            size="sm"
+          />
+        </Pressable>
+        {hasChildren && !collapsed ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Collapse replies"
+            style={styles.railHit}
+            onPress={() => setCollapsed(true)}
+            onPressIn={() => setRailPressed(true)}
+            onPressOut={() => setRailPressed(false)}
+          />
+        ) : null}
+        {hasChildren && collapsed ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Expand replies"
+            style={styles.expandButton}
+            onPress={() => setCollapsed(false)}
+          >
+            <AppText style={styles.expandButtonText}>+</AppText>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {/* Content column */}
+      <View style={styles.contentColumn}>
+        <PostCard
+          post={post}
+          isOp={isOp}
+          collapsed={collapsed}
+          descendantCount={descendantCount}
+          onExpand={() => setCollapsed(false)}
+          pendingVote={pendingVote?.postId === post.id ? pendingVote.vote : null}
           onVote={onVote}
           canReply={canReply}
           onStartReply={onStartReply}
           onStartQuote={onStartQuote}
-          editingPostId={editingPostId}
+          isOwner={isOwner}
+          isAdmin={isAdmin}
+          isEditing={editingPostId === post.id}
           editText={editText}
           onEditStart={onEditStart}
           onEditChange={onEditChange}
@@ -634,18 +759,69 @@ function ReplyTree({
           onEditCancel={onEditCancel}
           isSavingEdit={isSavingEdit}
           onDelete={onDelete}
-          currentUsername={currentUsername}
-          isAdmin={isAdmin}
-          parentPost={post}
-          registerPostRef={registerPostRef}
-          topRankMap={topRankMap}
+          onRegisterRef={(r) => registerPostRef?.(post.id, r)}
+          rank={rankForUsername(topRankMap, post.author_username)}
           onAuthorPress={onAuthorPress}
+          isBookmarked={post.viewer_has_bookmarked}
           onBookmark={onBookmark}
+          canReport={
+            !!currentUsername &&
+            !!post.author_username &&
+            post.author_username !== currentUsername &&
+            !reportedPostIds?.has(post.id)
+          }
           onReport={onReport}
-          reportedPostIds={reportedPostIds}
-          opUsername={opUsername}
         />
-      ))}
+        {hasChildren && !collapsed ? (
+          <View
+            style={[
+              styles.childrenWrap,
+              capped ? { marginLeft: childAvatarLeft - RAIL_CHILD_AVATAR_LEFT } : null,
+            ]}
+            onLayout={(e: LayoutChangeEvent) => {
+              const y = e.nativeEvent.layout.y;
+              setChildrenTop((prev) => (prev === y ? prev : y));
+            }}
+          >
+            {children.map((child) => (
+              <View
+                key={child.id}
+                onLayout={(e: LayoutChangeEvent) =>
+                  recordChildY(child.id, e.nativeEvent.layout.y)
+                }
+              >
+                <CommentNode
+                  post={child}
+                  byParent={byParent}
+                  depth={depth + 1}
+                  pendingVote={pendingVote}
+                  onVote={onVote}
+                  canReply={canReply}
+                  onStartReply={onStartReply}
+                  onStartQuote={onStartQuote}
+                  editingPostId={editingPostId}
+                  editText={editText}
+                  onEditStart={onEditStart}
+                  onEditChange={onEditChange}
+                  onEditSave={onEditSave}
+                  onEditCancel={onEditCancel}
+                  isSavingEdit={isSavingEdit}
+                  onDelete={onDelete}
+                  currentUsername={currentUsername}
+                  isAdmin={isAdmin}
+                  registerPostRef={registerPostRef}
+                  topRankMap={topRankMap}
+                  onAuthorPress={onAuthorPress}
+                  onBookmark={onBookmark}
+                  onReport={onReport}
+                  reportedPostIds={reportedPostIds}
+                  opUsername={opUsername}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -1139,6 +1315,8 @@ export function ForumThreadScreen() {
           };
         },
       );
+      // Refresh the Following tab + its count on the forum screen.
+      void queryClient.invalidateQueries({ queryKey: ["forum", "me"] });
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey });
@@ -1184,6 +1362,8 @@ export function ForumThreadScreen() {
           };
         },
       );
+      // Refresh the Bookmarked tab + its count on the forum screen.
+      void queryClient.invalidateQueries({ queryKey: ["forum", "me"] });
     },
     onError: () => {
       void queryClient.invalidateQueries({ queryKey });
@@ -2202,44 +2382,65 @@ export function ForumThreadScreen() {
       {originalPost ? (
         <View style={styles.section}>
           <SectionHeader title="Original post" />
-          <PostCard
-            post={originalPost}
-            label="Original"
-            isOp={Boolean(opUsername)}
-            pendingVote={
-              voteMutation.isPending && voteMutation.variables?.postId === originalPost.id
-                ? voteMutation.variables.vote
-                : null
-            }
-            onVote={handleVote}
-            canReply={canReplyToThread}
-            onStartReply={handleStartReply}
-            onStartQuote={handleStartQuote}
-            isOwner={Boolean(
-              user?.username && user.username === originalPost.author_username,
-            )}
-            isAdmin={isAdmin}
-            isEditing={editingPostId === originalPost.id}
-            editText={editText}
-            onEditStart={handleEditStart}
-            onEditChange={setEditText}
-            onEditSave={handleEditSave}
-            onEditCancel={handleEditCancel}
-            isSavingEdit={editMutation.isPending}
-            onDelete={handleDelete}
-            onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
-            rank={rankForUsername(topRankMap, originalPost.author_username)}
-            onAuthorPress={openPublicProfile}
-            isBookmarked={originalPost.viewer_has_bookmarked}
-            onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
-            canReport={
-              isSignedIn &&
-              !!originalPost.author_username &&
-              originalPost.author_username !== user?.username &&
-              !reportedPostIds.has(originalPost.id)
-            }
-            onReport={handleReport}
-          />
+          <View style={styles.opRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${
+                originalPost.author_username || "reader"
+              }'s profile`}
+              disabled={!originalPost.author_username}
+              onPress={() => openPublicProfile(originalPost.author_username)}
+              style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
+            >
+              <UserAvatar
+                username={originalPost.author_username || "Reader"}
+                avatarUrl={originalPost.author_avatar_url}
+                avatarPreset={originalPost.author_avatar_preset}
+                size="md"
+              />
+            </Pressable>
+            <View style={styles.contentColumn}>
+              <PostCard
+                post={originalPost}
+                isOriginalPost
+                isOp={Boolean(opUsername)}
+                pendingVote={
+                  voteMutation.isPending &&
+                  voteMutation.variables?.postId === originalPost.id
+                    ? voteMutation.variables.vote
+                    : null
+                }
+                onVote={handleVote}
+                canReply={canReplyToThread}
+                onStartReply={handleStartReply}
+                onStartQuote={handleStartQuote}
+                isOwner={Boolean(
+                  user?.username && user.username === originalPost.author_username,
+                )}
+                isAdmin={isAdmin}
+                isEditing={editingPostId === originalPost.id}
+                editText={editText}
+                onEditStart={handleEditStart}
+                onEditChange={setEditText}
+                onEditSave={handleEditSave}
+                onEditCancel={handleEditCancel}
+                isSavingEdit={editMutation.isPending}
+                onDelete={handleDelete}
+                onRegisterRef={(r) => registerPostRef(originalPost.id, r)}
+                rank={rankForUsername(topRankMap, originalPost.author_username)}
+                onAuthorPress={openPublicProfile}
+                isBookmarked={originalPost.viewer_has_bookmarked}
+                onBookmark={isSignedIn ? (p) => bookmarkMutation.mutate(p.id) : undefined}
+                canReport={
+                  isSignedIn &&
+                  !!originalPost.author_username &&
+                  originalPost.author_username !== user?.username &&
+                  !reportedPostIds.has(originalPost.id)
+                }
+                onReport={handleReport}
+              />
+            </View>
+          </View>
         </View>
       ) : null}
 
@@ -2256,14 +2457,13 @@ export function ForumThreadScreen() {
             title="Replies"
             body={`${formatForumCount(totalReplies, "top-level reply", "top-level replies")} / ${topLevelReplies.length} shown`}
           />
-          <View style={styles.stack}>
-            {topLevelReplies.map((post, index) => (
-              <ReplyTree
+          <View style={styles.replyList}>
+            {topLevelReplies.map((post) => (
+              <CommentNode
                 key={post.id}
                 post={post}
                 byParent={byParent}
                 depth={0}
-                topIndex={index + 1}
                 pendingVote={
                   voteMutation.isPending ? (voteMutation.variables ?? null) : null
                 }
@@ -2281,7 +2481,6 @@ export function ForumThreadScreen() {
                 onDelete={handleDelete}
                 currentUsername={user?.username ?? null}
                 isAdmin={isAdmin}
-                parentPost={originalPost}
                 registerPostRef={registerPostRef}
                 topRankMap={topRankMap}
                 onAuthorPress={openPublicProfile}
@@ -2567,25 +2766,68 @@ function getStyles() {
       borderWidth: 1,
       borderColor: colors.borderSoft,
     },
-    postCard: {
+    // Flat comment (no card) — used for the original post and every reply.
+    comment: {
+      gap: spacing.xs,
+    },
+    commentOriginal: {
       gap: spacing.sm,
     },
-    replyCard: {
-      borderLeftWidth: 4,
-      borderLeftColor: colors.accentBorder,
+    commentHeaderText: {
+      gap: 2,
     },
-    replyBranch: {
-      gap: spacing.sm,
-    },
-    postHeader: {
+    // One comment + its branch: avatar/rail column on the left, content on right.
+    branchRow: {
       flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
+      gap: RAIL_GAP,
+      position: "relative",
     },
-    postAuthor: {
+    railColumn: {
+      width: RAIL_AVATAR,
+      alignItems: "center",
+    },
+    railSvg: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+    },
+    // Transparent, full-height tap target over the rail — collapses the branch.
+    railHit: {
+      flex: 1,
+      alignSelf: "stretch",
+      marginTop: 4,
+    },
+    expandButton: {
+      marginTop: 4,
+      width: 18,
+      height: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    expandButtonText: {
+      fontSize: 13,
+      lineHeight: 15,
+      fontWeight: "800",
+      color: colors.accentStrong,
+    },
+    contentColumn: {
       flex: 1,
       minWidth: 0,
-      gap: 2,
+    },
+    opRow: {
+      flexDirection: "row",
+      gap: RAIL_GAP,
+    },
+    replyList: {
+      gap: spacing.md,
+    },
+    childrenWrap: {
+      marginTop: spacing.sm,
+      gap: spacing.md,
     },
     authorLine: {
       flexDirection: "row",
@@ -2593,13 +2835,21 @@ function getStyles() {
       alignItems: "center",
       gap: spacing.xs,
     },
-    replyLabel: {
+    originalPostPill: {
       paddingHorizontal: spacing.sm,
-      paddingVertical: 3,
+      paddingVertical: 2,
       borderRadius: radii.pill,
-      backgroundColor: colors.backgroundSoft,
+      backgroundColor: colors.accentSoft,
       borderWidth: 1,
-      borderColor: colors.borderSoft,
+      borderColor: colors.accentBorder,
+    },
+    originalPostPillText: {
+      fontSize: 10,
+      lineHeight: 14,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+      color: colors.accentStrong,
+      textTransform: "uppercase",
     },
     opBadge: {
       paddingHorizontal: 5,
@@ -2619,7 +2869,15 @@ function getStyles() {
     postFooter: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.xs,
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    // Plain-text reply/overflow action — no border/pill — placed beside the votes.
+    textAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingVertical: spacing.xs,
     },
     voteGroup: {
       flexDirection: "row",

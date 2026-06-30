@@ -5,6 +5,7 @@ export { AppText } from "./AppText";
 export { Chip, ChipButton } from "./Chip";
 export { EmptyState, ErrorState, LoadingState } from "./StateMessage";
 export { ForumMarkdown } from "./ForumMarkdown";
+export { ForumPersonalFeed, type ForumPersonalView } from "./ForumPersonalFeed";
 export { ForumComposerToolbar } from "./ForumComposerToolbar";
 export { ForumMentionSuggestions } from "./ForumMentionSuggestions";
 export { EditSeriesModal } from "./EditSeriesModal";
