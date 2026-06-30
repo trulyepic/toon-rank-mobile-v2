@@ -4,12 +4,36 @@ Status: **in progress**. Owner gave the go-ahead.
 
 Progress:
 
-- [x] **§2 OP badge** — done (branch `mobile-forum-redesign-todo`).
+- [x] **§2 OP badge** — done (branch `mobile-forum-redesign-todo`, merged).
 - [x] **§3 Relative timestamps** — done (added `src/utils/timeAgo.ts` + tests).
-- [ ] §1 / §4 / §8 Flat comments + connector rails + flat OP + unified body size.
-- [ ] §5 / §6 Collapse / expand + indentation cap.
-- [ ] §9 / §10 / §11 Composer under the OP + flat reply box + action overflow.
-- [ ] §7 Personalized tabs (Discover / Following / Bookmarked).
+- [x] **§1 / §4 / §8 Flat comments + connector rails + flat OP** — done (branch
+      `forum-flat-comments-rails`). Flat comments, parent-owned rail + curved elbow,
+      flat full-width OP with "Original post" pill. §4 (unified body) was already
+      satisfied — OP and replies share one `ForumMarkdown` size. §11 action overflow
+      (Reply beside votes as plain text, Quote moved into the `…` sheet) folded in here
+      since it touched the same action row.
+- [x] **§5 Collapse / expand + rail press-to-collapse** — done (branch
+      `forum-flat-comments-rails`). Also re-did the rail as ONE continuous measured
+      SVG path (see §1 note). **Adds `react-native-svg` — needs a native rebuild.**
+- [x] **§6 Indentation cap** — done (branch `forum-flat-comments-rails`). Past
+      depth 4, child indent shrinks (24px vs 40px) and the rail curve target follows.
+- [x] **§7 Personalized tabs (Discover / Following / Bookmarked)** — done. Native top
+      tab strip on `ForumScreen` (signed-in only; Discover default). New
+      `ForumPersonalFeed` component renders followed threads + bookmarked posts;
+      bookmarked rows use the native `ForumMarkdown` renderer with an "Image" badge.
+      Counts via lightweight `(1, 1)` requests; follow/bookmark toggles invalidate
+      `["forum","me"]`. API wrappers already existed.
+- [~] FlatList virtualization of the reply tree — **intentionally not done.** It
+  conflicts with the measured continuous rail (a parent measures ALL its direct
+  children via `onLayout` to draw one SVG path; virtualization unmounts offscreen
+  rows, so the rail would break) and with scroll-to-post (`measureLayout` against
+  the single `ScrollView`). The thread **already paginates** (20 posts/page via
+  `useInfiniteQuery` + "Load more"), so the render is bounded and the Home-list
+  lag scenario does not apply. Revisit only if a real long-thread perf problem
+  shows up — and then likely virtualize at the top-level-reply granularity, not
+  the whole tree. Logged here so it's a deliberate decision, not an oversight.
+- [~] §9 Composer placement — **skipped on mobile** (native docked bottom composer stays).
+- [~] §10 Flat reply box — **mostly N/A on mobile** (single native docked composer already).
 
 The web frontend (`toonranks-frontend`) shipped a Reddit-style forum redesign on
 branch `frontend-forum-reddit-redesign`. This doc is the spec for bringing the
@@ -45,7 +69,7 @@ Latest web parity updates to include in the mobile port:
   flat and let rails/actions provide interaction feedback.
 
 > Reminder of repo rules (see `CLAUDE.md` / `CONSTRAINTS.md`): branch first as
-> `mobile-<desc>`, use the theme tokens in `src/theme/` (no hardcoded colors),
+> `<desc>` (no `mobile-` prefix), use the theme tokens in `src/theme/` (no hardcoded colors),
 > API calls go through `src/api/`, run `npm run verify` before handoff, and end
 > with numbered emulator/device test steps.
 
@@ -60,7 +84,21 @@ Latest web parity updates to include in the mobile port:
 
 ---
 
-## 1. Reddit-style flat reply tree
+## 1. Reddit-style flat reply tree ✅ DONE (continuous SVG rail) / ⚠️ FlatList deferred
+
+> Implemented in `ForumThreadScreen.tsx`. First pass used two `View`s per child
+> (straight line + bordered elbow) which read as two disjoint rails. **Reworked to
+> match the web**: the avatar now lives in a left "rail column" and a single
+> `react-native-svg` `Path` per node draws ONE continuous rail — a vertical spine
+> plus a quadratic `Q` curve into each direct child's avatar centre, ending at the
+> last child (no tail). Child centres are measured at runtime via `onLayout` (reply
+> heights vary). The recursive node component is `CommentNode`; geometry is in the
+> `RAIL_*` constants. **This adds `react-native-svg` — the app needs a native
+> rebuild (`npm run android`), not just a JS reload.**
+>
+> **Deferred:** virtualizing the tree with a real `FlatList` (recursive tree + one
+> `ScrollView` for sticky composer / scroll-to-post — needs flattening into a
+> depth-tagged list).
 
 **Web change:** replaced heavy per-reply cards with flat, compact comments. The
 current web version uses Reddit/YouTube-style branch rails instead of a simple
@@ -130,7 +168,11 @@ lives in `src/util/timeAgo.ts` on web.
 - Use it in the thread + reply meta rows. (No SSR on mobile, so no
   hydration-mismatch concern — simpler than web.)
 
-## 4. Unified body text size
+## 4. Unified body text size ✅ DONE (already satisfied)
+
+> On mobile the OP and every reply already render through the same `ForumMarkdown`
+> component at one size — there was never depth-based sizing to undo. Confirmed
+> during the §1 rewrite.
 
 **Web change:** all comment bodies **and the original post** render at ~14px with
 ~1.5 line-height (originally the tree mixed 16px and 14px by depth). The OP is no
@@ -142,7 +184,14 @@ longer larger than the comments — it's distinguished by layout instead (see §
   existing body token, ~14–15px) with comfortable line-height. Drive sizes from
   `src/theme/` typography, not inline numbers.
 
-## 5. Collapse / expand comments
+## 5. Collapse / expand comments ✅ DONE
+
+> Implemented in `CommentNode`: per-node `collapsed` state. Tapping the rail
+> (a full-height transparent `Pressable` over the SVG line) collapses the branch;
+> the rail brightens (`accentStrong`) while pressed. Collapsing hides only the
+> **replies** — the parent comment stays fully visible (body + actions) — with a
+> `+` button under the avatar and "(N replies)" in the meta row (`countDescendants`)
+> to re-expand. Expanding re-measures and redraws the rail.
 
 **Web change:** a `[–]` / `[+]` toggle on each comment. Collapsing folds the
 comment to a single line, hides its body + actions + entire subtree, and shows a
@@ -215,7 +264,12 @@ empty states (empty state explains how to follow/bookmark).
 personalized feed the forced landing — anonymous/new users and discovery/SEO need
 the public list first. Personalization is an opt-in layer, not a gate.
 
-## 8. Original post: flatten + at-a-glance distinction
+## 8. Original post: flatten + at-a-glance distinction ✅ DONE
+
+> Implemented: the OP renders via `PostCard` with `isOriginalPost`, flat and
+> full-width (no rail), distinguished by an "Original post" pill, the OP badge, a
+> `md` avatar, and a `cardTitle` author name — no heavy tinted panel. Replies carry
+> the left rails; the OP does not.
 
 **Web change:** the original post used to be a heavy card (gradient header, an
 "Opening discussion" filler heading, a rounded inner card). It's now a flat post
@@ -238,7 +292,14 @@ colored panel:
   rail) vs. railed comments, plus the composer directly below it. Avoid a heavy
   tinted background.
 
-## 9. Reply composer placement (top, under the OP)
+## 9. Reply composer placement (top, under the OP) ❌ SKIP ON MOBILE
+
+> **Not porting this.** It's a web layout pattern. Mobile already uses the
+> native pattern — a composer **docked to the bottom of the screen**
+> (`ScreenShell` `stickyFooter`: the "Write a reply…" / "Log in to reply" bar that
+> expands into the full composer). That matches Reddit/Apollo/YouTube mobile and is
+> thumb-reachable. Moving an "Add a comment" box to the top under the OP would be
+> less native, so the docked bottom composer stays as-is.
 
 **Web change:** the main "Join the conversation" reply box moved from the bottom of
 the thread to **directly under the original post**, above the comments (the Reddit
@@ -252,7 +313,13 @@ top-level comments still append to the list below.
   sheet or inline expand) rather than an always-open box, to save vertical space.
   Keep new comments appending to the list below.
 
-## 10. Simplified, flat reply box
+## 10. Simplified, flat reply box ✅ MOSTLY N/A ON MOBILE
+
+> Mobile already has a **single** native docked composer (no per-reply card
+> variants to unify, no drop-shadow card to remove) with a flat themed input. The
+> only part that could still apply is optionally collapsing the formatting toolbar
+> behind a small toggle to keep the expanded composer cleaner — low priority, not
+> required. No structural work needed here.
 
 **Web change:** the reply editor was simplified two ways:
 
@@ -330,5 +397,5 @@ Updated sequencing addendum from the latest web branch:
 - Confirm Following and Bookmarked tab counts match endpoint totals and update
   after follow/bookmark toggles.
 
-Each step is its own `mobile-<desc>` branch with emulator test steps. Bump the
+Each step is its own `<desc>` branch (no `mobile-` prefix) with emulator test steps. Bump the
 app version only when the owner says a build is being made.

@@ -75,7 +75,7 @@ concrete emulator/device test steps.
 
 1. **Never commit or push without explicit instruction from the owner.** Finishing a task does not mean you commit. Wait to be told.
 2. **Always end every task with:** numbered emulator/device test steps (each with an expected outcome), a one-line commit message, and a short GitHub PR description. No exceptions.
-3. **Never work directly on `main`.** Branch as `mobile-<short-desc>`.
+3. **Never work directly on `main`.** Branch as `<short-desc>` (no `mobile-` prefix — this repo is already the mobile app).
 4. **Shared backend, shared data.** Never add a mobile-only store for data that must sync with the website (reading lists, forum, votes, identity).
 5. **Tokens go in `expo-secure-store`** — never plain AsyncStorage. (AsyncStorage is fine for non-sensitive things like forum composer drafts.)
 6. **Auth changes:** `docs/MOBILE_AUTH_CONTRACT.md` is the source of truth — read it before editing any auth code.

@@ -86,7 +86,8 @@ needs fixing while working, flag it as a follow-up, do not fix it inline.
 
 ### 4. Never work directly on `main`
 
-All work goes on a feature branch named `mobile-<short-desc>`. The owner merges
+All work goes on a feature branch named `<short-desc>` (no `mobile-` prefix — this
+repo is already the mobile app). The owner merges
 after reviewing.
 
 ### 5. Run `npm run verify` before handing back
@@ -154,6 +155,9 @@ Never assume — check `app.json` and Play Console if unsure.
 
 ## Branch naming
 
-`mobile-<short-desc>`
+`<short-desc>`
 
-Examples: `mobile-home-card-alignment`, `mobile-forum-draft-persist`, `mobile-status-badge`
+This repo **is** the mobile app, so do not prefix branches with `mobile-` — it's
+redundant. Just describe the work.
+
+Examples: `home-card-alignment`, `forum-draft-persist`, `status-badge`

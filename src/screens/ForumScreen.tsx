@@ -24,6 +24,8 @@ import {
   deleteForumCategory,
   getForumCategories,
   getForumThreads,
+  getMyBookmarkedPosts,
+  getMyFollowedThreads,
   pinForumThread,
   updateForumCategory,
   type ForumThreadSort,
@@ -34,6 +36,7 @@ import {
   AppText,
   EmptyState,
   ErrorState,
+  ForumPersonalFeed,
   ForumSeriesStrip,
   LoadingState,
   RankerBadge,
@@ -54,6 +57,14 @@ const SORT_OPTIONS: { value: ForumThreadSort; label: string }[] = [
   { value: "activity", label: "Active" },
   { value: "newest", label: "Newest" },
   { value: "replies", label: "Most replies" },
+];
+
+type ForumView = "discover" | "following" | "bookmarked";
+
+const TAB_OPTIONS: { value: ForumView; label: string }[] = [
+  { value: "discover", label: "Discover" },
+  { value: "following", label: "Following" },
+  { value: "bookmarked", label: "Bookmarked" },
 ];
 
 function ThreadCard({
@@ -439,6 +450,7 @@ export function ForumScreen() {
   const [activeCategorySlug, setActiveCategorySlug] = useState<string | null>(null);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [searchPosts, setSearchPosts] = useState(false);
+  const [view, setView] = useState<ForumView>("discover");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -454,6 +466,22 @@ export function ForumScreen() {
   });
   const categories = categoriesQuery.data ?? [];
   const activeCategory = categories.find((c) => c.slug === activeCategorySlug) ?? null;
+
+  // Lightweight first-page requests just to label the tabs with totals.
+  const followingCountQuery = useQuery({
+    queryKey: ["forum", "me", "following", "count"],
+    queryFn: () => getMyFollowedThreads(1, 1),
+    enabled: isSignedIn,
+    staleTime: 60 * 1000,
+  });
+  const bookmarkCountQuery = useQuery({
+    queryKey: ["forum", "me", "bookmarks", "count"],
+    queryFn: () => getMyBookmarkedPosts(1, 1),
+    enabled: isSignedIn,
+    staleTime: 60 * 1000,
+  });
+  const followingCount = followingCountQuery.data?.total;
+  const bookmarkCount = bookmarkCountQuery.data?.total;
 
   const threadsQuery = useInfiniteQuery({
     queryKey: ["forum", "threads", debouncedQuery, sort, activeCategorySlug, searchPosts],
@@ -601,191 +629,249 @@ export function ForumScreen() {
         </View>
       </Surface>
 
-      <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={20} color={colors.textMuted} />
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder="Search threads..."
-          placeholderTextColor={colors.textMuted}
-          style={styles.searchInput}
-          value={query}
-          onChangeText={(t) => {
-            setQuery(t);
-            if (!t) setSearchPosts(false);
-          }}
-          returnKeyType="search"
-        />
-        {query.length > 0 ? (
-          <Pressable
-            onPress={() => {
-              setQuery("");
-              setSearchPosts(false);
-            }}
-            hitSlop={8}
-          >
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
-      </View>
-
-      {debouncedQuery.length > 0 ? (
-        <Pressable
-          onPress={() => setSearchPosts((prev) => !prev)}
-          style={styles.searchPostsToggle}
+      {isSignedIn ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillStrip}
         >
-          <View
-            style={[
-              styles.searchPostsCheck,
-              searchPosts ? styles.searchPostsCheckOn : null,
-            ]}
-          >
-            {searchPosts ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
-          </View>
-          <AppText variant="caption" tone={searchPosts ? "accent" : "muted"}>
-            Search inside posts
-          </AppText>
-        </Pressable>
+          {TAB_OPTIONS.map((tab) => {
+            const count =
+              tab.value === "following"
+                ? followingCount
+                : tab.value === "bookmarked"
+                  ? bookmarkCount
+                  : undefined;
+            const active = view === tab.value;
+            return (
+              <Pressable
+                key={tab.value}
+                onPress={() => setView(tab.value)}
+                style={[styles.pill, active ? styles.pillActive : null]}
+              >
+                <AppText
+                  variant="caption"
+                  style={active ? styles.pillTextActive : styles.pillText}
+                >
+                  {tab.label}
+                </AppText>
+                {count != null && count > 0 ? (
+                  <AppText
+                    variant="caption"
+                    style={active ? styles.pillCountActive : styles.pillCount}
+                  >
+                    {count}
+                  </AppText>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       ) : null}
 
-      {/* Sort controls */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillStrip}
-      >
-        {SORT_OPTIONS.map((option) => (
-          <Pressable
-            key={option.value}
-            onPress={() => changeSort(option.value)}
-            style={[styles.pill, sort === option.value ? styles.pillActive : null]}
-          >
-            <AppText
-              variant="caption"
-              style={sort === option.value ? styles.pillTextActive : styles.pillText}
-            >
-              {option.label}
-            </AppText>
-          </Pressable>
-        ))}
-      </ScrollView>
+      {isSignedIn && view !== "discover" ? (
+        <ForumPersonalFeed view={view} />
+      ) : (
+        <>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color={colors.textMuted} />
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder="Search threads..."
+              placeholderTextColor={colors.textMuted}
+              style={styles.searchInput}
+              value={query}
+              onChangeText={(t) => {
+                setQuery(t);
+                if (!t) setSearchPosts(false);
+              }}
+              returnKeyType="search"
+            />
+            {query.length > 0 ? (
+              <Pressable
+                onPress={() => {
+                  setQuery("");
+                  setSearchPosts(false);
+                }}
+                hitSlop={8}
+              >
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              </Pressable>
+            ) : null}
+          </View>
 
-      {/* Category filter strip */}
-      {categories.length > 0 ? (
-        <View style={styles.categorySection}>
+          {debouncedQuery.length > 0 ? (
+            <Pressable
+              onPress={() => setSearchPosts((prev) => !prev)}
+              style={styles.searchPostsToggle}
+            >
+              <View
+                style={[
+                  styles.searchPostsCheck,
+                  searchPosts ? styles.searchPostsCheckOn : null,
+                ]}
+              >
+                {searchPosts ? (
+                  <Ionicons name="checkmark" size={12} color="#fff" />
+                ) : null}
+              </View>
+              <AppText variant="caption" tone={searchPosts ? "accent" : "muted"}>
+                Search inside posts
+              </AppText>
+            </Pressable>
+          ) : null}
+
+          {/* Sort controls */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.pillStrip}
           >
-            <Pressable
-              onPress={() => changeCategory(null)}
-              style={[
-                styles.pill,
-                activeCategorySlug === null ? styles.pillActive : null,
-              ]}
-            >
-              <AppText
-                variant="caption"
-                style={
-                  activeCategorySlug === null ? styles.pillTextActive : styles.pillText
-                }
-              >
-                All
-              </AppText>
-            </Pressable>
-            {categories.map((cat) => (
+            {SORT_OPTIONS.map((option) => (
               <Pressable
-                key={cat.slug}
-                onPress={() => changeCategory(cat.slug)}
-                style={[
-                  styles.pill,
-                  activeCategorySlug === cat.slug ? styles.pillActive : null,
-                ]}
+                key={option.value}
+                onPress={() => changeSort(option.value)}
+                style={[styles.pill, sort === option.value ? styles.pillActive : null]}
               >
                 <AppText
                   variant="caption"
-                  style={
-                    activeCategorySlug === cat.slug
-                      ? styles.pillTextActive
-                      : styles.pillText
-                  }
+                  style={sort === option.value ? styles.pillTextActive : styles.pillText}
                 >
-                  {cat.name}
-                </AppText>
-                <AppText
-                  variant="caption"
-                  style={
-                    activeCategorySlug === cat.slug
-                      ? styles.pillCountActive
-                      : styles.pillCount
-                  }
-                >
-                  {cat.thread_count}
+                  {option.label}
                 </AppText>
               </Pressable>
             ))}
           </ScrollView>
-          {activeCategory?.description ? (
-            <AppText variant="caption" tone="muted" style={styles.categoryDescription}>
-              {activeCategory.description}
-            </AppText>
+
+          {/* Category filter strip */}
+          {categories.length > 0 ? (
+            <View style={styles.categorySection}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pillStrip}
+              >
+                <Pressable
+                  onPress={() => changeCategory(null)}
+                  style={[
+                    styles.pill,
+                    activeCategorySlug === null ? styles.pillActive : null,
+                  ]}
+                >
+                  <AppText
+                    variant="caption"
+                    style={
+                      activeCategorySlug === null
+                        ? styles.pillTextActive
+                        : styles.pillText
+                    }
+                  >
+                    All
+                  </AppText>
+                </Pressable>
+                {categories.map((cat) => (
+                  <Pressable
+                    key={cat.slug}
+                    onPress={() => changeCategory(cat.slug)}
+                    style={[
+                      styles.pill,
+                      activeCategorySlug === cat.slug ? styles.pillActive : null,
+                    ]}
+                  >
+                    <AppText
+                      variant="caption"
+                      style={
+                        activeCategorySlug === cat.slug
+                          ? styles.pillTextActive
+                          : styles.pillText
+                      }
+                    >
+                      {cat.name}
+                    </AppText>
+                    <AppText
+                      variant="caption"
+                      style={
+                        activeCategorySlug === cat.slug
+                          ? styles.pillCountActive
+                          : styles.pillCount
+                      }
+                    >
+                      {cat.thread_count}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              {activeCategory?.description ? (
+                <AppText
+                  variant="caption"
+                  tone="muted"
+                  style={styles.categoryDescription}
+                >
+                  {activeCategory.description}
+                </AppText>
+              ) : null}
+            </View>
           ) : null}
-        </View>
-      ) : null}
 
-      {threadsQuery.isLoading ? (
-        <LoadingState message="Loading forum threads..." />
-      ) : null}
-      {threadsQuery.isError ? (
-        <ErrorState message="Forum threads could not be loaded. Try again in a moment." />
-      ) : null}
+          {threadsQuery.isLoading ? (
+            <LoadingState message="Loading forum threads..." />
+          ) : null}
+          {threadsQuery.isError ? (
+            <ErrorState message="Forum threads could not be loaded. Try again in a moment." />
+          ) : null}
 
-      {threadsQuery.data && !hasThreads ? (
-        <EmptyState
-          title={debouncedQuery ? "No threads found" : "No discussions yet"}
-          message={
-            debouncedQuery
-              ? `No threads matched "${debouncedQuery}". Try a different keyword.`
-              : activeCategorySlug
-                ? "No threads in this category yet."
-                : "Public forum threads will appear here once the community starts posting."
-          }
-        />
-      ) : null}
-
-      {hasThreads ? (
-        <View style={styles.section}>
-          <SectionHeader
-            title={debouncedQuery ? `Results for "${debouncedQuery}"` : "Recent threads"}
-            body={`${formatForumCount(totalThreads, "thread")} available / ${threads.length} shown`}
-          />
-          <View style={styles.stack}>
-            {threads.map((thread) => (
-              <ThreadCard
-                key={thread.id}
-                thread={thread}
-                rank={rankForUsername(topRankMap, thread.author_username)}
-                showCategory={activeCategorySlug === null}
-                isAdmin={isAdmin}
-                onPinToggle={handlePinToggle}
-              />
-            ))}
-          </View>
-          {hasNextPage ? (
-            <AppButton
-              label={threadsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
-              disabled={threadsQuery.isFetchingNextPage}
-              onPress={() => threadsQuery.fetchNextPage()}
-              iconRight={<Ionicons name="chevron-down" size={15} color={colors.text} />}
+          {threadsQuery.data && !hasThreads ? (
+            <EmptyState
+              title={debouncedQuery ? "No threads found" : "No discussions yet"}
+              message={
+                debouncedQuery
+                  ? `No threads matched "${debouncedQuery}". Try a different keyword.`
+                  : activeCategorySlug
+                    ? "No threads in this category yet."
+                    : "Public forum threads will appear here once the community starts posting."
+              }
             />
-          ) : (
-            <AppText variant="caption" tone="subtle" align="center">
-              You are caught up.
-            </AppText>
-          )}
-        </View>
-      ) : null}
+          ) : null}
+
+          {hasThreads ? (
+            <View style={styles.section}>
+              <SectionHeader
+                title={
+                  debouncedQuery ? `Results for "${debouncedQuery}"` : "Recent threads"
+                }
+                body={`${formatForumCount(totalThreads, "thread")} available / ${threads.length} shown`}
+              />
+              <View style={styles.stack}>
+                {threads.map((thread) => (
+                  <ThreadCard
+                    key={thread.id}
+                    thread={thread}
+                    rank={rankForUsername(topRankMap, thread.author_username)}
+                    showCategory={activeCategorySlug === null}
+                    isAdmin={isAdmin}
+                    onPinToggle={handlePinToggle}
+                  />
+                ))}
+              </View>
+              {hasNextPage ? (
+                <AppButton
+                  label={threadsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
+                  disabled={threadsQuery.isFetchingNextPage}
+                  onPress={() => threadsQuery.fetchNextPage()}
+                  iconRight={
+                    <Ionicons name="chevron-down" size={15} color={colors.text} />
+                  }
+                />
+              ) : (
+                <AppText variant="caption" tone="subtle" align="center">
+                  You are caught up.
+                </AppText>
+              )}
+            </View>
+          ) : null}
+        </>
+      )}
 
       <CategoryManagerModal
         visible={categoryModalOpen}
