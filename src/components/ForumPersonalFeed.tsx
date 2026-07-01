@@ -1,13 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { getMyBookmarkedPosts, getMyFollowedThreads } from "../api/forum";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { timeAgo } from "../utils/timeAgo";
+import { AppButton } from "./AppButton";
 import { AppText } from "./AppText";
 import { ForumMarkdown } from "./ForumMarkdown";
 import { EmptyState, ErrorState, LoadingState } from "./StateMessage";
@@ -44,20 +45,33 @@ export function ForumPersonalFeed({ view }: { view: ForumPersonalView }) {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const followingQuery = useQuery({
+  // Paged (was page-1-only, which silently hid anything past 20 items).
+  const followingQuery = useInfiniteQuery({
     queryKey: ["forum", "me", "following"],
-    queryFn: () => getMyFollowedThreads(1, 20),
+    queryFn: ({ pageParam }) => getMyFollowedThreads(pageParam, 20),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
     enabled: view === "following",
     staleTime: 60 * 1000,
   });
-  const bookmarksQuery = useQuery({
+  const bookmarksQuery = useInfiniteQuery({
     queryKey: ["forum", "me", "bookmarks"],
-    queryFn: () => getMyBookmarkedPosts(1, 20),
+    queryFn: ({ pageParam }) => getMyBookmarkedPosts(pageParam, 20),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.has_next ? lastPage.page + 1 : undefined),
     enabled: view === "bookmarked",
     staleTime: 60 * 1000,
   });
 
   const active = view === "following" ? followingQuery : bookmarksQuery;
+  const loadMoreButton = active.hasNextPage ? (
+    <AppButton
+      label={active.isFetchingNextPage ? "Loading..." : "Load more"}
+      disabled={active.isFetchingNextPage}
+      onPress={() => void active.fetchNextPage()}
+      iconRight={<Ionicons name="chevron-down" size={15} color={colors.text} />}
+    />
+  ) : null;
 
   if (active.isLoading) {
     return (
@@ -82,7 +96,7 @@ export function ForumPersonalFeed({ view }: { view: ForumPersonalView }) {
   }
 
   if (view === "following") {
-    const threads = followingQuery.data?.items ?? [];
+    const threads = followingQuery.data?.pages.flatMap((p) => p.items) ?? [];
     if (threads.length === 0) {
       return (
         <EmptyState
@@ -93,53 +107,64 @@ export function ForumPersonalFeed({ view }: { view: ForumPersonalView }) {
     }
     return (
       <View style={styles.list}>
-        {threads.map((thread) => (
-          <Pressable
-            key={thread.id}
-            accessibilityRole="button"
-            onPress={() => navigation.navigate("ForumThread", { threadId: thread.id })}
-            style={({ pressed }) => (pressed ? styles.pressed : null)}
-          >
-            <Surface variant="raised" radius="lg" style={styles.row}>
-              <View style={styles.titleRow}>
-                <AppText variant="cardTitle" numberOfLines={2} style={styles.flex1}>
-                  {thread.title}
-                </AppText>
-                {thread.has_unread ? (
-                  <View style={styles.newBadge}>
-                    <AppText style={styles.newBadgeText}>New</AppText>
-                  </View>
-                ) : null}
-              </View>
-              <View style={styles.metaRow}>
-                <AppText variant="caption" tone="muted">
-                  {thread.post_count} {thread.post_count === 1 ? "reply" : "replies"}
-                </AppText>
-                <AppText variant="caption" tone="subtle">
-                  ·
-                </AppText>
-                <AppText variant="caption" tone="muted">
-                  active {timeAgo(thread.last_post_at || thread.updated_at)}
-                </AppText>
-                {thread.category_name ? (
-                  <>
-                    <AppText variant="caption" tone="subtle">
-                      ·
-                    </AppText>
-                    <AppText variant="caption" tone="muted">
-                      {thread.category_name}
-                    </AppText>
-                  </>
-                ) : null}
-              </View>
-            </Surface>
-          </Pressable>
-        ))}
+        {/* Flat divided feed — matches the Discover thread list */}
+        <Surface variant="raised" radius="xl" padding="none" style={styles.feed}>
+          {threads.map((thread, index) => {
+            const replyCount = Math.max(0, (thread.post_count ?? 1) - 1);
+            return (
+              <Pressable
+                key={thread.id}
+                accessibilityRole="button"
+                onPress={() =>
+                  navigation.navigate("ForumThread", { threadId: thread.id })
+                }
+                style={({ pressed }) => [
+                  styles.row,
+                  index === threads.length - 1 ? styles.rowLast : null,
+                  pressed ? styles.pressedRow : null,
+                ]}
+              >
+                <View style={styles.titleRow}>
+                  <AppText variant="cardTitle" numberOfLines={2} style={styles.flex1}>
+                    {thread.title}
+                  </AppText>
+                  {thread.has_unread ? (
+                    <View style={styles.newBadge}>
+                      <AppText style={styles.newBadgeText}>New</AppText>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={styles.metaRow}>
+                  <AppText variant="caption" tone="muted">
+                    {replyCount} {replyCount === 1 ? "reply" : "replies"}
+                  </AppText>
+                  <AppText variant="caption" tone="subtle">
+                    ·
+                  </AppText>
+                  <AppText variant="caption" tone="muted">
+                    active {timeAgo(thread.last_post_at || thread.updated_at)}
+                  </AppText>
+                  {thread.category_name ? (
+                    <>
+                      <AppText variant="caption" tone="subtle">
+                        ·
+                      </AppText>
+                      <AppText variant="caption" tone="muted">
+                        {thread.category_name}
+                      </AppText>
+                    </>
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
+        </Surface>
+        {loadMoreButton}
       </View>
     );
   }
 
-  const posts = bookmarksQuery.data?.items ?? [];
+  const posts = bookmarksQuery.data?.pages.flatMap((p) => p.items) ?? [];
   if (posts.length === 0) {
     return (
       <EmptyState
@@ -150,24 +175,29 @@ export function ForumPersonalFeed({ view }: { view: ForumPersonalView }) {
   }
   return (
     <View style={styles.list}>
-      {posts.map((post) => {
-        const hasImage = hasMarkdownImage(post.content_markdown);
-        const preview = previewSafeMarkdown(post.content_markdown);
-        return (
-          <Pressable
-            key={post.id}
-            accessibilityRole="button"
-            disabled={!post.thread_id}
-            onPress={() =>
-              post.thread_id != null &&
-              navigation.navigate("ForumThread", {
-                threadId: post.thread_id,
-                postId: post.id,
-              })
-            }
-            style={({ pressed }) => (pressed ? styles.pressed : null)}
-          >
-            <Surface variant="raised" radius="lg" style={styles.row}>
+      {/* Flat divided feed — matches the Discover thread list */}
+      <Surface variant="raised" radius="xl" padding="none" style={styles.feed}>
+        {posts.map((post, index) => {
+          const hasImage = hasMarkdownImage(post.content_markdown);
+          const preview = previewSafeMarkdown(post.content_markdown);
+          return (
+            <Pressable
+              key={post.id}
+              accessibilityRole="button"
+              disabled={!post.thread_id}
+              onPress={() =>
+                post.thread_id != null &&
+                navigation.navigate("ForumThread", {
+                  threadId: post.thread_id,
+                  postId: post.id,
+                })
+              }
+              style={({ pressed }) => [
+                styles.row,
+                index === posts.length - 1 ? styles.rowLast : null,
+                pressed ? styles.pressedRow : null,
+              ]}
+            >
               <View style={styles.metaRow}>
                 <AppText variant="caption" style={styles.author}>
                   {post.author_username || "Anonymous"}
@@ -196,10 +226,11 @@ export function ForumPersonalFeed({ view }: { view: ForumPersonalView }) {
                   <AppText tone="muted">(no content)</AppText>
                 )}
               </View>
-            </Surface>
-          </Pressable>
-        );
-      })}
+            </Pressable>
+          );
+        })}
+      </Surface>
+      {loadMoreButton}
     </View>
   );
 }
@@ -209,8 +240,21 @@ function getStyles() {
     list: {
       gap: spacing.sm,
     },
+    feed: {
+      overflow: "hidden",
+    },
     row: {
       gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.borderSoft,
+    },
+    rowLast: {
+      borderBottomWidth: 0,
+    },
+    pressedRow: {
+      backgroundColor: colors.backgroundSoft,
     },
     titleRow: {
       flexDirection: "row",

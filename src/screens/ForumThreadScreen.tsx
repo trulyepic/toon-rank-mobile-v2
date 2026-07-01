@@ -861,6 +861,7 @@ export function ForumThreadScreen() {
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [isEditingThread, setIsEditingThread] = useState(false);
+  const [threadActionsOpen, setThreadActionsOpen] = useState(false);
   const [editThreadTitle, setEditThreadTitle] = useState("");
   const [editThreadBody, setEditThreadBody] = useState("");
   const [editThreadCategoryId, setEditThreadCategoryId] = useState<number | null>(null);
@@ -2020,7 +2021,7 @@ export function ForumThreadScreen() {
                 color={colors.accentStrong}
               />
               <AppText variant="caption">
-                {formatForumCount(thread.post_count, "reply", "replies")}
+                {formatForumCount(Math.max(0, thread.post_count - 1), "reply", "replies")}
               </AppText>
             </View>
             {thread.view_count != null && thread.view_count > 0 ? (
@@ -2109,117 +2110,146 @@ export function ForumThreadScreen() {
             </Pressable>
           ) : null}
 
-          {/* Admin / author actions — visually separated */}
+          {/* Admin / author actions — behind a "⋯" overflow (see
+              FORUM_REDDIT_REFINEMENT doc) instead of a visible button row */}
           {canManageThread ? (
             <View style={styles.heroActionsRow}>
               <View style={styles.heroDivider} />
-              <View style={styles.threadActions}>
-                <Pressable
-                  onPress={handleEditThreadStart}
-                  disabled={!originalPost}
-                  style={({ pressed }) => [
-                    styles.replyAction,
-                    pressed ? styles.pressedBadge : null,
-                  ]}
-                >
-                  <Ionicons name="pencil-outline" size={13} color={colors.text} />
-                  <AppText variant="caption">Edit</AppText>
-                </Pressable>
-                <Pressable
-                  onPress={handleDeleteThread}
-                  disabled={deleteThreadMutation.isPending}
-                  style={({ pressed }) => [
-                    styles.deleteAction,
-                    pressed ? styles.pressedBadge : null,
-                  ]}
-                >
-                  <Ionicons name="trash-outline" size={13} color={colors.danger} />
-                  <AppText variant="caption" tone="danger">
-                    Delete
-                  </AppText>
-                </Pressable>
-                {isAdmin ? (
-                  <>
-                    <Pressable
-                      onPress={handleLockThread}
-                      disabled={lockMutation.isPending}
-                      style={({ pressed }) => [
-                        styles.replyAction,
-                        pressed ? styles.pressedBadge : null,
-                      ]}
-                    >
-                      <Ionicons
-                        name={thread.locked ? "lock-open-outline" : "lock-closed-outline"}
-                        size={13}
-                        color={colors.text}
-                      />
-                      <AppText variant="caption">
-                        {thread.locked ? "Unlock" : "Lock"}
-                      </AppText>
-                    </Pressable>
-                    <Pressable
-                      onPress={handleToggleLatestFirst}
-                      disabled={settingsMutation.isPending}
-                      style={({ pressed }) => [
-                        styles.replyAction,
-                        thread.latest_first ? styles.activeThreadAction : null,
-                        pressed ? styles.pressedBadge : null,
-                      ]}
-                    >
-                      <Ionicons
-                        name="swap-vertical-outline"
-                        size={13}
-                        color={thread.latest_first ? colors.accentStrong : colors.text}
-                      />
-                      <AppText
-                        variant="caption"
-                        tone={thread.latest_first ? "accent" : undefined}
-                      >
-                        Latest first
-                      </AppText>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        const nextPinned = !thread.is_pinned;
-                        Alert.alert(
-                          nextPinned ? "Pin thread?" : "Unpin thread?",
-                          nextPinned
-                            ? "This thread will appear at the top of the thread list."
-                            : "This thread will no longer be pinned.",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            {
-                              text: nextPinned ? "Pin" : "Unpin",
-                              onPress: () => pinMutation.mutate(nextPinned),
-                            },
-                          ],
-                        );
-                      }}
-                      disabled={pinMutation.isPending}
-                      style={({ pressed }) => [
-                        styles.replyAction,
-                        thread.is_pinned ? styles.activeThreadAction : null,
-                        pressed ? styles.pressedBadge : null,
-                      ]}
-                    >
-                      <Ionicons
-                        name={thread.is_pinned ? "pin" : "pin-outline"}
-                        size={13}
-                        color={thread.is_pinned ? colors.accentStrong : colors.text}
-                      />
-                      <AppText
-                        variant="caption"
-                        tone={thread.is_pinned ? "accent" : undefined}
-                      >
-                        {thread.is_pinned ? "Pinned" : "Pin"}
-                      </AppText>
-                    </Pressable>
-                  </>
-                ) : null}
-              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Thread actions"
+                onPress={() => setThreadActionsOpen(true)}
+                style={({ pressed }) => [
+                  styles.replyAction,
+                  pressed ? styles.pressedBadge : null,
+                ]}
+              >
+                <Ionicons name="ellipsis-horizontal" size={15} color={colors.text} />
+                <AppText variant="caption">Thread actions</AppText>
+              </Pressable>
             </View>
           ) : null}
         </Surface>
+      ) : null}
+
+      {/* Thread actions bottom sheet (owner/admin) */}
+      {thread && canManageThread ? (
+        <Modal
+          transparent
+          visible={threadActionsOpen}
+          animationType="fade"
+          onRequestClose={() => setThreadActionsOpen(false)}
+        >
+          <Pressable
+            style={styles.sheetBackdrop}
+            onPress={() => setThreadActionsOpen(false)}
+          />
+          <View style={styles.actionSheet}>
+            <Pressable
+              disabled={!originalPost}
+              onPress={() => {
+                setThreadActionsOpen(false);
+                handleEditThreadStart();
+              }}
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.sheetRowPressed : null,
+              ]}
+            >
+              <Ionicons name="pencil-outline" size={17} color={colors.text} />
+              <AppText>Edit thread</AppText>
+            </Pressable>
+            {isAdmin ? (
+              <>
+                <Pressable
+                  disabled={lockMutation.isPending}
+                  onPress={() => {
+                    setThreadActionsOpen(false);
+                    handleLockThread();
+                  }}
+                  style={({ pressed }) => [
+                    styles.sheetRow,
+                    pressed ? styles.sheetRowPressed : null,
+                  ]}
+                >
+                  <Ionicons
+                    name={thread.locked ? "lock-open-outline" : "lock-closed-outline"}
+                    size={17}
+                    color={colors.text}
+                  />
+                  <AppText>{thread.locked ? "Unlock thread" : "Lock thread"}</AppText>
+                </Pressable>
+                <Pressable
+                  disabled={settingsMutation.isPending}
+                  onPress={() => {
+                    setThreadActionsOpen(false);
+                    handleToggleLatestFirst();
+                  }}
+                  style={({ pressed }) => [
+                    styles.sheetRow,
+                    pressed ? styles.sheetRowPressed : null,
+                  ]}
+                >
+                  <Ionicons
+                    name="swap-vertical-outline"
+                    size={17}
+                    color={thread.latest_first ? colors.accentStrong : colors.text}
+                  />
+                  <AppText tone={thread.latest_first ? "accent" : undefined}>
+                    {thread.latest_first ? "Latest first: on" : "Latest first: off"}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  disabled={pinMutation.isPending}
+                  onPress={() => {
+                    setThreadActionsOpen(false);
+                    const nextPinned = !thread.is_pinned;
+                    Alert.alert(
+                      nextPinned ? "Pin thread?" : "Unpin thread?",
+                      nextPinned
+                        ? "This thread will appear at the top of the thread list."
+                        : "This thread will no longer be pinned.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: nextPinned ? "Pin" : "Unpin",
+                          onPress: () => pinMutation.mutate(nextPinned),
+                        },
+                      ],
+                    );
+                  }}
+                  style={({ pressed }) => [
+                    styles.sheetRow,
+                    pressed ? styles.sheetRowPressed : null,
+                  ]}
+                >
+                  <Ionicons
+                    name={thread.is_pinned ? "pin" : "pin-outline"}
+                    size={17}
+                    color={thread.is_pinned ? colors.accentStrong : colors.text}
+                  />
+                  <AppText tone={thread.is_pinned ? "accent" : undefined}>
+                    {thread.is_pinned ? "Unpin thread" : "Pin thread"}
+                  </AppText>
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable
+              disabled={deleteThreadMutation.isPending}
+              onPress={() => {
+                setThreadActionsOpen(false);
+                handleDeleteThread();
+              }}
+              style={({ pressed }) => [
+                styles.sheetRow,
+                pressed ? styles.sheetRowPressed : null,
+              ]}
+            >
+              <Ionicons name="trash-outline" size={17} color={colors.danger} />
+              <AppText tone="danger">Delete thread</AppText>
+            </Pressable>
+          </View>
+        </Modal>
       ) : null}
 
       {isEditingThread ? (
