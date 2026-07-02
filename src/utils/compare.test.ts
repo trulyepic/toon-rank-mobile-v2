@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { canAddToCompare, computeNextCompare, MAX_COMPARE_ITEMS } from "./compare";
+import {
+  canAddToCompare,
+  computeNextCompare,
+  MAX_COMPARE_ITEMS,
+  winnersFor,
+} from "./compare";
 import type { RankedSeries } from "../types/series";
 
 function makeSeries(id: number): RankedSeries {
@@ -48,5 +53,29 @@ describe("compare tray reducer", () => {
     expect(
       canAddToCompare([makeSeries(1), makeSeries(2), makeSeries(3), makeSeries(4)]),
     ).toBe(false);
+  });
+});
+
+describe("winnersFor", () => {
+  it("marks the single highest value", () => {
+    expect(winnersFor([7.2, 8.9, 6.1])).toEqual([false, true, false]);
+  });
+
+  it("marks all tied leaders", () => {
+    expect(winnersFor([8.5, 8.5, 6])).toEqual([true, true, false]);
+  });
+
+  it("marks nothing when every value ties", () => {
+    expect(winnersFor([7, 7, 7])).toEqual([false, false, false]);
+  });
+
+  it("marks nothing with fewer than two comparable values", () => {
+    expect(winnersFor([8])).toEqual([false]);
+    expect(winnersFor([8, null, null])).toEqual([false, false, false]);
+    expect(winnersFor([])).toEqual([]);
+  });
+
+  it("ignores null gaps but still compares the rest", () => {
+    expect(winnersFor([null, 9, 7.5])).toEqual([false, true, false]);
   });
 });

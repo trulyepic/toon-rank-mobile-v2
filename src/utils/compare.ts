@@ -30,3 +30,16 @@ export function canAddToCompare(
 ): boolean {
   return current.length < max;
 }
+
+/**
+ * Mark the best value(s) in a compare row so the board answers "which one
+ * wins?" at a glance. No winner when fewer than two comparable values exist or
+ * when all values tie (highlighting everything reads as highlighting nothing).
+ */
+export function winnersFor(values: (number | null)[]): boolean[] {
+  const valid = values.filter((v): v is number => v != null && Number.isFinite(v));
+  if (valid.length < 2) return values.map(() => false);
+  const max = Math.max(...valid);
+  if (max === Math.min(...valid)) return values.map(() => false);
+  return values.map((v) => v != null && v === max);
+}
