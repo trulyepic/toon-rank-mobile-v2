@@ -30,4 +30,7 @@ export const SUPPORT_EMAIL = "support@toonranks.com";
 
 export const SOCIAL_URLS = {
   instagram: "https://instagram.com/toonranks",
+  reddit: "https://www.reddit.com/r/ToonRanks/",
 };
+
+export const REDDIT_COMMUNITY = "r/ToonRanks";

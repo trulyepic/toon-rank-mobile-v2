@@ -14,12 +14,17 @@ export async function openInAppBrowser(url: string) {
 
 export async function openSupportEmail(email: string) {
   const mailtoUrl = `mailto:${email}`;
-  const supported = await Linking.canOpenURL(mailtoUrl);
 
-  if (!supported) {
-    Alert.alert("Email app unavailable", email);
-    return;
+  // Do NOT gate on Linking.canOpenURL: on Android 11+ package-visibility rules
+  // make it report false for mailto: unless the manifest declares a <queries>
+  // entry — even when an email app is installed. openURL itself fires the
+  // intent without that restriction, so try it and only fall back on failure.
+  try {
+    await Linking.openURL(mailtoUrl);
+  } catch {
+    Alert.alert(
+      "No email app found",
+      `Reach us at ${email} from any device or email client.`,
+    );
   }
-
-  await Linking.openURL(mailtoUrl);
 }

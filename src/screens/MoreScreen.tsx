@@ -14,7 +14,7 @@ import {
   UserIdentity,
 } from "../components";
 import { useAuth } from "../auth/AuthContext";
-import { LEGAL_URLS, SITE_ORIGIN, SUPPORT_EMAIL } from "../config/site";
+import { LEGAL_URLS, SITE_ORIGIN, SOCIAL_URLS, SUPPORT_EMAIL } from "../config/site";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { openInAppBrowser, openSupportEmail } from "../utils/externalLinks";
@@ -333,6 +333,13 @@ export function MoreScreen() {
             title="Open Website"
             subtitle="Visit the full Toon Ranks site in your browser."
             onPress={() => openInAppBrowser(SITE_ORIGIN)}
+          />
+          <MenuRow
+            icon="logo-reddit"
+            iconColor="#FF4500"
+            title="Join r/ToonRanks"
+            subtitle="The community subreddit — discussion, updates, and feedback."
+            onPress={() => openInAppBrowser(SOCIAL_URLS.reddit)}
           />
           {supportRowsWithActions.map((row) => (
             <MenuRow key={row.title} {...row} />
