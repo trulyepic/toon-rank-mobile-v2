@@ -1,5 +1,5 @@
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -64,28 +64,32 @@ function getScoreTone(score: number) {
   return colors.danger;
 }
 
+// Handlers take the item (instead of per-item closures) so HomeScreen can pass
+// the same useCallback references to every card — keeping props referentially
+// stable is what lets memo() actually skip re-renders across the grid.
 const HomeCard = memo(function HomeCard({
   item,
-  onPress,
-  onOpenActions,
+  onPressItem,
+  onOpenActionsItem,
   showSave,
   saved,
-  onSave,
+  onSaveItem,
 }: {
   item: RankedSeries;
-  onPress: () => void;
-  onOpenActions: () => void;
+  onPressItem: (item: RankedSeries) => void;
+  onOpenActionsItem: (item: RankedSeries) => void;
   showSave: boolean;
   saved: boolean;
-  onSave: () => void;
+  onSaveItem: (item: RankedSeries) => void;
 }) {
   const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
+  const onOpenActions = () => onOpenActionsItem(item);
 
   return (
     <View style={styles.posterCard}>
       <Pressable
-        onPress={onPress}
+        onPress={() => onPressItem(item)}
         onLongPress={onOpenActions}
         delayLongPress={250}
         style={({ pressed }) => (pressed ? styles.posterCardPressed : null)}
@@ -135,7 +139,7 @@ const HomeCard = memo(function HomeCard({
             </AppText>
             {showSave ? (
               <Pressable
-                onPress={onSave}
+                onPress={() => onSaveItem(item)}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel={
@@ -223,6 +227,35 @@ export function HomeScreen() {
     queryFn: getMyReadingLists,
     enabled: isSignedIn,
   });
+  const readingLists = readingListsQuery.data;
+
+  // Stable, item-taking handlers so the memoized HomeCard's props keep the same
+  // identity between renders (inline closures here would re-render every card
+  // whenever any Home state changed — e.g. opening a sheet).
+  const handlePressItem = useCallback(
+    (item: RankedSeries) => navigation.navigate("SeriesDetail", { seriesId: item.id }),
+    [navigation],
+  );
+  const handleOpenActionsItem = useCallback(
+    (item: RankedSeries) => setActionsItem(item),
+    [],
+  );
+  const handleSaveItem = useCallback((item: RankedSeries) => {
+    setSaveSeriesId(item.id);
+  }, []);
+  const renderHomeCard = useCallback(
+    ({ item }: { item: RankedSeries }) => (
+      <HomeCard
+        item={item}
+        onPressItem={handlePressItem}
+        onOpenActionsItem={handleOpenActionsItem}
+        showSave={isSignedIn}
+        saved={isSeriesInAnyList(readingLists, item.id)}
+        onSaveItem={handleSaveItem}
+      />
+    ),
+    [handlePressItem, handleOpenActionsItem, handleSaveItem, isSignedIn, readingLists],
+  );
 
   return (
     <ScreenShell
@@ -368,16 +401,7 @@ export function HomeScreen() {
             </ScrollView>
           </View>
         }
-        renderItem={({ item }) => (
-          <HomeCard
-            item={item}
-            onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}
-            onOpenActions={() => setActionsItem(item)}
-            showSave={isSignedIn}
-            saved={isSeriesInAnyList(readingListsQuery.data, item.id)}
-            onSave={() => setSaveSeriesId(item.id)}
-          />
-        )}
+        renderItem={renderHomeCard}
         ListEmptyComponent={
           !rankingsQuery.isLoading && !rankingsQuery.isError ? (
             <EmptyState
