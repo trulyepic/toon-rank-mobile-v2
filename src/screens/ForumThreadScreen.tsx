@@ -123,7 +123,7 @@ const RAIL_CHILD_AVATAR_LEFT = RAIL_AVATAR + RAIL_GAP; // child avatar's left ed
 const RAIL_CHILD_CURVE_X = RAIL_X + 10; // x where the curve flattens into the row
 const RAIL_ELBOW_RADIUS = 12;
 const RAIL_START_Y = RAIL_AVATAR + 4; // rail begins just below the parent avatar
-const RAIL_THICKNESS = 2;
+const RAIL_THICKNESS = 1.5; // hairline, like Reddit/YouTube (was 2 — read too heavy)
 // Indentation cap (§6): past this depth, each further level indents by the smaller
 // capped amount instead of the full avatar-column width, so deep threads stay
 // readable on narrow phones. The rail still curves into each child.
@@ -687,7 +687,7 @@ function CommentNode(props: CommentNodeProps) {
         >
           <Path
             d={railPath.d}
-            stroke={railPressed ? colors.accentStrong : colors.accentBorder}
+            stroke={railPressed ? colors.accentStrong : colors.border}
             strokeWidth={RAIL_THICKNESS}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -719,7 +719,13 @@ function CommentNode(props: CommentNodeProps) {
             accessibilityRole="button"
             accessibilityLabel="Collapse replies"
             style={styles.railHit}
-            onPress={() => setCollapsed(true)}
+            onPress={() => {
+              // Clear the pressed highlight too — collapsing unmounts this
+              // Pressable before onPressOut fires, which otherwise leaves
+              // railPressed stuck true (rail stays highlighted after expand).
+              setRailPressed(false);
+              setCollapsed(true);
+            }}
             onPressIn={() => setRailPressed(true)}
             onPressOut={() => setRailPressed(false)}
           />
