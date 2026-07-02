@@ -863,6 +863,9 @@ export function ForumThreadScreen() {
   );
   const [replyTarget, setReplyTarget] = useState<ForumPost | null>(null);
   const [composerExpanded, setComposerExpanded] = useState(false);
+  // Formatting tools are hidden by default (most replies are plain text);
+  // the "Aa" toggle in the action row reveals them on demand.
+  const [formattingVisible, setFormattingVisible] = useState(false);
   const [insertListVisible, setInsertListVisible] = useState(false);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -965,6 +968,8 @@ export function ForumThreadScreen() {
       setReplyAttachment(null);
       setReplyTarget(null);
       setComposerExpanded(false);
+      // Start the next reply with a clean, tools-hidden composer.
+      setFormattingVisible(false);
       Keyboard.dismiss();
       queryClient.setQueryData<InfiniteData<ForumThreadPostsPage>>(
         queryKey,
@@ -1821,12 +1826,14 @@ export function ForumThreadScreen() {
           ) : null}
         </View>
         <View style={styles.dockedHeaderRight}>
-          <AppText
-            variant="caption"
-            tone={replyText.length > REPLY_MAX_LENGTH ? "danger" : "subtle"}
-          >
-            {replyText.length}/{REPLY_MAX_LENGTH}
-          </AppText>
+          {replyText.length >= REPLY_MAX_LENGTH * 0.8 ? (
+            <AppText
+              variant="caption"
+              tone={replyText.length > REPLY_MAX_LENGTH ? "danger" : "subtle"}
+            >
+              {replyText.length}/{REPLY_MAX_LENGTH}
+            </AppText>
+          ) : null}
           <Pressable
             hitSlop={8}
             onPress={collapseComposer}
@@ -1838,12 +1845,12 @@ export function ForumThreadScreen() {
         </View>
       </View>
       <ForumMentionSuggestions mention={activeMention} onSelect={handleMentionSelect} />
-      <ForumComposerToolbar
-        disabled={replyMutation.isPending}
-        onFormat={handleFormatReply}
-        onPickAttachment={handlePickReplyAttachment}
-        onInsertList={() => setInsertListVisible(true)}
-      />
+      {formattingVisible ? (
+        <ForumComposerToolbar
+          disabled={replyMutation.isPending}
+          onFormat={handleFormatReply}
+        />
+      ) : null}
       <TextInput
         ref={replyInputRef}
         autoFocus
@@ -1865,9 +1872,50 @@ export function ForumThreadScreen() {
         onRemove={() => setReplyAttachment(null)}
       />
       <View style={styles.dockedActionsRow}>
-        <AppText variant="caption" tone="subtle" style={styles.dockedHint}>
-          Markdown supported · @ to mention a user or series
-        </AppText>
+        <View style={styles.composerQuickActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              formattingVisible ? "Hide formatting tools" : "Show formatting tools"
+            }
+            accessibilityState={{ selected: formattingVisible }}
+            disabled={replyMutation.isPending}
+            onPress={() => setFormattingVisible((prev) => !prev)}
+            style={({ pressed }) => [
+              styles.quickAction,
+              formattingVisible ? styles.quickActionActive : null,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <AppText variant="caption" style={styles.quickActionLabel}>
+              Aa
+            </AppText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Attach image or GIF"
+            disabled={replyMutation.isPending}
+            onPress={handlePickReplyAttachment}
+            style={({ pressed }) => [
+              styles.quickAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="image-outline" size={17} color={colors.text} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Insert a reading list"
+            disabled={replyMutation.isPending}
+            onPress={() => setInsertListVisible(true)}
+            style={({ pressed }) => [
+              styles.quickAction,
+              pressed ? styles.pressedBadge : null,
+            ]}
+          >
+            <Ionicons name="bookmark-outline" size={17} color={colors.text} />
+          </Pressable>
+        </View>
         <AppButton
           label={replyMutation.isPending ? "Posting..." : "Post reply"}
           disabled={!canSubmitReply}
@@ -2719,9 +2767,29 @@ function getStyles() {
       justifyContent: "space-between",
       gap: spacing.sm,
     },
-    dockedHint: {
-      flex: 1,
-      minWidth: 0,
+    composerQuickActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    quickAction: {
+      minWidth: 38,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      paddingHorizontal: spacing.sm,
+    },
+    quickActionActive: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    quickActionLabel: {
+      fontWeight: "800",
     },
     dockedHeaderRight: {
       flexDirection: "row",
