@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Constants from "expo-constants";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { AppText, ScreenShell, Surface } from "../components";
@@ -6,7 +7,7 @@ import { SITE_ORIGIN, SOCIAL_URLS, SUPPORT_EMAIL } from "../config/site";
 import { openSupportEmail } from "../utils/externalLinks";
 import { colors, radii, spacing } from "../theme/tokens";
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = Constants.expoConfig?.version ?? "unknown";
 
 function LinkRow({
   icon,
@@ -73,6 +74,12 @@ export function AboutScreen() {
           label="@toonranks on Instagram"
           color="#E1306C"
           onPress={() => Linking.openURL(SOCIAL_URLS.instagram)}
+        />
+        <LinkRow
+          icon="logo-reddit"
+          label="r/ToonRanks on Reddit"
+          color="#FF4500"
+          onPress={() => Linking.openURL(SOCIAL_URLS.reddit)}
         />
         <LinkRow
           icon="mail-outline"
