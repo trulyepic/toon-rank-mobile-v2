@@ -313,13 +313,16 @@ top-level comments still append to the list below.
   sheet or inline expand) rather than an always-open box, to save vertical space.
   Keep new comments appending to the list below.
 
-## 10. Simplified, flat reply box ✅ MOSTLY N/A ON MOBILE
+## 10. Simplified, flat reply box ✅ DONE (mobile-native version)
 
-> Mobile already has a **single** native docked composer (no per-reply card
-> variants to unify, no drop-shadow card to remove) with a flat themed input. The
-> only part that could still apply is optionally collapsing the formatting toolbar
-> behind a small toggle to keep the expanded composer cleaner — low priority, not
-> required. No structural work needed here.
+> Mobile already had a **single** native docked composer (no per-reply card
+> variants to unify). The remaining web-parity piece shipped on branch
+> `forum-reply-box-polish`: the formatting toolbar is now **hidden by default**
+> behind an "Aa" toggle in the action row (image + reading-list moved there as
+> compact icon buttons), the permanent "Markdown supported" hint line was removed,
+> and the character counter only appears once the reply passes 80% of the limit.
+> The toolbar resets to hidden after a successful post. The create-thread screen
+> keeps its always-visible toolbar (full-page form, no keyboard-space pressure).
 
 **Web change:** the reply editor was simplified two ways:
 

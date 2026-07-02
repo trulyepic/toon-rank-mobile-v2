@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -104,6 +104,8 @@ function MenuRow({
   if (onPress && !disabled) {
     return (
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${title}. ${subtitle}`}
         onPress={onPress}
         style={({ pressed }) => (pressed ? styles.pressed : null)}
       >
@@ -200,10 +202,6 @@ export function MoreScreen() {
               {user?.username || "Reader"}
             </RoleNameText>
           </View>
-          <AppText tone="muted">
-            Your mobile session is connected to the same Toon Ranks account used on the
-            website.
-          </AppText>
         </View>
       ) : (
         <SectionHeader
@@ -240,7 +238,13 @@ export function MoreScreen() {
             <AppButton
               label="Log out"
               variant="ghost"
-              onPress={logout}
+              onPress={() =>
+                // Confirm first — an accidental tap would force a full re-login.
+                Alert.alert("Log out?", "You can log back in at any time.", [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Log out", style: "destructive", onPress: () => void logout() },
+                ])
+              }
               iconLeft={<Ionicons name="log-out-outline" size={15} color={colors.text} />}
             />
           ) : (
@@ -341,7 +345,7 @@ export function MoreScreen() {
           Toon Ranks is operated by Nofara LLC.
         </AppText>
         <AppText variant="caption" tone="subtle" align="center">
-          Copyright 2026 Toon Ranks
+          Copyright {new Date().getFullYear()} Toon Ranks
         </AppText>
       </View>
     </ScreenShell>
