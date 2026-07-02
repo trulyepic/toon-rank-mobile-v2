@@ -27,6 +27,7 @@ import {
 import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { winnersFor } from "../utils/compare";
 import { compactGenre, formatAverage, formatScore } from "../utils/seriesFormatting";
 
 const compareLabels = [
@@ -63,15 +64,17 @@ function ValueCell({
   width,
   muted = false,
   accent = false,
+  winner = false,
 }: {
   children: React.ReactNode;
   width: number;
   muted?: boolean;
   accent?: boolean;
+  winner?: boolean;
 }) {
   const styles = getStyles();
   return (
-    <View style={[styles.valueCell, { width }]}>
+    <View style={[styles.valueCell, winner ? styles.valueCellWinner : null, { width }]}>
       <Text
         style={[
           styles.valueCellText,
@@ -81,6 +84,11 @@ function ValueCell({
       >
         {children}
       </Text>
+      {winner ? (
+        <View style={styles.winnerBadge}>
+          <Ionicons name="trophy" size={10} color={colors.accentStrong} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -93,7 +101,9 @@ export function CompareScreen() {
 
   const detailQueries = useQueries({
     queries: compareItems.map((item) => ({
-      queryKey: ["compare-series-detail", item.id],
+      // Same key as SeriesDetailScreen so the two share the cache — comparing a
+      // title you just viewed (or vice versa) doesn't refetch.
+      queryKey: ["series-detail", item.id],
       queryFn: () => getSeriesDetail(item.id),
     })),
   });
@@ -108,6 +118,26 @@ export function CompareScreen() {
         detail: detailQueries[index]?.data,
       })),
     [compareItems, detailQueries],
+  );
+
+  // Best value per row (trophy highlight): overall score + each category average.
+  const overallWinners = winnersFor(
+    comparedItems.map(({ summary }) => {
+      const score = Number(summary.final_score);
+      return Number.isFinite(score) && score > 0 ? score : null;
+    }),
+  );
+  const categoryWinners: Record<string, boolean[]> = Object.fromEntries(
+    compareLabels.map(({ key }) => [
+      key,
+      winnersFor(
+        comparedItems.map(({ detail }) => {
+          const total = Number(detail?.[`${key}_total` as keyof typeof detail] ?? 0);
+          const count = Number(detail?.[`${key}_count` as keyof typeof detail] ?? 0);
+          return total > 0 && count > 0 ? total / count : null;
+        }),
+      ),
+    ]),
   );
 
   const availableWidth = Math.max(screenWidth - spacing.md * 2, 320);
@@ -135,10 +165,17 @@ export function CompareScreen() {
       }
     >
       {!compareItems.length ? (
-        <EmptyState
-          title="Pick titles to compare"
-          message="Use Compare on Home or Search to build a side-by-side board."
-        />
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            title="Pick titles to compare"
+            message="Use Compare on Home or Search to build a side-by-side board."
+          />
+          <AppButton
+            label="Browse rankings"
+            onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
+            iconLeft={<Ionicons name="podium-outline" size={15} color={colors.text} />}
+          />
+        </View>
       ) : (
         <>
           {loading ? <LoadingState message="Loading comparison..." /> : null}
@@ -256,8 +293,13 @@ export function CompareScreen() {
 
                   <View style={styles.dataRow}>
                     <RowLabel text="Overall" />
-                    {comparedItems.map(({ summary }) => (
-                      <ValueCell key={`overall-${summary.id}`} width={columnWidth} accent>
+                    {comparedItems.map(({ summary }, index) => (
+                      <ValueCell
+                        key={`overall-${summary.id}`}
+                        width={columnWidth}
+                        accent
+                        winner={overallWinners[index]}
+                      >
                         {formatScore(summary.final_score)}
                       </ValueCell>
                     ))}
@@ -276,7 +318,7 @@ export function CompareScreen() {
                     <RowLabel text="Votes" />
                     {comparedItems.map(({ summary }) => (
                       <ValueCell key={`votes-${summary.id}`} width={columnWidth}>
-                        {summary.vote_count}
+                        {Number(summary.vote_count ?? 0).toLocaleString()}
                       </ValueCell>
                     ))}
                   </View>
@@ -319,8 +361,12 @@ export function CompareScreen() {
                   {compareLabels.map(({ key, label }) => (
                     <View key={key} style={styles.dataRow}>
                       <RowLabel text={label} />
-                      {comparedItems.map(({ detail, summary }) => (
-                        <ValueCell key={`${summary.id}-${key}`} width={columnWidth}>
+                      {comparedItems.map(({ detail, summary }, index) => (
+                        <ValueCell
+                          key={`${summary.id}-${key}`}
+                          width={columnWidth}
+                          winner={categoryWinners[key]?.[index]}
+                        >
                           {formatAverage(
                             detail?.[`${key}_total` as keyof typeof detail] as
                               | number
@@ -548,6 +594,19 @@ function getStyles() {
     },
     valueCellAccent: {
       color: colors.accentStrong,
+    },
+    valueCellWinner: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    winnerBadge: {
+      position: "absolute",
+      top: 6,
+      right: 8,
+    },
+    emptyWrap: {
+      gap: spacing.md,
+      alignItems: "stretch",
     },
     dimmed: {
       opacity: 0.9,
