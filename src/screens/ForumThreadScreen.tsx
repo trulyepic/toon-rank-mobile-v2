@@ -63,6 +63,7 @@ import {
   SectionHeader,
   Surface,
   UserAvatar,
+  UserTagBadges,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -74,7 +75,7 @@ import type {
   ForumVote,
   ForumVoteResponse,
 } from "../types/forum";
-import { formatForumCount } from "../utils/forumFormatting";
+import { formatForumCount, previewMarkdown } from "../utils/forumFormatting";
 import { timeAgo } from "../utils/timeAgo";
 import {
   extractForumSeriesIds,
@@ -236,9 +237,10 @@ function PostCard({
               variant={isOriginalPost ? "cardTitle" : "caption"}
               role={post.author_role}
             >
-              {post.author_username || "Unknown reader"}
+              {post.author_username || "Anonymous"}
             </RoleNameText>
           </Pressable>
+          <UserTagBadges role={post.author_role} />
           {isOp ? (
             <View
               style={styles.opBadge}
@@ -2013,10 +2015,12 @@ export function ForumThreadScreen() {
                     }}
                   >
                     <AppText variant="caption" tone="muted" numberOfLines={1}>
-                      @{result.author_username || "Unknown"}
+                      {result.author_username
+                        ? `@${result.author_username}`
+                        : "Anonymous"}
                     </AppText>
                     <AppText variant="caption" numberOfLines={2}>
-                      {result.content_markdown.slice(0, 120)}
+                      {previewMarkdown(result.content_markdown, 120)}
                     </AppText>
                   </Pressable>
                 ))}
@@ -2044,7 +2048,7 @@ export function ForumThreadScreen() {
           {/* Author row */}
           <View style={styles.heroAuthorRow}>
             <UserAvatar
-              username={thread.author_username || "Unknown"}
+              username={thread.author_username || "Anonymous"}
               avatarUrl={thread.author_avatar_url}
               avatarPreset={thread.author_avatar_preset}
               size="sm"
@@ -2057,9 +2061,10 @@ export function ForumThreadScreen() {
               style={({ pressed }) => (pressed ? styles.pressedBadge : null)}
             >
               <RoleNameText variant="caption" role={thread.author_role}>
-                {thread.author_username || "Unknown"}
+                {thread.author_username || "Anonymous"}
               </RoleNameText>
             </Pressable>
+            <UserTagBadges role={thread.author_role} />
             <RankerBadge rank={rankForUsername(topRankMap, thread.author_username)} />
             <AppText variant="caption" tone="muted">
               · {timeAgo(thread.created_at)}

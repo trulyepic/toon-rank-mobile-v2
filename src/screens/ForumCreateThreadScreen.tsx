@@ -27,6 +27,7 @@ import {
   AppText,
   ForumComposerToolbar,
   ForumMentionSuggestions,
+  HintScrollRow,
   InsertReadingListSheet,
   ScreenShell,
   Surface,
@@ -91,6 +92,9 @@ export function ForumCreateThreadScreen() {
   const [attachment, setAttachment] = useState<ForumMediaAttachment | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [insertListVisible, setInsertListVisible] = useState(false);
+  // Formatting tools hidden by default (most first posts are plain text);
+  // the "Aa" toggle reveals them — same pattern as the thread reply composer.
+  const [formattingVisible, setFormattingVisible] = useState(false);
   const activeMention = getActiveForumMention(body);
 
   const categoriesQuery = useQuery({
@@ -239,11 +243,7 @@ export function ForumCreateThreadScreen() {
             {categories.length > 0 ? (
               <View style={styles.categorySection}>
                 <AppText variant="caption">Category (optional)</AppText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.pillStrip}
-                >
+                <HintScrollRow contentContainerStyle={styles.pillStrip}>
                   {categories.map((cat) => {
                     const active = selectedCategoryId === cat.id;
                     return (
@@ -261,7 +261,7 @@ export function ForumCreateThreadScreen() {
                       </Pressable>
                     );
                   })}
-                </ScrollView>
+                </HintScrollRow>
               </View>
             ) : null}
 
@@ -304,12 +304,12 @@ export function ForumCreateThreadScreen() {
                 setValidationMessage(null);
               }}
             />
-            <ForumComposerToolbar
-              disabled={createMutation.isPending}
-              onFormat={handleFormatBody}
-              onPickAttachment={handlePickAttachment}
-              onInsertList={() => setInsertListVisible(true)}
-            />
+            {formattingVisible ? (
+              <ForumComposerToolbar
+                disabled={createMutation.isPending}
+                onFormat={handleFormatBody}
+              />
+            ) : null}
             <TextInput
               ref={bodyInputRef}
               value={body}
@@ -366,6 +366,50 @@ export function ForumCreateThreadScreen() {
             ) : null}
 
             <View style={styles.actions}>
+              <View style={styles.quickActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    formattingVisible ? "Hide formatting tools" : "Show formatting tools"
+                  }
+                  accessibilityState={{ selected: formattingVisible }}
+                  disabled={createMutation.isPending}
+                  onPress={() => setFormattingVisible((prev) => !prev)}
+                  style={({ pressed }) => [
+                    styles.quickAction,
+                    formattingVisible ? styles.quickActionActive : null,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <AppText variant="caption" style={styles.quickActionLabel}>
+                    Aa
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Attach image or GIF"
+                  disabled={createMutation.isPending}
+                  onPress={handlePickAttachment}
+                  style={({ pressed }) => [
+                    styles.quickAction,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <Ionicons name="image-outline" size={17} color={colors.text} />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Insert a reading list"
+                  disabled={createMutation.isPending}
+                  onPress={() => setInsertListVisible(true)}
+                  style={({ pressed }) => [
+                    styles.quickAction,
+                    pressed ? styles.pressed : null,
+                  ]}
+                >
+                  <Ionicons name="bookmark-outline" size={17} color={colors.text} />
+                </Pressable>
+              </View>
               <AppButton
                 label="Cancel"
                 variant="ghost"
@@ -519,9 +563,36 @@ function getStyles() {
     },
     actions: {
       flexDirection: "row",
+      alignItems: "center",
       justifyContent: "flex-end",
       flexWrap: "wrap",
       gap: spacing.sm,
+    },
+    // Quick actions (Aa / image / list) sit left; Cancel + Create push right.
+    quickActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      marginRight: "auto",
+    },
+    quickAction: {
+      minWidth: 38,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.borderSoft,
+      backgroundColor: colors.backgroundSoft,
+      paddingHorizontal: spacing.sm,
+    },
+    quickActionActive: {
+      borderColor: colors.accentBorder,
+      backgroundColor: colors.accentSoft,
+    },
+    quickActionLabel: {
+      fontWeight: "800",
     },
     categorySection: {
       gap: spacing.xs,

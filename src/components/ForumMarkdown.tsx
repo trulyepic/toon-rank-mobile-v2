@@ -14,6 +14,7 @@ import {
 
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
+import { unescapeMarkdown } from "../utils/forumFormatting";
 import { AppText } from "./AppText";
 
 type Props = {
@@ -121,7 +122,7 @@ export function stripMarkdownToText(value: string): string {
     .replace(/\n+/g, " ") // collapse all newlines to spaces
     .replace(/\s{2,}/g, " ") // normalise multiple spaces
     .trim();
-  return s;
+  return unescapeMarkdown(s);
 }
 
 // ─── HTML → Markdown preprocessor ──────────────────────────────────────────
@@ -213,6 +214,10 @@ function preprocessHtml(src: string): string {
   // 12. Span tags: strip wrapper, keep content
   s = s.replace(/<\/?span[^>]*>/gi, "");
 
+  // 12b. Superscript/subscript (web rich-text editor): keep meaning visible.
+  s = s.replace(/<sup[^>]*>([\s\S]*?)<\/sup>/gi, "^$1");
+  s = s.replace(/<sub[^>]*>([\s\S]*?)<\/sub>/gi, "$1");
+
   // 13. HTML entities
   s = s
     .replace(/&amp;/g, "&")
@@ -286,7 +291,9 @@ function parseInline(src: string): InlineToken[] {
 
 function InlineText({ text, extra }: { text: string; extra?: object }) {
   const styles = getStyles();
-  const tokens = parseInline(text);
+  // Unescape after block parsing (so "\-" can't become a list marker) but
+  // before inline tokenizing, matching how the website renders escapes.
+  const tokens = parseInline(unescapeMarkdown(text));
 
   return (
     <Text style={[styles.mdBody, extra]}>

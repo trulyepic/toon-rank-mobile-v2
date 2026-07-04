@@ -16,6 +16,7 @@ import {
   SectionHeader,
   Surface,
   UserAvatar,
+  UserTagBadges,
 } from "../components";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { LeaderboardUser } from "../types/account";
@@ -125,6 +126,11 @@ function PodiumCard({
         >
           {user.username}
         </RoleNameText>
+        <UserTagBadges
+          role={user.role}
+          seriesRated={user.series_rated}
+          postCount={user.post_count}
+        />
         <AppText align="center" style={{ color: rankTheme.text }}>
           {formatCp(user.cred_score)}
         </AppText>
@@ -193,6 +199,11 @@ function LeaderboardRow({
           <RoleNameText variant="cardTitle" role={user.role}>
             {user.username}
           </RoleNameText>
+          <UserTagBadges
+            role={user.role}
+            seriesRated={user.series_rated}
+            postCount={user.post_count}
+          />
           <AppText variant="caption" tone="muted">
             {user.post_count} posts / {user.series_rated} rated
           </AppText>

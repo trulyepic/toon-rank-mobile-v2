@@ -89,6 +89,13 @@ export const colors = {
   credSurface: "rgba(232, 162, 58, 0.14)",
   credText: "#f3cf89",
   danger: "#eb6a5a",
+  // Static pill families for user tag badges (theme-independent semantics,
+  // mirroring the warning/cred pattern above).
+  successSurface: "rgba(14, 167, 106, 0.16)",
+  successBorder: "#0b6b46",
+  infoText: "#8ab8ff",
+  infoSurface: "rgba(59, 130, 246, 0.16)",
+  infoBorder: "#2a5db8",
   overlayBorder: "rgba(255,255,255,0.12)",
   shadow: "#000000",
   // Rating bar fill — blue→cyan gradient matching the website wordmark/identity.

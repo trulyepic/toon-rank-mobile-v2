@@ -28,9 +28,22 @@ export function previewMarkdown(content: string, maxLength = 180) {
   return `${normalized.slice(0, maxLength).trim()}...`;
 }
 
+/**
+ * Remove backslash escapes that markdown serializers add to plain text
+ * (e.g. the web rich-text editor saves "2 * 3" as "2 \* 3"). The website
+ * unescapes these when rendering; we must do the same.
+ */
+export function unescapeMarkdown(content: string) {
+  return content.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~\\])/g, "$1");
+}
+
 export function plainTextMarkdown(content: string) {
   return (
-    content
+    unescapeMarkdown(content)
+      // Collapse spoilers without leaking their hidden content.
+      .replace(/<details\b[^>]*>[\s\S]*?<\/details>/gi, " Spoiler ")
+      // Strip any other inline HTML tags (e.g. <sup>), keeping inner text.
+      .replace(/<[^>]+>/g, " ")
       .replace(/```[\s\S]*?```/g, " ")
       // Drop image markdown entirely (e.g. ![alt](url)).
       .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")

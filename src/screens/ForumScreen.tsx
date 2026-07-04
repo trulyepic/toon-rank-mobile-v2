@@ -39,6 +39,7 @@ import {
   ErrorState,
   ForumPersonalFeed,
   ForumSeriesStrip,
+  HintScrollRow,
   LoadingState,
   RankerBadge,
   RoleNameText,
@@ -46,6 +47,7 @@ import {
   SectionHeader,
   Surface,
   UserAvatar,
+  UserTagBadges,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -92,7 +94,7 @@ function ThreadRow({
 }) {
   const styles = getStyles();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const authorUsername = thread.author_username || "Unknown";
+  const authorUsername = thread.author_username || "Anonymous";
   const replyCount = Math.max(0, (thread.post_count ?? 1) - 1);
   const openAuthorProfile = () => {
     if (!thread.author_username) return;
@@ -138,6 +140,7 @@ function ThreadRow({
                 {authorUsername}
               </RoleNameText>
             </Pressable>
+            <UserTagBadges role={thread.author_role} />
             <RankerBadge rank={rank} />
             <AppText variant="caption" tone="subtle">
               ·
@@ -625,11 +628,7 @@ export function ForumScreen() {
       ) : null}
 
       {isSignedIn ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillStrip}
-        >
+        <HintScrollRow contentContainerStyle={styles.pillStrip}>
           {TAB_OPTIONS.map((tab) => {
             const count =
               tab.value === "following"
@@ -661,7 +660,7 @@ export function ForumScreen() {
               </Pressable>
             );
           })}
-        </ScrollView>
+        </HintScrollRow>
       ) : null}
 
       {isSignedIn && view !== "discover" ? (
@@ -717,13 +716,64 @@ export function ForumScreen() {
             </Pressable>
           ) : null}
 
-          {/* One toolbar strip: sort chips, separator, category chips */}
+          {/* Categories get their own rail (mirrors the Home type rail) so they
+              are visible without swiping — they were previously appended after
+              the sort chips in one strip, hidden off-screen on phone widths. */}
+          {categories.length > 0 ? (
+            <HintScrollRow contentContainerStyle={styles.pillStrip}>
+              <Pressable
+                onPress={() => changeCategory(null)}
+                style={[
+                  styles.pill,
+                  activeCategorySlug === null ? styles.pillActive : null,
+                ]}
+              >
+                <AppText
+                  variant="caption"
+                  style={
+                    activeCategorySlug === null ? styles.pillTextActive : styles.pillText
+                  }
+                >
+                  All
+                </AppText>
+              </Pressable>
+              {categories.map((cat) => (
+                <Pressable
+                  key={cat.slug}
+                  onPress={() => changeCategory(cat.slug)}
+                  style={[
+                    styles.pill,
+                    activeCategorySlug === cat.slug ? styles.pillActive : null,
+                  ]}
+                >
+                  <AppText
+                    variant="caption"
+                    style={
+                      activeCategorySlug === cat.slug
+                        ? styles.pillTextActive
+                        : styles.pillText
+                    }
+                  >
+                    {cat.name}
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    style={
+                      activeCategorySlug === cat.slug
+                        ? styles.pillCountActive
+                        : styles.pillCount
+                    }
+                  >
+                    {cat.thread_count}
+                  </AppText>
+                </Pressable>
+              ))}
+            </HintScrollRow>
+          ) : null}
+
+          {/* Sort strip (tools, secondary to the category rail above) */}
           <View style={styles.categorySection}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.pillStrip}
-            >
+            <HintScrollRow contentContainerStyle={styles.pillStrip}>
               {SORT_OPTIONS.map((option) => (
                 <Pressable
                   key={option.value}
@@ -740,62 +790,7 @@ export function ForumScreen() {
                   </AppText>
                 </Pressable>
               ))}
-
-              {categories.length > 0 ? (
-                <>
-                  <View style={styles.pillDivider} />
-                  <Pressable
-                    onPress={() => changeCategory(null)}
-                    style={[
-                      styles.pill,
-                      activeCategorySlug === null ? styles.pillActive : null,
-                    ]}
-                  >
-                    <AppText
-                      variant="caption"
-                      style={
-                        activeCategorySlug === null
-                          ? styles.pillTextActive
-                          : styles.pillText
-                      }
-                    >
-                      All
-                    </AppText>
-                  </Pressable>
-                  {categories.map((cat) => (
-                    <Pressable
-                      key={cat.slug}
-                      onPress={() => changeCategory(cat.slug)}
-                      style={[
-                        styles.pill,
-                        activeCategorySlug === cat.slug ? styles.pillActive : null,
-                      ]}
-                    >
-                      <AppText
-                        variant="caption"
-                        style={
-                          activeCategorySlug === cat.slug
-                            ? styles.pillTextActive
-                            : styles.pillText
-                        }
-                      >
-                        {cat.name}
-                      </AppText>
-                      <AppText
-                        variant="caption"
-                        style={
-                          activeCategorySlug === cat.slug
-                            ? styles.pillCountActive
-                            : styles.pillCount
-                        }
-                      >
-                        {cat.thread_count}
-                      </AppText>
-                    </Pressable>
-                  ))}
-                </>
-              ) : null}
-            </ScrollView>
+            </HintScrollRow>
             {activeCategory?.description ? (
               <AppText variant="caption" tone="muted" style={styles.categoryDescription}>
                 {activeCategory.description}
@@ -1076,13 +1071,6 @@ function getStyles() {
       alignItems: "center",
       justifyContent: "center",
       borderRadius: radii.pill,
-    },
-    pillDivider: {
-      width: 1,
-      alignSelf: "stretch",
-      marginVertical: 4,
-      marginHorizontal: 2,
-      backgroundColor: colors.borderSoft,
     },
     threadTitleRow: {
       flexDirection: "row",
