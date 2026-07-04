@@ -1,9 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { colors, radii, spacing } from "../theme/tokens";
 import type { ForumFormatAction } from "../utils/forumComposerFormatting";
 import { AppText } from "./AppText";
+import { HintScrollRow } from "./HintScrollRow";
 
 type ToolbarAction = {
   key: ForumFormatAction;
@@ -40,10 +41,9 @@ export function ForumComposerToolbar({
   const styles = getStyles();
   return (
     <View style={styles.toolbarWrap}>
-      <ScrollView
-        horizontal
+      {/* Scroll-hint chevron shows while more tools sit off-screen. */}
+      <HintScrollRow
         keyboardShouldPersistTaps="handled"
-        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.toolbarContent}
       >
         {ACTIONS.map((action) => (
@@ -113,7 +113,7 @@ export function ForumComposerToolbar({
             </AppText>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </HintScrollRow>
     </View>
   );
 }

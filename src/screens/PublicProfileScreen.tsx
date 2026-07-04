@@ -18,6 +18,7 @@ import {
   SectionHeader,
   Surface,
   UserAvatar,
+  UserTagBadges,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
@@ -283,9 +284,15 @@ export function PublicProfileScreen() {
               <RoleNameText variant="sectionTitle" role={profile.role} align="center">
                 {profile.username}
               </RoleNameText>
-              <AppText variant="label" tone="muted" align="center">
-                {profile.role}
-              </AppText>
+              {/* Tag badges replace the raw role string (e.g. "GENERAL") — for
+                  untagged users the line simply disappears, which reads cleaner. */}
+              <View style={styles.profileTags}>
+                <UserTagBadges
+                  role={profile.role}
+                  seriesRated={profile.ratings?.length ?? 0}
+                  postCount={profile.post_count}
+                />
+              </View>
               <AppText variant="caption" tone="muted" align="center">
                 Joined {formatJoinDate(profile.registered_at)}
               </AppText>
@@ -443,6 +450,9 @@ function getStyles() {
     identityText: {
       alignItems: "center",
       gap: spacing.xs,
+    },
+    profileTags: {
+      alignItems: "center",
     },
     statsRow: {
       flexDirection: "row",
