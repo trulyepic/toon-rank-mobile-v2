@@ -35,7 +35,7 @@ export function CoverImage({ uri, style, fallbackIconSize = 24 }: Props) {
       source={{ uri }}
       style={[styles.image, style]}
       contentFit="cover"
-      transition={150}
+      transition={250}
       cachePolicy="memory-disk"
     />
   );
