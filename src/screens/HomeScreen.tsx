@@ -1,6 +1,18 @@
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  Animated,
+  type FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
+
+import { animateNextLayout, motion } from "../theme/motion";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -14,8 +26,13 @@ import {
   EditSeriesModal,
   EmptyState,
   ErrorState,
+  FadeInView,
   HomeFilterSheet,
-  LoadingState,
+  HomeGridSkeleton,
+  HomeHeroCarousel,
+  LoadingDots,
+  PressableScale,
+  SectionHeader,
   SaveToListSheet,
   ScreenShell,
   SeriesCardActionsSheet,
@@ -64,11 +81,20 @@ function getScoreTone(score: number) {
   return colors.danger;
 }
 
+// Gold / silver / bronze rank-badge treatment for the podium spots.
+const TOP_RANK_STYLES: Record<number, { backgroundColor: string; borderColor: string }> =
+  {
+    1: { backgroundColor: "rgba(202,138,4,0.92)", borderColor: "#facc15" },
+    2: { backgroundColor: "rgba(100,116,139,0.92)", borderColor: "#cbd5e1" },
+    3: { backgroundColor: "rgba(154,52,18,0.92)", borderColor: "#fb923c" },
+  };
+
 // Handlers take the item (instead of per-item closures) so HomeScreen can pass
 // the same useCallback references to every card — keeping props referentially
 // stable is what lets memo() actually skip re-renders across the grid.
 const HomeCard = memo(function HomeCard({
   item,
+  index,
   onPressItem,
   onOpenActionsItem,
   showSave,
@@ -76,6 +102,7 @@ const HomeCard = memo(function HomeCard({
   onSaveItem,
 }: {
   item: RankedSeries;
+  index: number;
   onPressItem: (item: RankedSeries) => void;
   onOpenActionsItem: (item: RankedSeries) => void;
   showSave: boolean;
@@ -85,14 +112,17 @@ const HomeCard = memo(function HomeCard({
   const styles = getStyles();
   const score = Number(item.final_score || 0).toFixed(1);
   const onOpenActions = () => onOpenActionsItem(item);
+  const topRankStyle = item.rank ? TOP_RANK_STYLES[item.rank] : undefined;
+  // Stagger within the freshly loaded page only, so later pages don't wait
+  // out the full list's worth of delays.
+  const entranceDelay = (index % HOME_RANKINGS_PAGE_SIZE) * 40;
 
   return (
-    <View style={styles.posterCard}>
-      <Pressable
+    <FadeInView delay={entranceDelay} style={styles.posterCard}>
+      <PressableScale
         onPress={() => onPressItem(item)}
         onLongPress={onOpenActions}
         delayLongPress={250}
-        style={({ pressed }) => (pressed ? styles.posterCardPressed : null)}
         accessibilityRole="button"
         accessibilityLabel={`Open details for ${item.title}`}
       >
@@ -103,7 +133,7 @@ const HomeCard = memo(function HomeCard({
             fallbackIconSize={20}
           />
           {item.rank ? (
-            <View style={styles.rankBadge}>
+            <View style={[styles.rankBadge, topRankStyle]}>
               <Text style={styles.rankBadgeText}>#{item.rank}</Text>
             </View>
           ) : null}
@@ -158,8 +188,8 @@ const HomeCard = memo(function HomeCard({
             ) : null}
           </View>
         </View>
-      </Pressable>
-    </View>
+      </PressableScale>
+    </FadeInView>
   );
 });
 
@@ -236,17 +266,19 @@ export function HomeScreen() {
     (item: RankedSeries) => navigation.navigate("SeriesDetail", { seriesId: item.id }),
     [navigation],
   );
-  const handleOpenActionsItem = useCallback(
-    (item: RankedSeries) => setActionsItem(item),
-    [],
-  );
+  const handleOpenActionsItem = useCallback((item: RankedSeries) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActionsItem(item);
+  }, []);
   const handleSaveItem = useCallback((item: RankedSeries) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSaveSeriesId(item.id);
   }, []);
   const renderHomeCard = useCallback(
-    ({ item }: { item: RankedSeries }) => (
+    ({ item, index }: { item: RankedSeries; index: number }) => (
       <HomeCard
         item={item}
+        index={index}
         onPressItem={handlePressItem}
         onOpenActionsItem={handleOpenActionsItem}
         showSave={isSignedIn}
@@ -257,20 +289,239 @@ export function HomeScreen() {
     [handlePressItem, handleOpenActionsItem, handleSaveItem, isSignedIn, readingLists],
   );
 
+  // ── Scroll-linked hero exit ────────────────────────────────────────────────
+  // As the grid scrolls, the hero fades, lags behind (parallax), and shrinks
+  // slightly — while the type/filter rails stay pinned above the list.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const heroOpacity = scrollY.interpolate({
+    inputRange: [0, 320],
+    outputRange: [1, 0.1],
+    extrapolate: "clamp",
+  });
+  const heroTranslate = scrollY.interpolate({
+    inputRange: [0, 320],
+    outputRange: [0, 90],
+    extrapolate: "clamp",
+  });
+  const heroScale = scrollY.interpolate({
+    inputRange: [0, 320],
+    outputRange: [1, 0.96],
+    extrapolate: "clamp",
+  });
+
+  // ── Sliding type-rail indicator ────────────────────────────────────────────
+  // A small accent dot glides under the active chip (chip positions are
+  // measured onLayout since labels have different widths).
+  const chipLayouts = useRef<
+    Partial<Record<TitleTypeFilter, { x: number; width: number }>>
+  >({});
+  const railDotX = useRef(new Animated.Value(0)).current;
+  const [railDotVisible, setRailDotVisible] = useState(false);
+  const moveRailDot = useCallback(
+    (filter: TitleTypeFilter) => {
+      const layout = chipLayouts.current[filter];
+      if (!layout) return;
+      setRailDotVisible(true);
+      Animated.spring(railDotX, {
+        toValue: layout.x + layout.width / 2 - 3,
+        useNativeDriver: true,
+        ...motion.spring.gentle,
+      }).start();
+    },
+    [railDotX],
+  );
+  useEffect(() => {
+    moveRailDot(activeType);
+  }, [activeType, moveRailDot]);
+
+  // ── Pull-to-refresh ────────────────────────────────────────────────────────
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Promise.all([
+        rankingsQuery.refetch(),
+        queryClient.invalidateQueries({ queryKey: ["hero-top10"] }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [queryClient, rankingsQuery]);
+
+  // ── Scroll to top when the type filter changes ─────────────────────────────
+  // So the fresh grid's staggered entrance is actually seen from the top.
+  const listRef = useRef<FlatList<RankedSeries> | null>(null);
+  const firstTypeRun = useRef(true);
+  useEffect(() => {
+    if (firstTypeRun.current) {
+      firstTypeRun.current = false;
+      return;
+    }
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, [activeType]);
+
+  // ── Compare-counter pop ────────────────────────────────────────────────────
+  const compareCount = compareItems.length;
+  const counterScale = useRef(new Animated.Value(1)).current;
+  const firstCounterRun = useRef(true);
+  useEffect(() => {
+    if (firstCounterRun.current) {
+      firstCounterRun.current = false;
+      return;
+    }
+    if (compareCount === 0) return;
+    counterScale.setValue(0.6);
+    Animated.spring(counterScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      ...motion.spring.release,
+    }).start();
+  }, [compareCount, counterScale]);
+
   return (
     <ScreenShell
       title="Toon Ranks"
       scroll={false}
       rightSlot={
-        compareItems.length ? (
-          <View style={styles.headerCounter}>
+        compareCount ? (
+          <Animated.View
+            style={[styles.headerCounter, { transform: [{ scale: counterScale }] }]}
+          >
             <Ionicons name="git-compare-outline" size={14} color={colors.text} />
-            <Text style={styles.headerCounterText}>{compareItems.length}</Text>
-          </View>
+            <Text style={styles.headerCounterText}>{compareCount}</Text>
+          </Animated.View>
         ) : null
       }
     >
-      <FlatList
+      {/* Pinned rails: always visible while the hero scrolls away beneath. */}
+      <View style={styles.pinnedRails}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.typeRail}
+        >
+          {TITLE_TYPE_FILTERS.map((filter) => {
+            const selected = activeType === filter;
+
+            return (
+              <Pressable
+                key={filter}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onLayout={(e) => {
+                  chipLayouts.current[filter] = {
+                    x: e.nativeEvent.layout.x,
+                    width: e.nativeEvent.layout.width,
+                  };
+                  if (selected) moveRailDot(filter);
+                }}
+                onPress={() => {
+                  animateNextLayout();
+                  setActiveType(filter);
+                  setActiveGenre(null);
+                }}
+                style={({ pressed }) => [
+                  styles.segmentButton,
+                  selected ? styles.segmentButtonActive : null,
+                  pressed ? styles.segmentButtonPressed : null,
+                ]}
+              >
+                <AppText
+                  variant="caption"
+                  tone={selected ? "primary" : "muted"}
+                  style={styles.typeButtonText}
+                >
+                  {filter}
+                </AppText>
+              </Pressable>
+            );
+          })}
+          {railDotVisible ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.railDot, { transform: [{ translateX: railDotX }] }]}
+            />
+          ) : null}
+        </ScrollView>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open filters"
+            onPress={() => setFiltersVisible(true)}
+            style={({ pressed }) => [
+              styles.filtersChip,
+              activeFilterCount > 0 ? styles.filtersChipActive : null,
+              pressed ? styles.segmentButtonPressed : null,
+            ]}
+          >
+            <Ionicons name="options-outline" size={15} color={colors.text} />
+            <AppText variant="caption" style={styles.filtersChipText}>
+              Filters
+            </AppText>
+            {activeFilterCount > 0 ? (
+              <View style={styles.filterCountBadge}>
+                <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+
+          {activeStatusLabel ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Clear ${activeStatusLabel} status filter`}
+              onPress={() => {
+                animateNextLayout();
+                setActiveStatus(null);
+              }}
+              style={({ pressed }) => [
+                styles.activeFilterChip,
+                pressed ? styles.segmentButtonPressed : null,
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: getSeriesStatusMeta(activeStatus)?.background },
+                ]}
+              />
+              <AppText variant="caption" tone="primary">
+                {activeStatusLabel}
+              </AppText>
+              <Ionicons name="close" size={13} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+
+          {activeGenre ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Clear ${activeGenre} genre filter`}
+              onPress={() => {
+                animateNextLayout();
+                setActiveGenre(null);
+              }}
+              style={({ pressed }) => [
+                styles.activeFilterChip,
+                pressed ? styles.segmentButtonPressed : null,
+              ]}
+            >
+              <AppText variant="caption" tone="primary">
+                {activeGenre}
+              </AppText>
+              <Ionicons name="close" size={13} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </ScrollView>
+      </View>
+
+      <Animated.FlatList
+        ref={listRef}
         data={rankings}
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
@@ -282,157 +533,78 @@ export function HomeScreen() {
         maxToRenderPerBatch={8}
         windowSize={7}
         removeClippedSubviews
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accentStrong}
+            colors={[colors.accentStrong]}
+          />
+        }
         onEndReachedThreshold={0.5}
         onEndReached={() => {
           if (rankingsQuery.hasNextPage && !rankingsQuery.isFetchingNextPage) {
             void rankingsQuery.fetchNextPage();
           }
         }}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
+        scrollEventThrottle={16}
         ListHeaderComponent={
           <View style={styles.listHeader}>
-            {rankingsQuery.isLoading ? (
-              <LoadingState message="Loading rankings..." />
-            ) : null}
+            <Animated.View
+              style={{
+                opacity: heroOpacity,
+                transform: [{ translateY: heroTranslate }, { scale: heroScale }],
+              }}
+            >
+              <HomeHeroCarousel activeType={activeType} onPressItem={handlePressItem} />
+            </Animated.View>
+
+            <SectionHeader title="All rankings" />
+
+            {rankingsQuery.isLoading ? <HomeGridSkeleton /> : null}
             {rankingsQuery.isError ? (
               <ErrorState message="Rankings failed to load. Check your connection and try again in a moment." />
             ) : null}
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.typeRail}
-            >
-              {TITLE_TYPE_FILTERS.map((filter) => {
-                const selected = activeType === filter;
-
-                return (
-                  <Pressable
-                    key={filter}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => {
-                      setActiveType(filter);
-                      setActiveGenre(null);
-                    }}
-                    style={({ pressed }) => [
-                      styles.segmentButton,
-                      selected ? styles.segmentButtonActive : null,
-                      pressed ? styles.segmentButtonPressed : null,
-                    ]}
-                  >
-                    {selected ? <View style={styles.typeDot} /> : null}
-                    <AppText
-                      variant="caption"
-                      tone={selected ? "primary" : "muted"}
-                      style={styles.typeButtonText}
-                    >
-                      {filter}
-                    </AppText>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open filters"
-                onPress={() => setFiltersVisible(true)}
-                style={({ pressed }) => [
-                  styles.filtersChip,
-                  activeFilterCount > 0 ? styles.filtersChipActive : null,
-                  pressed ? styles.segmentButtonPressed : null,
-                ]}
-              >
-                <Ionicons name="options-outline" size={15} color={colors.text} />
-                <AppText variant="caption" style={styles.filtersChipText}>
-                  Filters
-                </AppText>
-                {activeFilterCount > 0 ? (
-                  <View style={styles.filterCountBadge}>
-                    <Text style={styles.filterCountText}>{activeFilterCount}</Text>
-                  </View>
-                ) : null}
-              </Pressable>
-
-              {activeStatusLabel ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Clear ${activeStatusLabel} status filter`}
-                  onPress={() => setActiveStatus(null)}
-                  style={({ pressed }) => [
-                    styles.activeFilterChip,
-                    pressed ? styles.segmentButtonPressed : null,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      { backgroundColor: getSeriesStatusMeta(activeStatus)?.background },
-                    ]}
-                  />
-                  <AppText variant="caption" tone="primary">
-                    {activeStatusLabel}
-                  </AppText>
-                  <Ionicons name="close" size={13} color={colors.textMuted} />
-                </Pressable>
-              ) : null}
-
-              {activeGenre ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Clear ${activeGenre} genre filter`}
-                  onPress={() => setActiveGenre(null)}
-                  style={({ pressed }) => [
-                    styles.activeFilterChip,
-                    pressed ? styles.segmentButtonPressed : null,
-                  ]}
-                >
-                  <AppText variant="caption" tone="primary">
-                    {activeGenre}
-                  </AppText>
-                  <Ionicons name="close" size={13} color={colors.textMuted} />
-                </Pressable>
-              ) : null}
-            </ScrollView>
           </View>
         }
         renderItem={renderHomeCard}
         ListEmptyComponent={
           !rankingsQuery.isLoading && !rankingsQuery.isError ? (
-            <EmptyState
-              title={
-                activeStatusLabel
-                  ? `No ${activeStatusLabel} titles`
-                  : activeGenre
-                    ? `No ${activeGenre} titles`
-                    : activeType !== "All"
-                      ? `No ${activeType} yet`
-                      : undefined
-              }
-              message={
-                activeStatusLabel
-                  ? "Try a different status or clear the status filter."
-                  : activeGenre
-                    ? "Try a different genre or clear the genre filter."
-                    : activeType !== "All"
-                      ? "Try another type filter or check back after more titles are ranked."
-                      : "No rankings are available yet. Check back soon for ranked titles."
-              }
-            />
+            <FadeInView>
+              <EmptyState
+                title={
+                  activeStatusLabel
+                    ? `No ${activeStatusLabel} titles`
+                    : activeGenre
+                      ? `No ${activeGenre} titles`
+                      : activeType !== "All"
+                        ? `No ${activeType} yet`
+                        : undefined
+                }
+                message={
+                  activeStatusLabel
+                    ? "Try a different status or clear the status filter."
+                    : activeGenre
+                      ? "Try a different genre or clear the genre filter."
+                      : activeType !== "All"
+                        ? "Try another type filter or check back after more titles are ranked."
+                        : "No rankings are available yet. Check back soon for ranked titles."
+                }
+              />
+            </FadeInView>
           ) : null
         }
         ListFooterComponent={
           rankings.length ? (
             <View style={styles.listFooter}>
-              {rankingsQuery.hasNextPage ? (
+              {rankingsQuery.isFetchingNextPage ? (
+                <LoadingDots />
+              ) : rankingsQuery.hasNextPage ? (
                 <AppButton
-                  label={rankingsQuery.isFetchingNextPage ? "Loading..." : "Load more"}
-                  disabled={rankingsQuery.isFetchingNextPage}
+                  label="Load more"
                   onPress={() => rankingsQuery.fetchNextPage()}
                   iconRight={
                     <Ionicons name="chevron-down" size={15} color={colors.text} />
@@ -488,12 +660,22 @@ export function HomeScreen() {
         onClose={() => setFiltersVisible(false)}
         genres={allGenres}
         activeStatus={activeStatus}
-        onStatusChange={setActiveStatus}
+        onStatusChange={(status) => {
+          animateNextLayout();
+          setActiveStatus(status);
+        }}
         activeGenre={activeGenre}
-        onGenreChange={setActiveGenre}
+        onGenreChange={(genre) => {
+          animateNextLayout();
+          setActiveGenre(genre);
+        }}
         activeSort={activeSort}
-        onSortChange={setActiveSort}
+        onSortChange={(sort) => {
+          animateNextLayout();
+          setActiveSort(sort);
+        }}
         onReset={() => {
+          animateNextLayout();
           setActiveStatus(null);
           setActiveGenre(null);
           setActiveSort("score");
@@ -516,6 +698,18 @@ function getStyles() {
       gap: spacing.md,
       marginBottom: spacing.md,
     },
+    pinnedRails: {
+      gap: spacing.sm,
+    },
+    railDot: {
+      position: "absolute",
+      left: 0,
+      bottom: 0,
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.accentStrong,
+    },
     listFooter: {
       paddingTop: spacing.sm,
     },
@@ -529,6 +723,8 @@ function getStyles() {
       alignItems: "center",
       gap: spacing.sm,
       paddingRight: spacing.md,
+      // Room for the sliding indicator dot beneath the chips.
+      paddingBottom: 10,
     },
     filterRow: {
       flexDirection: "row",
@@ -604,12 +800,6 @@ function getStyles() {
     },
     typeButtonText: {
       fontWeight: "800",
-    },
-    typeDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: colors.accentStrong,
     },
     posterCard: {
       flex: 1,
@@ -698,10 +888,6 @@ function getStyles() {
     scoreBadgeText: {
       fontSize: 12,
       fontWeight: "800",
-    },
-    posterCardPressed: {
-      opacity: 0.9,
-      transform: [{ scale: 0.992 }],
     },
     posterMeta: {
       gap: spacing.xs,

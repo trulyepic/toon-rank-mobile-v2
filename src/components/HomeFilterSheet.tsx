@@ -1,4 +1,6 @@
+import { useEffect, useRef } from "react";
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +12,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SeriesSort } from "../api/series";
+import { motion } from "../theme/motion";
 import { colors, radii, spacing } from "../theme/tokens";
 import { getSeriesStatusMeta, SERIES_STATUS_FILTERS } from "../utils/seriesStatus";
 import { AppButton } from "./AppButton";
@@ -62,128 +65,147 @@ export function HomeFilterSheet({
   const maxScrollHeight = screenHeight * 0.55;
   const hasActive = !!activeStatus || !!activeGenre || activeSort !== "score";
 
+  // Spring-up entrance: the sheet starts 48 px low and settles with a gentle
+  // spring while the modal itself fades in.
+  const sheetTranslate = useRef(new Animated.Value(48)).current;
+  useEffect(() => {
+    if (visible) {
+      sheetTranslate.setValue(48);
+      Animated.spring(sheetTranslate, {
+        toValue: 0,
+        useNativeDriver: true,
+        ...motion.spring.gentle,
+      }).start();
+    }
+  }, [visible, sheetTranslate]);
+
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={styles.backdropFill} onPress={onClose} />
-        <Surface
-          radius="xl"
-          style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}
-        >
-          <View style={styles.header}>
-            <AppText variant="sectionTitle">Filters</AppText>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close filters"
-            >
-              <Ionicons name="close" size={24} color={colors.text} />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            style={[styles.scrollView, { maxHeight: maxScrollHeight }]}
-            showsVerticalScrollIndicator
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scroll}
+        <Animated.View style={{ transform: [{ translateY: sheetTranslate }] }}>
+          <Surface
+            radius="xl"
+            style={[styles.sheet, { paddingBottom: spacing.md + insets.bottom }]}
           >
-            <AppText variant="label" tone="muted">
-              Sort
-            </AppText>
-            <View style={styles.pillWrap}>
-              {SORT_OPTIONS.map((option) => {
-                const selected = activeSort === option.value;
-                return (
-                  <Pressable
-                    key={option.value}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => onSortChange(option.value)}
-                    style={({ pressed }) => [
-                      styles.pill,
-                      selected ? styles.pillActive : null,
-                      pressed ? styles.pillPressed : null,
-                    ]}
-                  >
-                    <AppText variant="caption" tone={selected ? "primary" : "muted"}>
-                      {option.label}
-                    </AppText>
-                  </Pressable>
-                );
-              })}
+            <View style={styles.header}>
+              <AppText variant="sectionTitle">Filters</AppText>
+              <Pressable
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close filters"
+              >
+                <Ionicons name="close" size={24} color={colors.text} />
+              </Pressable>
             </View>
 
-            <AppText variant="label" tone="muted" style={styles.genreHeading}>
-              Status
-            </AppText>
-            <View style={styles.pillWrap}>
-              {SERIES_STATUS_FILTERS.map((status) => {
-                const selected = activeStatus === status.value;
-                const dotColor = getSeriesStatusMeta(status.value)?.background;
-                return (
-                  <Pressable
-                    key={status.value}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => onStatusChange(selected ? null : status.value)}
-                    style={({ pressed }) => [
-                      styles.pill,
-                      selected ? styles.pillActive : null,
-                      pressed ? styles.pillPressed : null,
-                    ]}
-                  >
-                    {dotColor ? (
-                      <View style={[styles.dot, { backgroundColor: dotColor }]} />
-                    ) : null}
-                    <AppText variant="caption" tone={selected ? "primary" : "muted"}>
-                      {status.label}
-                    </AppText>
-                  </Pressable>
-                );
-              })}
+            <ScrollView
+              style={[styles.scrollView, { maxHeight: maxScrollHeight }]}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scroll}
+            >
+              <AppText variant="label" tone="muted">
+                Sort
+              </AppText>
+              <View style={styles.pillWrap}>
+                {SORT_OPTIONS.map((option) => {
+                  const selected = activeSort === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      onPress={() => onSortChange(option.value)}
+                      style={({ pressed }) => [
+                        styles.pill,
+                        selected ? styles.pillActive : null,
+                        pressed ? styles.pillPressed : null,
+                      ]}
+                    >
+                      <AppText variant="caption" tone={selected ? "primary" : "muted"}>
+                        {option.label}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <AppText variant="label" tone="muted" style={styles.genreHeading}>
+                Status
+              </AppText>
+              <View style={styles.pillWrap}>
+                {SERIES_STATUS_FILTERS.map((status) => {
+                  const selected = activeStatus === status.value;
+                  const dotColor = getSeriesStatusMeta(status.value)?.background;
+                  return (
+                    <Pressable
+                      key={status.value}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      onPress={() => onStatusChange(selected ? null : status.value)}
+                      style={({ pressed }) => [
+                        styles.pill,
+                        selected ? styles.pillActive : null,
+                        pressed ? styles.pillPressed : null,
+                      ]}
+                    >
+                      {dotColor ? (
+                        <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                      ) : null}
+                      <AppText variant="caption" tone={selected ? "primary" : "muted"}>
+                        {status.label}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {genres.length > 0 ? (
+                <>
+                  <AppText variant="label" tone="muted" style={styles.genreHeading}>
+                    Genre
+                  </AppText>
+                  <View style={styles.pillWrap}>
+                    {genres.map((genre) => {
+                      const selected = activeGenre === genre;
+                      return (
+                        <Pressable
+                          key={genre}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          onPress={() => onGenreChange(selected ? null : genre)}
+                          style={({ pressed }) => [
+                            styles.pill,
+                            selected ? styles.pillActive : null,
+                            pressed ? styles.pillPressed : null,
+                          ]}
+                        >
+                          <AppText
+                            variant="caption"
+                            tone={selected ? "primary" : "muted"}
+                          >
+                            {genre}
+                          </AppText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
+              ) : null}
+            </ScrollView>
+
+            <View style={styles.footer}>
+              <AppButton
+                label="Reset"
+                variant="ghost"
+                disabled={!hasActive}
+                onPress={onReset}
+              />
+              <AppButton label="Done" selected onPress={onClose} />
             </View>
-
-            {genres.length > 0 ? (
-              <>
-                <AppText variant="label" tone="muted" style={styles.genreHeading}>
-                  Genre
-                </AppText>
-                <View style={styles.pillWrap}>
-                  {genres.map((genre) => {
-                    const selected = activeGenre === genre;
-                    return (
-                      <Pressable
-                        key={genre}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        onPress={() => onGenreChange(selected ? null : genre)}
-                        style={({ pressed }) => [
-                          styles.pill,
-                          selected ? styles.pillActive : null,
-                          pressed ? styles.pillPressed : null,
-                        ]}
-                      >
-                        <AppText variant="caption" tone={selected ? "primary" : "muted"}>
-                          {genre}
-                        </AppText>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </>
-            ) : null}
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <AppButton
-              label="Reset"
-              variant="ghost"
-              disabled={!hasActive}
-              onPress={onReset}
-            />
-            <AppButton label="Done" selected onPress={onClose} />
-          </View>
-        </Surface>
+          </Surface>
+        </Animated.View>
       </View>
     </Modal>
   );
