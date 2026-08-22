@@ -29,9 +29,17 @@ function statusTone(s: SubmissionStatus): "accent" | "warning" | "neutral" {
 function SubmissionCard({ item }: { item: SeriesSubmission }) {
   const styles = getStyles();
   const navigation = useNavigation<Nav>();
+  const isPending = String(item.approval_status).toUpperCase().startsWith("PENDING");
 
   return (
-    <Pressable onPress={() => navigation.navigate("SeriesDetail", { seriesId: item.id })}>
+    <Pressable
+      onPress={() =>
+        navigation.navigate("SeriesDetail", {
+          seriesId: item.id,
+          canManagePendingDetails: isPending,
+        })
+      }
+    >
       <Surface variant="raised" radius="xl" style={styles.card}>
         <View style={styles.cardRow}>
           {item.cover_url ? (
@@ -55,7 +63,7 @@ function SubmissionCard({ item }: { item: SeriesSubmission }) {
                 tone={statusTone(item.approval_status)}
               />
             </View>
-            {!item.detail_ready && item.approval_status === "PENDING_REVIEW" ? (
+            {!item.detail_ready && isPending ? (
               <View style={styles.detailPrompt}>
                 <Ionicons
                   name="information-circle-outline"
@@ -63,8 +71,8 @@ function SubmissionCard({ item }: { item: SeriesSubmission }) {
                   color={colors.warning}
                 />
                 <AppText tone="muted" style={styles.detailText}>
-                  Open the title page to add synopsis and secondary cover before admin
-                  review.
+                  Open the title page to add title details and secondary cover before
+                  admin review.
                 </AppText>
               </View>
             ) : null}

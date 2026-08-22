@@ -199,6 +199,7 @@ export function HomeScreen() {
   const { canAddMore, compareItems, isSelected, toggleCompare } = useCompare();
   const { isSignedIn, user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
+  const canSubmitTitle = user?.role === "CONTRIBUTOR" || isAdmin;
   const [activeType, setActiveType] = useState<TitleTypeFilter>("All");
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
@@ -385,13 +386,25 @@ export function HomeScreen() {
       title="Toon Ranks"
       scroll={false}
       rightSlot={
-        compareCount ? (
-          <Animated.View
-            style={[styles.headerCounter, { transform: [{ scale: counterScale }] }]}
-          >
-            <Ionicons name="git-compare-outline" size={14} color={colors.text} />
-            <Text style={styles.headerCounterText}>{compareCount}</Text>
-          </Animated.View>
+        canSubmitTitle || compareCount ? (
+          <View style={styles.headerActions}>
+            {canSubmitTitle ? (
+              <AppButton
+                label="Submit"
+                size="sm"
+                onPress={() => navigation.navigate("SubmitSeries")}
+                iconLeft={<Ionicons name="add" size={15} color={colors.text} />}
+              />
+            ) : null}
+            {compareCount ? (
+              <Animated.View
+                style={[styles.headerCounter, { transform: [{ scale: counterScale }] }]}
+              >
+                <Ionicons name="git-compare-outline" size={14} color={colors.text} />
+                <Text style={styles.headerCounterText}>{compareCount}</Text>
+              </Animated.View>
+            ) : null}
+          </View>
         ) : null
       }
     >
@@ -700,6 +713,11 @@ function getStyles() {
     },
     pinnedRails: {
       gap: spacing.sm,
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
     },
     railDot: {
       position: "absolute",

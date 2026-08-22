@@ -14,6 +14,7 @@ export { ForumPersonalFeed, type ForumPersonalView } from "./ForumPersonalFeed";
 export { ForumComposerToolbar } from "./ForumComposerToolbar";
 export { ForumMentionSuggestions } from "./ForumMentionSuggestions";
 export { EditSeriesModal } from "./EditSeriesModal";
+export { EditSeriesDetailModal } from "./EditSeriesDetailModal";
 export { ForumSeriesStrip } from "./ForumSeriesStrip";
 export { HintScrollRow } from "./HintScrollRow";
 export { HomeFilterSheet } from "./HomeFilterSheet";
