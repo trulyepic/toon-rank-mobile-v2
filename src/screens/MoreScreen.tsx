@@ -285,6 +285,13 @@ export function MoreScreen() {
           <SectionHeader title="Contributor" />
           <View style={styles.rowStack}>
             <MenuRow
+              icon="add-circle-outline"
+              iconColor="#22c55e"
+              title="Submit a Title"
+              subtitle="Add a new manhwa, manga, or manhua for review."
+              onPress={() => navigation.navigate("SubmitSeries")}
+            />
+            <MenuRow
               icon="documents-outline"
               iconColor="#8b5cf6"
               title="My Submissions"

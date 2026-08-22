@@ -42,6 +42,28 @@ export async function getSeriesDetail(seriesId: number) {
   return res.data;
 }
 
+export async function saveSeriesDetail(payload: {
+  seriesId: number;
+  synopsis: string;
+  coverUri?: string;
+  coverMimeType?: string;
+}): Promise<SeriesDetailData> {
+  const formData = new FormData();
+  formData.append("series_id", String(payload.seriesId));
+  formData.append("synopsis", payload.synopsis);
+  if (payload.coverUri && payload.coverMimeType) {
+    formData.append("file", {
+      uri: payload.coverUri,
+      type: payload.coverMimeType,
+      name: "detail-cover." + (payload.coverMimeType.split("/")[1] ?? "jpg"),
+    } as unknown as Blob);
+  }
+  const res = await api.post<SeriesDetailData>("/series-details/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
 export async function submitSeries(payload: {
   title: string;
   type: SeriesType;
@@ -57,7 +79,7 @@ export async function submitSeries(payload: {
   formData.append("genre", payload.genre);
   if (payload.author) formData.append("author", payload.author);
   if (payload.artist) formData.append("artist", payload.artist);
-  formData.append("cover_image", {
+  formData.append("cover", {
     uri: payload.coverUri,
     type: payload.coverMimeType,
     name: "cover." + (payload.coverMimeType.split("/")[1] ?? "jpg"),
@@ -93,7 +115,7 @@ export async function updateSeries(
   if (payload.type !== undefined) formData.append("type", payload.type);
   if (payload.author !== undefined) formData.append("author", payload.author);
   if (payload.artist !== undefined) formData.append("artist", payload.artist);
-  if (payload.status) formData.append("status", payload.status);
+  if (payload.status !== undefined) formData.append("status", payload.status);
   if (payload.coverUri && payload.coverMimeType) {
     formData.append("cover", {
       uri: payload.coverUri,

@@ -16,6 +16,9 @@ import {
   AppText,
   Chip,
   CoverImage,
+  EditSeriesDetailModal,
+  EditSeriesModal,
+  ForumMarkdown,
   ImageLightbox,
   LoadingState,
   SaveToListSheet,
@@ -25,6 +28,7 @@ import {
   Surface,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import type { RankedSeries } from "../types/series";
 import { colors, radii, shadows, spacing } from "../theme/tokens";
 import {
   getUserVoteForCategory,
@@ -196,10 +200,12 @@ export function SeriesDetailScreen() {
   const route = useRoute<SeriesDetailRoute>();
   const navigation = useNavigation<SeriesDetailNavigation>();
   const queryClient = useQueryClient();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useAuth();
   const seriesId = route.params.seriesId;
   const [savePickerVisible, setSavePickerVisible] = useState(false);
   const [coverLightboxVisible, setCoverLightboxVisible] = useState(false);
+  const [editTitleVisible, setEditTitleVisible] = useState(false);
+  const [editDetailsVisible, setEditDetailsVisible] = useState(false);
   const summaryQuery = useQuery({
     queryKey: ["series-summary", seriesId],
     queryFn: () => getSeriesSummary(seriesId),
@@ -252,8 +258,20 @@ export function SeriesDetailScreen() {
   const rank = summary?.rank;
   const voteCount = summary?.vote_count ?? 0;
 
-  const heroImage = detail?.series_cover_url || summary?.cover_url || detail?.cover_url;
+  const detailCoverImage = detail?.series_cover_url ?? null;
+  const titleCoverImage = summary?.cover_url || detail?.cover_url || "";
   const genreChips = getGenreChips(detail?.genre || summary?.genre);
+  const isAdmin = user?.role === "ADMIN";
+  const approvalStatus = String(detail?.approval_status ?? "").toUpperCase();
+  const isPendingSubmission =
+    approvalStatus === "PENDING" || approvalStatus === "PENDING_REVIEW";
+  const isSubmissionOwner =
+    Number(detail?.submitted_by_id) > 0 && Number(detail?.submitted_by_id) === user?.id;
+  const canManagePendingDetails =
+    Boolean(route.params.canManagePendingDetails) ||
+    (isPendingSubmission && isSubmissionOwner);
+  const canEditTitleDetails = Boolean(isAdmin || canManagePendingDetails);
+  const hasTitleDetails = Boolean(detail?.synopsis?.trim() || detail?.series_cover_url);
 
   const storyScore = getAverage(detail?.story_total, detail?.story_count);
   const characterScore = getAverage(detail?.characters_total, detail?.characters_count);
@@ -264,6 +282,22 @@ export function SeriesDetailScreen() {
     detail?.drama_or_fight_count,
   );
   const averageScore = Number(summary?.final_score || 0);
+  const editSeriesData: RankedSeries | null =
+    summary || detail
+      ? {
+          id: seriesId,
+          title,
+          genre: detail?.genre || summary?.genre || "",
+          type: (type || "MANHWA") as RankedSeries["type"],
+          cover_url: titleCoverImage,
+          vote_count: voteCount,
+          final_score: averageScore,
+          rank: rank ?? null,
+          author: detail?.author || summary?.author,
+          artist: detail?.artist || summary?.artist,
+          status,
+        }
+      : null;
   const handleVote = (category: VoteCategory, score: number) => {
     if (!isSignedIn) {
       Alert.alert("Log in to vote", "Use your Toon Ranks account to rate this series.", [
@@ -331,15 +365,15 @@ export function SeriesDetailScreen() {
       {summary || detail ? (
         <>
           <View style={styles.heroShell}>
-            {heroImage ? (
+            {detailCoverImage ? (
               <Pressable
                 onPress={() => setCoverLightboxVisible(true)}
                 style={({ pressed }) => (pressed ? { opacity: 0.88 } : null)}
                 accessibilityRole="imagebutton"
-                accessibilityLabel="View full cover image"
+                accessibilityLabel="View full detail cover image"
               >
                 <CoverImage
-                  uri={heroImage}
+                  uri={detailCoverImage}
                   style={styles.heroImage}
                   fallbackIconSize={28}
                 />
@@ -354,7 +388,7 @@ export function SeriesDetailScreen() {
                   {title}
                 </AppText>
                 <AppText tone="muted" align="center">
-                  Cover art has not been added yet.
+                  Detail cover has not been added yet.
                 </AppText>
               </View>
             )}
@@ -417,6 +451,37 @@ export function SeriesDetailScreen() {
                 }
               />
             </View>
+
+            {isAdmin || canEditTitleDetails ? (
+              <View style={styles.managementActions}>
+                {isAdmin && editSeriesData ? (
+                  <AppButton
+                    label="Edit title"
+                    variant="secondary"
+                    style={styles.managementBtn}
+                    onPress={() => setEditTitleVisible(true)}
+                    iconLeft={
+                      <Ionicons name="create-outline" size={16} color={colors.text} />
+                    }
+                  />
+                ) : null}
+                {canEditTitleDetails ? (
+                  <AppButton
+                    label={hasTitleDetails ? "Edit title details" : "Add title details"}
+                    variant="secondary"
+                    style={styles.managementBtn}
+                    onPress={() => setEditDetailsVisible(true)}
+                    iconLeft={
+                      <Ionicons
+                        name="document-text-outline"
+                        size={16}
+                        color={colors.text}
+                      />
+                    }
+                  />
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           {genreChips.length ? (
@@ -436,12 +501,18 @@ export function SeriesDetailScreen() {
 
           <Surface style={styles.infoCard}>
             <AppText variant="label" tone="muted">
-              Synopsis
+              Title details
             </AppText>
-            <AppText style={styles.infoBody}>
-              {detail?.synopsis?.trim() ||
-                "Synopsis has not been added yet. The ranking summary is still available above."}
-            </AppText>
+            {detail?.synopsis?.trim() ? (
+              <View style={styles.infoMarkdown}>
+                <ForumMarkdown markdown={detail.synopsis} />
+              </View>
+            ) : (
+              <AppText style={styles.infoBody}>
+                Title details have not been added yet. The ranking summary is still
+                available above.
+              </AppText>
+            )}
           </Surface>
 
           <SectionHeader
@@ -530,7 +601,7 @@ export function SeriesDetailScreen() {
       </View>
 
       <ImageLightbox
-        uri={heroImage}
+        uri={detailCoverImage}
         visible={coverLightboxVisible}
         onClose={() => setCoverLightboxVisible(false)}
       />
@@ -539,6 +610,32 @@ export function SeriesDetailScreen() {
         seriesId={seriesId}
         visible={savePickerVisible}
         onClose={() => setSavePickerVisible(false)}
+      />
+
+      {editSeriesData ? (
+        <EditSeriesModal
+          series={editSeriesData}
+          visible={editTitleVisible}
+          onClose={() => setEditTitleVisible(false)}
+          onSaved={() => {
+            setEditTitleVisible(false);
+            void summaryQuery.refetch();
+            void detailQuery.refetch();
+          }}
+        />
+      ) : null}
+
+      <EditSeriesDetailModal
+        seriesId={seriesId}
+        visible={editDetailsVisible}
+        initialSynopsis={detail?.synopsis ?? ""}
+        initialCoverUrl={detail?.series_cover_url ?? null}
+        hasExistingDetails={hasTitleDetails}
+        onClose={() => setEditDetailsVisible(false)}
+        onSaved={() => {
+          setEditDetailsVisible(false);
+          void detailQuery.refetch();
+        }}
       />
     </ScreenShell>
   );
@@ -613,6 +710,14 @@ function getStyles() {
     actionBtn: {
       flex: 1,
     },
+    managementActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    managementBtn: {
+      flexGrow: 1,
+    },
     metricGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
@@ -632,6 +737,9 @@ function getStyles() {
     infoBody: {
       fontSize: 16,
       lineHeight: 28,
+    },
+    infoMarkdown: {
+      paddingTop: 2,
     },
     breakdownPanel: {
       gap: spacing.md,

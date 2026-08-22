@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,6 +19,7 @@ import { updateSeries } from "../api/series";
 import { colors, radii, spacing } from "../theme/tokens";
 import type { RankedSeries, SeriesType } from "../types/series";
 import { getSeriesStatusMeta } from "../utils/seriesStatus";
+import { prepareCoverImage, TITLE_COVER_SPEC } from "../utils/coverImage";
 import { AppButton } from "./AppButton";
 import { AppText } from "./AppText";
 import { Surface } from "./Surface";
@@ -57,8 +58,26 @@ export function EditSeriesModal({ series, visible, onClose, onSaved }: Props) {
   const [author, setAuthor] = useState(series.author ?? "");
   const [artist, setArtist] = useState(series.artist ?? "");
   const [status, setStatus] = useState<string>((series.status ?? "").toUpperCase());
-  const [cover, setCover] = useState<{ uri: string; mimeType: string } | null>(null);
+  const [cover, setCover] = useState<{
+    uri: string;
+    mimeType: string;
+    width: number;
+    height: number;
+    sizeKB: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    setTitle(series.title);
+    setGenre(series.genre ?? "");
+    setType(series.type);
+    setAuthor(series.author ?? "");
+    setArtist(series.artist ?? "");
+    setStatus((series.status ?? "").toUpperCase());
+    setCover(null);
+    setError(null);
+  }, [series, visible]);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -68,7 +87,7 @@ export function EditSeriesModal({ series, visible, onClose, onSaved }: Props) {
         type,
         author: author.trim(),
         artist: artist.trim(),
-        status: status || undefined,
+        status,
         coverUri: cover?.uri,
         coverMimeType: cover?.mimeType,
       }),
@@ -80,10 +99,9 @@ export function EditSeriesModal({ series, visible, onClose, onSaved }: Props) {
       onClose();
     },
     onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Could not save changes. Please try again.";
-      setError(msg);
+      setError(
+        err instanceof Error ? err.message : "Could not save changes. Please try again.",
+      );
     },
   });
 
@@ -91,12 +109,16 @@ export function EditSeriesModal({ series, visible, onClose, onSaved }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
-      aspect: [2, 3],
-      quality: 0.85,
+      aspect: TITLE_COVER_SPEC.pickerAspect,
+      quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setCover({ uri: asset.uri, mimeType: asset.mimeType ?? "image/jpeg" });
+      try {
+        setError(null);
+        setCover(await prepareCoverImage(result.assets[0], TITLE_COVER_SPEC));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not prepare cover image.");
+      }
     }
   }
 
@@ -257,6 +279,11 @@ export function EditSeriesModal({ series, visible, onClose, onSaved }: Props) {
                   {cover ? "Cover selected — tap to change" : "Replace cover"}
                 </AppText>
               </Pressable>
+              {cover ? (
+                <AppText tone="muted" variant="caption" style={styles.coverReadyText}>
+                  Ready: {cover.width}x{cover.height}, {cover.sizeKB}KB
+                </AppText>
+              ) : null}
             </View>
           </ScrollView>
 
@@ -370,6 +397,9 @@ function getStyles() {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.xs,
+      flex: 1,
+    },
+    coverReadyText: {
       flex: 1,
     },
     pressed: {

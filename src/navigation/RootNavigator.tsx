@@ -29,7 +29,7 @@ import { MySubmissionsScreen } from "../screens/MySubmissionsScreen";
 
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList> | undefined;
-  SeriesDetail: { seriesId: number };
+  SeriesDetail: { seriesId: number; canManagePendingDetails?: boolean };
   Login: undefined;
   Signup: undefined;
   CheckEmail: undefined;

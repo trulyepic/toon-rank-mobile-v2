@@ -48,6 +48,8 @@ export interface SeriesDetailData {
   status?: string | null;
   cover_url?: string;
   series_cover_url?: string;
+  approval_status?: string | null;
+  submitted_by_id?: number | null;
   synopsis?: string;
   vote_scores?: Record<string, number>;
   vote_counts?: Record<string, number>;
@@ -63,7 +65,7 @@ export interface SeriesDetailData {
   drama_or_fight_count?: number;
 }
 
-export type SubmissionStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+export type SubmissionStatus = "PENDING" | "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 
 export interface SeriesSubmission {
   id: number;
