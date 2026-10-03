@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { compactGenre, formatAverage, formatScore } from "./seriesFormatting";
+import {
+  compactGenre,
+  formatAverage,
+  formatScore,
+  hasExternalContext,
+} from "./seriesFormatting";
 
 describe("series formatting", () => {
   it("formats numeric scores to one decimal place", () => {
@@ -26,5 +31,20 @@ describe("series formatting", () => {
     );
     expect(compactGenre(" Action , , Fantasy ")).toBe("Action / Fantasy");
     expect(compactGenre()).toBe("-");
+  });
+
+  it("shows external context when at least one attributed metric exists", () => {
+    expect(hasExternalContext({ external_source: "ANILIST", external_score: 82 })).toBe(
+      true,
+    );
+    expect(
+      hasExternalContext({ external_source: "ANILIST", external_popularity: 56030 }),
+    ).toBe(true);
+  });
+
+  it("hides external context for source-only or unattributed metrics", () => {
+    expect(hasExternalContext({ external_source: "ANILIST" })).toBe(false);
+    expect(hasExternalContext({ external_score: 82 })).toBe(false);
+    expect(hasExternalContext(null)).toBe(false);
   });
 });
