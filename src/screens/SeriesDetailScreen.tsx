@@ -10,6 +10,7 @@ import { getSeriesDetail, getSeriesSummary } from "../api/series";
 import { getMyReadingLists } from "../api/readingLists";
 import { voteSeriesDetail } from "../api/votes";
 import { maybePromptForReview } from "../utils/appReview";
+import { openInAppBrowser } from "../utils/externalLinks";
 import { useAuth } from "../auth/AuthContext";
 import {
   AppButton,
@@ -37,6 +38,7 @@ import {
   type VoteCategory,
 } from "../utils/voting";
 import { isSeriesInAnyList } from "../utils/seriesBrowse";
+import { hasExternalContext } from "../utils/seriesFormatting";
 
 type SeriesDetailRoute = RouteProp<RootStackParamList, "SeriesDetail">;
 type SeriesDetailNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -83,6 +85,71 @@ function MetricCard({
       <AppText variant="cardTitle" style={highlight ? styles.metricValueHighlight : null}>
         {value}
       </AppText>
+    </Surface>
+  );
+}
+
+function ExternalContextCard({
+  source,
+  url,
+  score,
+  popularity,
+}: {
+  source: string;
+  url?: string | null;
+  score?: number | null;
+  popularity?: number | null;
+}) {
+  const styles = getStyles();
+  const sourceLabel = source.toUpperCase();
+
+  return (
+    <Surface variant="accent" radius="lg" style={styles.externalCard}>
+      <View style={styles.externalHeader}>
+        <AppText variant="label" tone="accent">
+          External context
+        </AppText>
+        {url ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={`Open ${sourceLabel} source`}
+            hitSlop={8}
+            onPress={() => void openInAppBrowser(url)}
+            style={({ pressed }) => [
+              styles.externalSourceLink,
+              pressed ? styles.externalSourcePressed : null,
+            ]}
+          >
+            <AppText variant="caption" tone="accent">
+              Source: {sourceLabel}
+            </AppText>
+            <Ionicons name="open-outline" size={14} color={colors.accentStrong} />
+          </Pressable>
+        ) : (
+          <AppText variant="caption" tone="accent">
+            Source: {sourceLabel}
+          </AppText>
+        )}
+      </View>
+
+      <View style={styles.externalMetrics}>
+        {score != null ? (
+          <View style={styles.externalMetric}>
+            <AppText variant="label" tone="muted">
+              AniList score
+            </AppText>
+            <AppText variant="sectionTitle">{score}%</AppText>
+          </View>
+        ) : null}
+        {popularity != null ? (
+          <View style={styles.externalMetric}>
+            <AppText variant="label" tone="muted">
+              Popularity
+            </AppText>
+            <AppText variant="sectionTitle">{popularity.toLocaleString()}</AppText>
+          </View>
+        ) : null}
+      </View>
     </Surface>
   );
 }
@@ -272,6 +339,7 @@ export function SeriesDetailScreen() {
     (isPendingSubmission && isSubmissionOwner);
   const canEditTitleDetails = Boolean(isAdmin || canManagePendingDetails);
   const hasTitleDetails = Boolean(detail?.synopsis?.trim() || detail?.series_cover_url);
+  const showExternalContext = hasExternalContext(detail);
 
   const storyScore = getAverage(detail?.story_total, detail?.story_count);
   const characterScore = getAverage(detail?.characters_total, detail?.characters_count);
@@ -498,6 +566,15 @@ export function SeriesDetailScreen() {
             <MetricCard label="Author" value={detail?.author || "Unknown"} />
             <MetricCard label="Artist" value={detail?.artist || "Unknown"} />
           </View>
+
+          {showExternalContext && detail?.external_source ? (
+            <ExternalContextCard
+              source={detail.external_source}
+              url={detail.external_url}
+              score={detail.external_score}
+              popularity={detail.external_popularity}
+            />
+          ) : null}
 
           <Surface style={styles.infoCard}>
             <AppText variant="label" tone="muted">
@@ -730,6 +807,39 @@ function getStyles() {
     },
     metricValueHighlight: {
       color: colors.text,
+    },
+    externalCard: {
+      gap: spacing.md,
+    },
+    externalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    externalSourceLink: {
+      minHeight: 32,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingHorizontal: spacing.xs,
+      marginHorizontal: -spacing.xs,
+      borderRadius: radii.sm,
+    },
+    externalSourcePressed: {
+      backgroundColor: colors.surfacePressed,
+      opacity: 0.88,
+    },
+    externalMetrics: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    externalMetric: {
+      minWidth: 120,
+      flex: 1,
+      gap: spacing.xs,
     },
     infoCard: {
       gap: spacing.sm,
