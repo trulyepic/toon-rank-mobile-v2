@@ -4,7 +4,7 @@
     "slug": "toonranks-mobile",
     "scheme": "toonranks",
     "newArchEnabled": false,
-    "version": "1.0.15",
+    "version": "1.0.16",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.toonranks.mobile",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "associatedDomains": ["applinks:www.toonranks.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -29,7 +29,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.toonranks.mobile",
-      "versionCode": 16,
+      "versionCode": 17,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -112,7 +112,8 @@
         {
           "android": {
             "enableMinifyInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class expo.modules.securestore.** { *; }"
           }
         }
       ],
