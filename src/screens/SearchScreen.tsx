@@ -30,6 +30,7 @@ import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing, typography } from "../theme/tokens";
 import type { RankedSeries } from "../types/series";
+import { shouldShowVoteCount } from "../utils/seriesFormatting";
 import {
   filterSeriesByType,
   getTypeParam,
@@ -103,9 +104,11 @@ function SearchResultCard({
           </Text>
           <View style={styles.resultMetaRow}>
             <Text style={styles.resultType}>{item.type}</Text>
-            <Text style={styles.resultVotes}>
-              {item.vote_count.toLocaleString()} votes
-            </Text>
+            {shouldShowVoteCount(item.vote_count) ? (
+              <Text style={styles.resultVotes}>
+                {item.vote_count.toLocaleString()} votes
+              </Text>
+            ) : null}
           </View>
           <Text numberOfLines={2} style={styles.resultGenre}>
             {item.genre}
