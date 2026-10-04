@@ -1,5 +1,12 @@
 import type { SeriesDetailData } from "../types/series";
 
+export const MIN_PUBLIC_VOTE_COUNT = 100;
+
+export function shouldShowVoteCount(voteCount?: number | null) {
+  const numericCount = Number(voteCount);
+  return Number.isFinite(numericCount) && numericCount >= MIN_PUBLIC_VOTE_COUNT;
+}
+
 export function formatAverage(total?: number, count?: number) {
   if (!total || !count) return "-";
   return (total / count).toFixed(1);

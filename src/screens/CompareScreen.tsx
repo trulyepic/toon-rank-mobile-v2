@@ -28,7 +28,12 @@ import { useCompare } from "../context/CompareContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { colors, radii, spacing } from "../theme/tokens";
 import { winnersFor } from "../utils/compare";
-import { compactGenre, formatAverage, formatScore } from "../utils/seriesFormatting";
+import {
+  compactGenre,
+  formatAverage,
+  formatScore,
+  shouldShowVoteCount,
+} from "../utils/seriesFormatting";
 
 const compareLabels = [
   { key: "story", label: "Story" },
@@ -54,7 +59,14 @@ function RowLabel({ text }: { text: string }) {
   const styles = getStyles();
   return (
     <View style={[styles.labelCell, { width: LABEL_COLUMN_WIDTH }]}>
-      <Text style={styles.labelCellText}>{text}</Text>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+        numberOfLines={2}
+        style={styles.labelCellText}
+      >
+        {text}
+      </Text>
     </View>
   );
 }
@@ -127,6 +139,28 @@ export function CompareScreen() {
       return Number.isFinite(score) && score > 0 ? score : null;
     }),
   );
+  const visibleVoteCounts = comparedItems.map(({ summary }) =>
+    shouldShowVoteCount(summary.vote_count) ? Number(summary.vote_count) : null,
+  );
+  const showVoteRow = visibleVoteCounts.some((count) => count != null);
+  const anilistScores = comparedItems.map(({ detail }) => {
+    if (detail?.external_source?.toUpperCase() !== "ANILIST") return null;
+    if (detail.external_score == null) return null;
+    const score = Number(detail.external_score);
+    return Number.isFinite(score) ? score : null;
+  });
+  const anilistPopularity = comparedItems.map(({ detail }) => {
+    if (detail?.external_source?.toUpperCase() !== "ANILIST") return null;
+    if (detail.external_popularity == null) return null;
+    const popularity = Number(detail.external_popularity);
+    return Number.isFinite(popularity) ? popularity : null;
+  });
+  const showAniListScoreRow = anilistScores.some((score) => score != null);
+  const showAniListPopularityRow = anilistPopularity.some(
+    (popularity) => popularity != null,
+  );
+  const anilistScoreWinners = winnersFor(anilistScores);
+  const anilistPopularityWinners = winnersFor(anilistPopularity);
   const categoryWinners: Record<string, boolean[]> = Object.fromEntries(
     compareLabels.map(({ key }) => [
       key,
@@ -314,14 +348,48 @@ export function CompareScreen() {
                     ))}
                   </View>
 
-                  <View style={styles.dataRow}>
-                    <RowLabel text="Votes" />
-                    {comparedItems.map(({ summary }) => (
-                      <ValueCell key={`votes-${summary.id}`} width={columnWidth}>
-                        {Number(summary.vote_count ?? 0).toLocaleString()}
-                      </ValueCell>
-                    ))}
-                  </View>
+                  {showVoteRow ? (
+                    <View style={styles.dataRow}>
+                      <RowLabel text="Votes" />
+                      {comparedItems.map(({ summary }, index) => (
+                        <ValueCell key={`votes-${summary.id}`} width={columnWidth}>
+                          {visibleVoteCounts[index]?.toLocaleString() ?? "-"}
+                        </ValueCell>
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {showAniListScoreRow ? (
+                    <View style={styles.dataRow}>
+                      <RowLabel text="AniList score" />
+                      {comparedItems.map(({ summary }, index) => (
+                        <ValueCell
+                          key={`anilist-score-${summary.id}`}
+                          width={columnWidth}
+                          winner={anilistScoreWinners[index]}
+                        >
+                          {anilistScores[index] != null
+                            ? `${anilistScores[index]?.toFixed(0)}%`
+                            : "-"}
+                        </ValueCell>
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {showAniListPopularityRow ? (
+                    <View style={styles.dataRow}>
+                      <RowLabel text="AniList popularity" />
+                      {comparedItems.map(({ summary }, index) => (
+                        <ValueCell
+                          key={`anilist-popularity-${summary.id}`}
+                          width={columnWidth}
+                          winner={anilistPopularityWinners[index]}
+                        >
+                          {anilistPopularity[index]?.toLocaleString() ?? "-"}
+                        </ValueCell>
+                      ))}
+                    </View>
+                  ) : null}
 
                   <View style={styles.dataRow}>
                     <RowLabel text="Genre" />

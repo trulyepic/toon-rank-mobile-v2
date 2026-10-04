@@ -5,6 +5,7 @@ import {
   formatAverage,
   formatScore,
   hasExternalContext,
+  shouldShowVoteCount,
 } from "./seriesFormatting";
 
 describe("series formatting", () => {
@@ -46,5 +47,13 @@ describe("series formatting", () => {
     expect(hasExternalContext({ external_source: "ANILIST" })).toBe(false);
     expect(hasExternalContext({ external_score: 82 })).toBe(false);
     expect(hasExternalContext(null)).toBe(false);
+  });
+
+  it("shows vote counts only after the public threshold is reached", () => {
+    expect(shouldShowVoteCount(99)).toBe(false);
+    expect(shouldShowVoteCount(100)).toBe(true);
+    expect(shouldShowVoteCount(1450)).toBe(true);
+    expect(shouldShowVoteCount(null)).toBe(false);
+    expect(shouldShowVoteCount(Number.NaN)).toBe(false);
   });
 });

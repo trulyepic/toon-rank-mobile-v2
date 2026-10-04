@@ -38,7 +38,7 @@ import {
   type VoteCategory,
 } from "../utils/voting";
 import { isSeriesInAnyList } from "../utils/seriesBrowse";
-import { hasExternalContext } from "../utils/seriesFormatting";
+import { hasExternalContext, shouldShowVoteCount } from "../utils/seriesFormatting";
 
 type SeriesDetailRoute = RouteProp<RootStackParamList, "SeriesDetail">;
 type SeriesDetailNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -170,9 +170,11 @@ function BreakdownBar({
       <View style={styles.breakdownTopRow}>
         <AppText variant="cardTitle">{label}</AppText>
         <View style={styles.breakdownScoreGroup}>
-          <AppText tone="muted" variant="caption">
-            {votes > 0 ? `${votes} votes` : "No votes yet"}
-          </AppText>
+          {shouldShowVoteCount(votes) ? (
+            <AppText tone="muted" variant="caption">
+              {votes.toLocaleString()} votes
+            </AppText>
+          ) : null}
           <AppText variant="cardTitle" style={{ color: colors.ratingBarFrom }}>
             {score > 0 ? score.toFixed(1) : "-"}
             <AppText tone="subtle" variant="caption">
@@ -478,9 +480,11 @@ export function SeriesDetailScreen() {
               >
                 {averageScore.toFixed(1)}
               </AppText>
-              <AppText variant="caption" tone="muted">
-                {voteCount.toLocaleString()} votes
-              </AppText>
+              {shouldShowVoteCount(voteCount) ? (
+                <AppText variant="caption" tone="muted">
+                  {voteCount.toLocaleString()} votes
+                </AppText>
+              ) : null}
             </View>
 
             <View style={styles.quickActions}>
@@ -562,7 +566,9 @@ export function SeriesDetailScreen() {
 
           <View style={styles.metricGrid}>
             <MetricCard label="Rank" value={rank ? `#${rank}` : "Unranked"} />
-            <MetricCard label="Votes" value={voteCount.toLocaleString()} />
+            {shouldShowVoteCount(voteCount) ? (
+              <MetricCard label="Votes" value={voteCount.toLocaleString()} />
+            ) : null}
             <MetricCard label="Author" value={detail?.author || "Unknown"} />
             <MetricCard label="Artist" value={detail?.artist || "Unknown"} />
           </View>
