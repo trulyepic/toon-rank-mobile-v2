@@ -29,14 +29,19 @@ export function ThemeProvider({ children, onThemeChange }: Props) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    void SecureStore.getItemAsync(STORAGE_KEY).then((stored) => {
-      const resolved = (stored as ThemeName) ?? DEFAULT_THEME;
-      if (resolved !== DEFAULT_THEME) {
-        applyTheme(resolved);
-      }
-      setThemeState(resolved);
-      setReady(true);
-    });
+    void SecureStore.getItemAsync(STORAGE_KEY)
+      .then((stored) => {
+        const resolved = (stored as ThemeName) ?? DEFAULT_THEME;
+        if (resolved !== DEFAULT_THEME) {
+          applyTheme(resolved);
+        }
+        setThemeState(resolved);
+      })
+      .catch(() => {
+        applyTheme(DEFAULT_THEME);
+        setThemeState(DEFAULT_THEME);
+      })
+      .finally(() => setReady(true));
   }, []);
 
   const setTheme = async (name: ThemeName) => {
