@@ -210,6 +210,9 @@ functions, forum image uploads, app-store assets, placeholder Android package na
   handoff. `app.json` may already be one ahead of the live store build (a staged bump); if
   so, don't bump again. When triggered, bump `android.versionCode` (+1), `ios.buildNumber`
   (+1), and `version` (semver) together. Full rule: `CONSTRAINTS.md` #7.
+- **Build/release instructions come from `docs/RELEASE_PROCESS.md`** — production build
+  command, Play upload, release-notes format, and development builds (`expo-dev-client`,
+  not Expo Go). Answer "how do I build/release" questions from that file.
 - Do not wire production-destructive behavior.
 - Do not introduce mobile-only data stores for data that must be shared with the website.
 - Do not fork product logic unless the backend contract requires it.

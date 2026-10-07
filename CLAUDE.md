@@ -66,6 +66,14 @@ npm run verify       # typecheck + lint + format + test  ← run before handoff
 The owner typically runs on a **connected physical device**, not the cloud. Always give
 concrete emulator/device test steps.
 
+Development uses a **development build** (`expo-dev-client`), not Expo Go. For production
+builds, uploads and Play release notes, follow **`docs/RELEASE_PROCESS.md`** — it is the
+source of truth for any "how do I build / release" question:
+
+```powershell
+eas build --platform android --profile production   # Play Store .aab
+```
+
 ---
 
 ## Critical rules — read before writing any code
@@ -109,6 +117,7 @@ and add `useSafeAreaInsets().bottom` padding so the footer stays on screen — s
 | Workflow + handoff rules                     | `CONSTRAINTS.md`                   |
 | App structure, file-by-file                  | `docs/ARCHITECTURE.md`             |
 | Auth flow (the source of truth)              | `docs/MOBILE_AUTH_CONTRACT.md`     |
+| Building + releasing (EAS, Play, notes)      | `docs/RELEASE_PROCESS.md`          |
 | Active roadmap / what to work on             | `docs/CORE_APP_EXPERIENCE_TODO.md` |
 | Design direction                             | `docs/DESIGN_DIRECTION.md`         |
 
