@@ -38,6 +38,11 @@ export interface RankedSeries {
   status?: string | null;
 }
 
+export interface ReadingLink {
+  site: string;
+  url: string;
+}
+
 export interface SeriesDetailData {
   id: number;
   title: string;
@@ -56,6 +61,7 @@ export interface SeriesDetailData {
   external_score?: number | null;
   external_popularity?: number | null;
   external_synced_at?: string | null;
+  where_to_read?: ReadingLink[];
   synopsis?: string;
   vote_scores?: Record<string, number>;
   vote_counts?: Record<string, number>;
