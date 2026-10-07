@@ -29,7 +29,7 @@ import {
   Surface,
 } from "../components";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import type { RankedSeries } from "../types/series";
+import type { RankedSeries, ReadingLink } from "../types/series";
 import { colors, radii, shadows, spacing } from "../theme/tokens";
 import {
   getUserVoteForCategory,
@@ -84,6 +84,40 @@ function MetricCard({
       </AppText>
       <AppText variant="cardTitle" style={highlight ? styles.metricValueHighlight : null}>
         {value}
+      </AppText>
+    </Surface>
+  );
+}
+
+function WhereToReadCard({ links }: { links: ReadingLink[] }) {
+  const styles = getStyles();
+
+  return (
+    <Surface radius="lg" style={styles.readCard}>
+      <AppText variant="label" tone="muted">
+        Where to read
+      </AppText>
+      <View style={styles.readLinks}>
+        {links.map((link) => (
+          <Pressable
+            key={link.url}
+            accessibilityRole="link"
+            accessibilityLabel={`Read on ${link.site}`}
+            onPress={() => void openInAppBrowser(link.url)}
+            style={({ pressed }) => [
+              styles.readLink,
+              pressed ? styles.externalSourcePressed : null,
+            ]}
+          >
+            <AppText variant="caption" tone="accent">
+              {link.site}
+            </AppText>
+            <Ionicons name="open-outline" size={14} color={colors.accentStrong} />
+          </Pressable>
+        ))}
+      </View>
+      <AppText variant="caption" tone="muted">
+        Official platforms. Support the creators.
       </AppText>
     </Surface>
   );
@@ -573,6 +607,10 @@ export function SeriesDetailScreen() {
             <MetricCard label="Artist" value={detail?.artist || "Unknown"} />
           </View>
 
+          {detail?.where_to_read?.length ? (
+            <WhereToReadCard links={detail.where_to_read} />
+          ) : null}
+
           {showExternalContext && detail?.external_source ? (
             <ExternalContextCard
               source={detail.external_source}
@@ -836,6 +874,25 @@ function getStyles() {
     externalSourcePressed: {
       backgroundColor: colors.surfacePressed,
       opacity: 0.88,
+    },
+    readCard: {
+      gap: spacing.sm,
+    },
+    readLinks: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    readLink: {
+      minHeight: 36,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radii.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.accentSoft,
     },
     externalMetrics: {
       flexDirection: "row",
