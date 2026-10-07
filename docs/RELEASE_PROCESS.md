@@ -11,11 +11,11 @@ The owner runs the commands from the `toon-ranks-mobile` folder in PowerShell.
 
 ## Build profiles (`eas.json`)
 
-| Profile       | Command                                                 | Produces                  | Use for                                     |
-| ------------- | ------------------------------------------------------- | ------------------------- | ------------------------------------------- |
-| `production`  | `eas build --platform android --profile production`     | `.aab` (app bundle)       | Google Play uploads                         |
-| `preview`     | `eas build --platform android --profile preview`        | `.apk`                    | Sideloading a release-like build to a phone |
-| `development` | `eas build --platform android --profile development`    | `.apk` with dev tools     | Day-to-day development (see below)          |
+| Profile       | Command                                              | Produces              | Use for                                     |
+| ------------- | ---------------------------------------------------- | --------------------- | ------------------------------------------- |
+| `production`  | `eas build --platform android --profile production`  | `.aab` (app bundle)   | Google Play uploads                         |
+| `preview`     | `eas build --platform android --profile preview`     | `.apk`                | Sideloading a release-like build to a phone |
+| `development` | `eas build --platform android --profile development` | `.apk` with dev tools | Day-to-day development (see below)          |
 
 - `appVersionSource` is `"local"`: EAS uses the numbers in `app.json` exactly as written. It
   does **not** auto-increment.
