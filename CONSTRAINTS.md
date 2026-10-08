@@ -126,9 +126,10 @@ so the build is store-ready:
 
 The number in `app.json` is the **next** build's number, and it may already be one
 ahead of the live store build because a bump was staged but not yet built. In that case
-do **not** bump again — that staged number is consumed by the next build. (Example: as
-of this writing `app.json` is `versionCode 4` while the store still serves `3`; build 4
-has not been cut, so it stays `4` until the owner runs that build.) Only after the owner
+do **not** bump again — that staged number is consumed by the next build. (Example: if
+`app.json` says `versionCode 21` while the store serves `20`, build 21 has not been cut,
+so it stays `21` until the owner runs that build. Last built: 1.0.19 / `versionCode 20`
+on 2026-10-07.) Only after the owner
 says a build was made does the _following_ shippable change move to the next integer.
 Never assume — check `app.json` and Play Console if unsure.
 
@@ -136,6 +137,8 @@ Never assume — check `app.json` and Play Console if unsure.
 > `appVersionSource: "remote"` with `autoIncrement` makes EAS bump `versionCode`
 > automatically on each production build, removing the manual step. Until that change
 > is made, the manual bump above is mandatory.
+
+The full build → upload → release-notes procedure is in `docs/RELEASE_PROCESS.md`.
 
 ---
 
